@@ -1,0 +1,70 @@
+{
+  "name": "@rsksmart/rif-storage-ipfs-pinning",
+  "version": "0.1.0",
+  "description": "Application for providing your storage space to other to use in exchange of RIF Tokens",
+  "keywords": [
+    "IPFS",
+    "Pinning",
+    "RSK"
+  ],
+  "homepage": "https://github.com/rsksmart/rds-ipfs",
+  "bugs": {
+    "url": "https://github.com/rsksmart/rds-ipfs/issues/"
+  },
+  "license": "MIT",
+  "files": [
+    "types",
+    "lib"
+  ],
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsksmart/rds-ipfs.git"
+  },
+  "scripts": {
+    "compile": "tasegir compile",
+    "compile:watch": "tasegir compile -- --watch",
+    "docs": "typedoc --mode modules --excludeNotExported --readme none --excludePrivate  --tsconfig ./node_modules/tasegir/src/config/tsconfig.json --exclude 'src/providers/*,test/**/*' --out docs src",
+    "types-check": "tasegir types-check",
+    "exec": "tasegir run",
+    "lint": "tasegir lint",
+    "release": "tasegir release --no-build",
+    "test": "tasegir test",
+    "test:node": "tasegir test --target node",
+    "test:browser": "tasegir test --target browser --target webworker"
+  },
+  "dependencies": {
+    "cids": "^0.7.1",
+    "debug": "^4.1.0",
+    "ipfs-http-client": "^40.1.0",
+    "multiaddr": "^7.2.1"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.7",
+    "@types/chai-as-promised": "^7.1.2",
+    "@types/debug": "^4.1.5",
+    "@types/dirty-chai": "^2.0.2",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.12.7",
+    "@types/pull-stream": "^3.6.0",
+    "@types/readable-stream": "^2.3.5",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "dirty-chai": "^2.0.1",
+    "ipfs": "^0.40.0",
+    "ipfsd-ctl": "^0.47.4",
+    "merge-options": "^2.0.0",
+    "sinon": "^8.0.1",
+    "tasegir": "^1.6.0",
+    "typedoc": "^0.15.6",
+    "typedoc-plugin-markdown": "^2.2.14"
+  },
+  "engines": {
+    "node": ">=10.0.0",
+    "npm": ">=6.0.0"
+  },
+  "types": "types/index.d.ts",
+  "contributors": [
+    "Adam Uhlíř <adam@uhlir.dev>"
+  ]
+}
