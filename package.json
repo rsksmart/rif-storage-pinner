@@ -37,7 +37,8 @@
     "cids": "^0.7.1",
     "debug": "^4.1.0",
     "ipfs-http-client": "^40.1.0",
-    "multiaddr": "^7.2.1"
+    "multiaddr": "^7.2.1",
+    "web3-eth-contract": "^1.2.4"
   },
   "devDependencies": {
     "@types/chai": "^4.2.7",
