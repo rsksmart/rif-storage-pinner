@@ -1,11 +1,11 @@
-import { setup, getContract } from './contract'
+import { setup, getPinningContract } from './contract'
 import { waitForEnter } from './utils'
 
 (async function main (): Promise<void> {
   setup()
-  const contract = await getContract()
+  const contract = await getPinningContract()
 
-  contract.events.allEvents({}, (err: string, event: { event: string }) => {
+  contract.events.allEvents({}, (err: Error, event: { event: string }) => {
     if (err) {
       console.error(`>>> ERROR! ${err}`)
       return
