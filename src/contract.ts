@@ -1,15 +1,10 @@
-import Contract, { ContractOptions } from 'web3-eth-contract'
-import { promisify } from 'util'
-import { readFile as readFileCb } from 'fs'
-import { env } from 'process'
+import { Contract, ContractOptions } from 'web3-eth-contract'
+import { AbiItem } from 'web3-utils'
+import config from 'config'
 
 
-const readFile = promisify(readFileCb)
-
-const PINNIG_CONTRACT_PATH = './contracts/PinningManager.json'
-
-const PROVIDER_ENV = 'RDS_PROVIDER'
-const CONTRACT_ADDR_ENV = 'RDS_CONTRACT_ADDR'
+import { PinningManager } from '@rsksmart/rif-martketplace-storage-pinning/types/web3-v1-contracts/PinningManager'
+import pinningContractAbi from '@rsksmart/rif-martketplace-storage-pinning/build/contracts/PinningManager.json'
 
 let alreadySetup = false
 
@@ -18,21 +13,17 @@ export function setup (provider?: string): void {
     return
   }
 
-  provider = provider || env[PROVIDER_ENV] || 'ws://localhost:8545'
+  provider = provider || config.get('provider') || 'ws://localhost:8545'
 
   // @ts-ignore
   Contract.setProvider(provider)
   alreadySetup = true
 }
 
-export async function getContract (addr?: string, options?: ContractOptions): Promise<Contract> {
-  addr = addr || env[CONTRACT_ADDR_ENV]
-  if(!addr){
-    throw new Error('No contract address!')
+export function getPinningContract (addr?: string, options?: ContractOptions): PinningManager {
+  if (!addr) {
+    addr = config.get('pinningContractAddr')
   }
 
-  const abiBuffer = await readFile(PINNIG_CONTRACT_PATH)
-  const abi = JSON.parse(abiBuffer.toString()).abi
-
-  return new Contract(abi, addr, Object.assign({gas: 100000}, options))
+  return new Contract([(pinningContractAbi as unknown) as AbiItem], addr, Object.assign({ gas: 100000 }, options))
 }
