@@ -1,0 +1,6 @@
+{
+  "provider": "RDS_PROVIDER",
+  "pinningContractAddr": "RDS_CONTRACT_ADDR",
+  "storageAccount": "RDS_STORAGE_ACCOUNT",
+  "pinningAccount": "RDS_PIN_ACCOUNT"
+}
