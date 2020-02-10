@@ -1,52 +1,39 @@
 {
   "name": "@rsksmart/rif-storage-ipfs-pinning",
-  "version": "0.1.0",
   "description": "Application for providing your storage space to other to use in exchange of RIF Tokens",
-  "keywords": [
-    "IPFS",
-    "Pinning",
-    "RSK"
-  ],
-  "homepage": "https://github.com/rsksmart/rds-ipfs",
+  "version": "0.1.0",
+  "author": "Adam Uhlíř @AuHau",
+  "bin": {
+    "rif-pinning": "./bin/run"
+  },
   "bugs": {
     "url": "https://github.com/rsksmart/rds-ipfs/issues/"
   },
-  "license": "MIT",
-  "files": [
-    "types",
-    "lib"
+  "contributors": [
+    "Adam Uhlíř <adam@uhlir.dev>"
   ],
-  "main": "lib/index.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/rsksmart/rds-ipfs.git"
-  },
-  "scripts": {
-    "compile": "tasegir compile",
-    "compile:watch": "tasegir compile -- --watch",
-    "docs": "typedoc --mode modules --excludeNotExported --readme none --excludePrivate  --tsconfig ./node_modules/tasegir/src/config/tsconfig.json --exclude 'src/providers/*,test/**/*' --out docs src",
-    "types-check": "tasegir types-check",
-    "exec": "tasegir run",
-    "lint": "tasegir lint",
-    "release": "tasegir release --no-build",
-    "test": "tasegir test",
-    "test:node": "tasegir test --target node",
-    "test:browser": "tasegir test --target browser --target webworker"
-  },
   "dependencies": {
     "@oclif/command": "^1.5.19",
     "@oclif/config": "^1.13.3",
     "@oclif/plugin-help": "^2.2.3",
     "@rsksmart/rif-martketplace-storage-pinning": "github:rsksmart/rif-martketplace-storage-pinning#feat/npm_package_preparations",
+    "bn.js": "^5.1.1",
     "cids": "^0.7.1",
+    "cli-ux": "^5.4.4",
+    "config": "^3.2.5",
     "debug": "^4.1.0",
     "ipfs-http-client": "^40.1.0",
     "multiaddr": "^7.2.1",
-    "web3-eth-contract": "^1.2.4"
+    "oclif": "^1.15.2",
+    "tslib": "^1.10.0",
+    "web3-eth-contract": "^1.2.6",
+    "web3-utils": "^1.2.6"
   },
   "devDependencies": {
+    "@oclif/dev-cli": "^1.22.2",
     "@types/chai": "^4.2.7",
     "@types/chai-as-promised": "^7.1.2",
+    "@types/config": "0.0.36",
     "@types/debug": "^4.1.5",
     "@types/dirty-chai": "^2.0.2",
     "@types/mocha": "^5.2.7",
@@ -56,20 +43,55 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "dirty-chai": "^2.0.1",
+    "globby": "^10.0.2",
     "ipfs": "^0.40.0",
     "ipfsd-ctl": "^0.47.4",
     "merge-options": "^2.0.0",
     "sinon": "^8.0.1",
     "tasegir": "^1.6.0",
     "typedoc": "^0.15.6",
-    "typedoc-plugin-markdown": "^2.2.14"
+    "typedoc-plugin-markdown": "^2.2.14",
+    "typescript": "^3.7.5"
   },
   "engines": {
     "node": ">=10.0.0",
     "npm": ">=6.0.0"
   },
-  "types": "types/index.d.ts",
-  "contributors": [
-    "Adam Uhlíř <adam@uhlir.dev>"
-  ]
+  "files": [
+    "/bin",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json",
+    "lib",
+    "types"
+  ],
+  "homepage": "https://github.com/rsksmart/rds-ipfs",
+  "keywords": [
+    "IPFS",
+    "Pinning",
+    "RIF"
+  ],
+  "license": "MIT",
+  "main": "lib/index.js",
+  "oclif": {
+    "commands": "./lib/commands",
+    "bin": "rif-pinning",
+    "plugins": [
+      "@oclif/plugin-help"
+    ]
+  },
+  "repository": "https://github.com/rsksmart/rds-ipfs.git",
+  "scripts": {
+    "compile": "tasegir compile",
+    "compile:watch": "tasegir compile -- --watch",
+    "docs": "typedoc --mode modules --excludeNotExported --readme none --excludePrivate  --tsconfig ./node_modules/tasegir/src/config/tsconfig.json --exclude 'src/providers/*,test/**/*' --out docs src",
+    "exec": "tasegir run",
+    "lint": "tasegir lint",
+    "postpack": "rm -f oclif.manifest.json",
+    "prepack": "rm -rf lib && tsc -b && oclif-dev manifest && oclif-dev readme",
+    "release": "tasegir release --no-build",
+    "test": "tasegir test --target node",
+    "types-check": "tasegir types-check",
+    "version": "oclif-dev readme && git add README.md"
+  },
+  "types": "types/index.d.ts"
 }
