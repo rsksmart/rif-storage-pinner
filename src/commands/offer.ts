@@ -30,6 +30,12 @@ export default class Offer extends Command {
       multiple: true,
       char: 'p',
       description: 'set price for given interval; in format <interval in seconds>:<price>'
+    }),
+
+    terminate: flags.boolean({
+      char: 't',
+      description: 'terminate the contract and prevents new requests or prolongation of current requests',
+      exclusive: ['maximumDuration', 'price', 'capacity']
     })
   }
 
@@ -59,17 +65,22 @@ export default class Offer extends Command {
     return { prices, periods }
   }
 
-  async run () {
+  async run (): Promise<void> {
     const { args, flags } = this.parse(Offer)
-    // @ts-ignore
     const { prices, periods } = this.parsePrices(flags.price)
     this.validateAddress(flags.account)
+    const contract = getPinningContract(undefined, { from: flags.account })
+
+    if (flags.terminate) {
+      const hash = await contract.methods.stopStorage().send()
+      this.log('Storage offer terminated with transaction: ', hash.transactionHash)
+      this.exit()
+    }
 
     if (!flags.price && !flags.maximumDuration && !flags.capacity) {
       this._help()
     }
 
-    const contract = getPinningContract(undefined, { from: flags.account })
     cli.action.start('Writing to blockchain')
 
     if (flags.capacity) {
