@@ -1,9 +1,8 @@
 import Contract, { ContractOptions } from 'web3-eth-contract'
-import { AbiItem } from 'web3-utils'
 import config from 'config'
 
-import { PinningManager } from '@rsksmart/rif-martketplace-storage-pinning/types/web3-v1-contracts/PinningManager'
-import pinningContractAbi from '@rsksmart/rif-martketplace-storage-pinning/build/contracts/PinningManager.json'
+import { StorageManager } from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
+import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
 let alreadySetup = false
 
@@ -12,23 +11,24 @@ export function setup (provider?: string): void {
     return
   }
 
-  provider = provider || config.get('provider') || 'ws://localhost:8545'
+  provider = provider || config.get('provider')
 
   // @ts-ignore
   Contract.setProvider(provider)
   alreadySetup = true
 }
 
-export function getPinningContract (addr?: string, options?: ContractOptions): PinningManager {
+export function getStorageManagerContract (addr?: string, options?: ContractOptions): StorageManager {
   setup()
 
   if (!addr) {
-    addr = config.get('pinningContractAddr')
+    addr = config.get<string>('storageManagerContractAddr')
   }
 
   if (!addr) {
     throw new Error('Contract without address')
   }
 
-  return new Contract(pinningContractAbi.abi as AbiItem[], addr, options)
+  // @ts-ignore
+  return (new Contract(storageManagerContractAbi.abi, addr, options)) as StorageManager
 }

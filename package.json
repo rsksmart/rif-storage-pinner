@@ -16,7 +16,7 @@
     "@oclif/command": "^1.5.19",
     "@oclif/config": "^1.13.3",
     "@oclif/plugin-help": "^2.2.3",
-    "@rsksmart/rif-martketplace-storage-pinning": "github:rsksmart/rif-martketplace-storage-pinning#feat/npm_package_preparations",
+    "@rsksmart/rif-marketplace-storage": "^0.1.0-dev.0",
     "bn.js": "^5.1.1",
     "cids": "^0.7.1",
     "cli-ux": "^5.4.4",

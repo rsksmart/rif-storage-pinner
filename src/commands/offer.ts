@@ -1,11 +1,11 @@
 import cli from 'cli-ux'
 import { Command, flags } from '@oclif/command'
-import { getPinningContract } from '../contract'
+import { getStorageManagerContract } from '../contract'
 
 export default class Offer extends Command {
-  static description = 'Manages StorageOffer'
+  static description = 'Manages Offers'
 
-  static examples = ['$ rif-pinning --address 0x123 --price 100:10 --price 1000:80']
+  static examples = ['$ rif-pinning offer --address 0x123 --price 100:10 --price 1000:80']
 
   static flags = {
     account: flags.string({
@@ -16,26 +16,21 @@ export default class Offer extends Command {
     }),
 
     help: flags.help({ char: 'h' }),
-    capacity: flags.string({
+    capacity: flags.integer({
       char: 'c',
-      description: 'capacity to be added or removed from the offer; use +/-'
-    }),
-
-    maximumDuration: flags.integer({
-      char: 'm',
-      description: 'the maximum time (in seconds) for which a proposer can prepay'
+      description: 'total capacity to be set for the offer'
     }),
 
     price: flags.string({
       multiple: true,
       char: 'p',
-      description: 'set price for given interval; in format <interval in seconds>:<price>'
+      description: 'set price for given interval; in format: <interval in seconds>:<price>'
     }),
 
     terminate: flags.boolean({
       char: 't',
       description: 'terminate the contract and prevents new requests or prolongation of current requests',
-      exclusive: ['maximumDuration', 'price', 'capacity']
+      exclusive: ['price', 'capacity']
     })
   }
 
@@ -66,42 +61,30 @@ export default class Offer extends Command {
   }
 
   async run (): Promise<void> {
-    const { args, flags } = this.parse(Offer)
+    const { flags } = this.parse(Offer)
     const { prices, periods } = this.parsePrices(flags.price)
     this.validateAddress(flags.account)
-    const contract = getPinningContract(undefined, { from: flags.account })
+    const contract = getStorageManagerContract(undefined, { from: flags.account })
 
     if (flags.terminate) {
-      const hash = await contract.methods.stopStorage().send()
-      this.log('Storage offer terminated with transaction: ', hash.transactionHash)
+      const hash = await contract.methods.terminateOffer().send()
+      this.log('Offer terminated with transaction: ', hash.transactionHash)
       this.exit()
     }
 
-    if (!flags.price && !flags.maximumDuration && !flags.capacity) {
+    if (!flags.price && !flags.capacity) {
       this._help()
     }
 
     cli.action.start('Writing to blockchain')
 
     if (flags.capacity) {
-      if (flags.capacity.startsWith('+')) {
-        const hash = await contract.methods.increaseStorageCapacity(parseInt(flags.capacity)).send()
-        this.log('Capacity increased with transaction: ', hash.transactionHash)
-      } else if (flags.capacity.startsWith('-')) {
-        const hash = await contract.methods.decreaseStorageCapacity(Math.abs(parseInt(flags.capacity))).send()
-        this.log('Capacity decreased with transaction: ', hash.transactionHash)
-      } else {
-        this.error('Capacity has to have either + or -')
-      }
-    }
-
-    if (flags.maximumDuration) {
-      const hash = await contract.methods.setMaximumDuration(flags.maximumDuration).send()
-      this.log('Maximum duration set with transaction: ', hash.transactionHash)
+      const hash = await contract.methods.setTotalCapacity(flags.capacity).send()
+      this.log('Total capacity set with transaction: ', hash.transactionHash)
     }
 
     if (prices && periods) {
-      const hash = await contract.methods.setStoragePrice(periods, prices).send()
+      const hash = await contract.methods.setBillingPlans(periods, prices).send()
       this.log('Prices set with transaction: ', hash.transactionHash)
     }
 
