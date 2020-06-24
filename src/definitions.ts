@@ -16,6 +16,9 @@ export interface Provider {
   unpin (hash: string): Promise<void>
 }
 
+/**
+ * Basic logger interface used around the application.
+ */
 export interface Logger {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   critical (message: string | Error | object, ...meta: any[]): never
