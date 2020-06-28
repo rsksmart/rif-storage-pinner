@@ -1,8 +1,10 @@
-import { Config, Logger } from './definitions'
-import { Command, flags } from '@oclif/command'
-import { Input, OutputFlags } from '@oclif/parser'
-import { readFile } from 'fs/promises'
-import config from 'config'
+import { Logger } from './definitions'
+import { EventData } from 'web3-eth-contract'
+import { hexToAscii } from 'web3-utils'
+import Agreement from './models/agreement.model'
+import { loggingFactory } from './logger'
+
+const logger = loggingFactory('utils')
 
 export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> {
   return (...args) => {
@@ -10,57 +12,30 @@ export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Log
   }
 }
 
-export abstract class BaseCLICommand extends Command {
-  static flags = {
-    config: flags.string({
-      description: 'path to JSON config file to load',
-      env: 'RIFM_CONFIG'
-    }),
-    log: flags.string({
-      description: 'what level of information to log',
-      options: ['error', 'warn', 'info', 'verbose', 'debug'],
-      default: 'error',
-      env: 'LOG_LEVEL'
-    }),
-    'log-filter': flags.string(
-      {
-        description: 'what components should be logged (+-, chars allowed)'
-      }
-    ),
-    'log-path': flags.string(
-      {
-        description: 'log to file, default is STDOUT'
-      }
-    )
-  }
+export function filterEvents (offerId: string, callback: (event: EventData) => Promise<void>) {
+  return async (event: EventData): Promise<void> => {
+    logger.debug(`Got ${event.event} for provider ${event.returnValues.provider}`)
 
-  async loadConfig (path?: string): Promise<Config> {
-    if (!path) {
-      return {}
+    if (event.returnValues.provider && event.returnValues.provider === offerId) {
+      return callback(event)
     }
 
-    const data = await readFile(path, 'utf-8')
-    return JSON.parse(data) as Config
-  }
-
-  async init (): Promise<void> {
-    const { flags: originalFlags } = this.parse(this.constructor as Input<typeof BaseCLICommand.flags>)
-    const flags = originalFlags as OutputFlags<typeof BaseCLICommand.flags>
-
-    const logObject = {
-      log:
-        {
-          level: flags.log,
-          filter: flags['log-filter'] || null,
-          path: flags['log-path'] || null
-        }
+    if (event.event.startsWith('Agreement') && await Agreement.findByPk(event.returnValues.agreementReference)) {
+      return callback(event)
     }
-
-    const userConfig = await this.loadConfig(flags.config)
-
-    config.util.extendDeep(config, userConfig)
-    config.util.extendDeep(config, logObject)
 
     return Promise.resolve()
   }
+}
+
+/**
+ * Utility function for decoding Solidity's byte32 array.
+ * @param fileReference
+ */
+export function decodeByteArray (fileReference: string[]): string {
+  return fileReference
+    .map(hexToAscii)
+    .join('')
+    .trim()
+    .replace(/\0/g, '') // Remove null-characters
 }
