@@ -15,7 +15,7 @@
   "dependencies": {
     "@oclif/command": "^1.6.1",
     "@oclif/config": "^1.15.1",
-    "@oclif/errors": "^1.2.2",
+    "@oclif/errors": "^1.3.1",
     "@oclif/parser": "^3.8.5",
     "@oclif/plugin-help": "^3.1.0",
     "@rsksmart/rif-marketplace-storage": "^0.1.0-dev.0",
@@ -24,11 +24,11 @@
     "cids": "^0.8.3",
     "cli-ux": "^5.4.6",
     "config": "^3.3.1",
-    "ipfs-http-client": "^44.2.0",
-    "multiaddr": "^7.4.3",
+    "ipfs-http-client": "^44.3.0",
+    "multiaddr": "^7.5.0",
     "oclif": "^1.16.1",
     "reflect-metadata": "^0.1.13",
-    "sequelize": "^5.21.10",
+    "sequelize": "^5.22.1",
     "sequelize-store": "^0.3.1",
     "sequelize-typescript": "^1.1.0",
     "sql-formatter": "^2.3.3",
@@ -37,21 +37,23 @@
     "web3-eth": "^1.2.9",
     "web3-eth-contract": "^1.2.9",
     "web3-utils": "^1.2.9",
-    "winston": "~3.2.1",
+    "winston": "^3.3.3",
     "winston-transport": "^4.3.0"
   },
   "devDependencies": {
     "@fluffy-spoon/substitute": "^1.143.0",
     "@oclif/dev-cli": "^1.22.2",
-    "@types/chai": "^4.2.7",
+    "@types/bluebird": "^3.5.32",
+    "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.2",
     "@types/config": "0.0.36",
     "@types/dirty-chai": "^2.0.2",
     "@types/mocha": "^7.0.2",
-    "@types/node": "^14.0.13",
+    "@types/node": "^14.0.14",
     "@types/sinon": "^9.0.3",
     "@types/sinon-chai": "^3.2.4",
     "@types/sql-formatter": "^2.3.0",
+    "@types/validator": "^13.1.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "dirty-chai": "^2.0.1",
@@ -82,9 +84,8 @@
     "RIF"
   ],
   "license": "MIT",
-  "main": "lib/index.js",
+  "main": "src/cli.ts",
   "oclif": {
-    "commands": "./lib/commands",
     "bin": "rif-pinning",
     "plugins": [
       "@oclif/plugin-help"
@@ -92,6 +93,7 @@
   },
   "repository": "https://github.com/rsksmart/rds-ipfs.git",
   "scripts": {
+    "bin": "tasegir run --watch ./bin/run -- ",
     "compile": "tasegir compile",
     "compile:watch": "tasegir compile -- --watch",
     "docs": "typedoc --mode modules --excludeNotExported --readme none --excludePrivate  --tsconfig ./node_modules/tasegir/src/config/tsconfig.json --exclude 'src/providers/*,test/**/*' --out docs src",
@@ -100,6 +102,7 @@
     "postpack": "rm -f oclif.manifest.json",
     "prepack": "rm -rf lib && tsc -b && oclif-dev manifest && oclif-dev readme",
     "release": "tasegir release --no-build",
+    "start": "tasegir run --watch ./bin/run --",
     "test": "tasegir test --target node",
     "types-check": "tasegir types-check",
     "version": "oclif-dev readme && git add README.md"
