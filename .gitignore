@@ -25,5 +25,12 @@ coverage
 build
 dist
 
+# Local configuration
+config/local.json5
+
 # Dependency directory
 node_modules
+
+# IPFS repos for development
+.repos/*
+!.repos/init.sh

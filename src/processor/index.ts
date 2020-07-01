@@ -5,23 +5,26 @@ import type { EventEmitter } from 'events'
 import offer from './offer'
 import request from './agreement'
 import type { Handler } from '../definitions'
+import type { ProviderManager } from '../providers'
 import { loggingFactory } from '../logger'
+import Agreement from '../models/agreement.model'
 
 const precacheLogger = loggingFactory('blockchain:precache')
 const HANDLERS: Handler[] = [offer, request]
 
-export default function processor (eth: Eth) {
+export default function processor (eth: Eth, manager?: ProviderManager) {
   return async (event: EventData): Promise<void> => {
     const promises = HANDLERS
       .filter(handler => handler.events.includes(event.event))
-      .map(handler => handler.process(event, eth))
+      .map(handler => handler.process(event, eth, manager))
     await Promise.all(promises)
   }
 }
 
-export function precache (eventsEmitter: EventEmitter, processor: (event: EventData) => Promise<void>): Promise<void> {
-  precacheLogger.verbose('Precaching')
-  return new Promise<void>((resolve, reject) => {
+export async function precache (eventsEmitter: EventEmitter, manager: ProviderManager, processor: (event: EventData) => Promise<void>): Promise<void> {
+  // Wait to build up the database with latest data
+  precacheLogger.verbose('Populating database')
+  await new Promise<void>((resolve, reject) => {
     const dataQueue: EventData[] = []
     const dataQueuePusher = (event: EventData): void => { dataQueue.push(event) }
 
@@ -39,8 +42,13 @@ export function precache (eventsEmitter: EventEmitter, processor: (event: EventD
       }
     })
     eventsEmitter.on('newEvent', dataQueuePusher)
-    eventsEmitter.on('error', (e: Error) => {
-      precacheLogger.error(`There was unknown error in Events Emitter! ${e}`)
-    })
   })
+
+  // Now lets pin every Agreement that has funds
+  precacheLogger.verbose('Pinning valid Agreements')
+  for (const agreement of await Agreement.findAll()) {
+    if (agreement.hasSufficientFunds) {
+      await manager.pin(agreement.dataReference, agreement.size)
+    }
+  }
 }

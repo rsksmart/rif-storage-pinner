@@ -9,11 +9,17 @@ import { decodeByteArray } from '../utils'
 import { getBlockDate } from '../blockchain/utils'
 
 import Agreement from '../models/agreement.model'
+import type { ProviderManager } from '../providers'
+import {
+  AgreementFundsDeposited, AgreementFundsPayout, AgreementFundsWithdrawn,
+  AgreementStopped,
+  NewAgreement
+} from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
 
 const logger = loggingFactory('processor:agreement')
 
 const handlers = {
-  async NewAgreement (event: EventData, eth: Eth): Promise<void> {
+  async NewAgreement (event: NewAgreement, eth: Eth, manager?: ProviderManager): Promise<void> {
     const { provider: offerId } = event.returnValues
     const id = soliditySha3(event.returnValues.agreementCreator, ...event.returnValues.dataReference)
     const dataReference = decodeByteArray(event.returnValues.dataReference)
@@ -29,12 +35,14 @@ const handlers = {
       availableFunds: event.returnValues.availableFunds,
       lastPayout: await getBlockDate(eth, event.blockNumber)
     }
-    await Agreement.upsert(data) // Agreement might already exist
 
+    if (manager) await manager.pin(dataReference, parseInt(data.size))
+
+    await Agreement.upsert(data) // Agreement might already exist
     logger.info(`Created new Agreement with ID ${id} for offer ${offerId}`)
   },
 
-  async AgreementStopped (event: EventData): Promise<void> {
+  async AgreementStopped (event: AgreementStopped, eth: Eth, manager?: ProviderManager): Promise<void> {
     const id = event.returnValues.agreementReference
     const agreement = await Agreement.findByPk(id)
 
@@ -42,13 +50,15 @@ const handlers = {
       throw new EventError(`Agreement with ID ${id} was not found!`, 'AgreementStopped')
     }
 
+    if (manager) await manager.unpin(agreement.dataReference)
+
     agreement.isActive = false
     await agreement.save()
 
     logger.info(`Agreement ${id} was stopped.`)
   },
 
-  async AgreementFundsDeposited (event: EventData): Promise<void> {
+  async AgreementFundsDeposited (event: AgreementFundsDeposited): Promise<void> {
     const id = event.returnValues.agreementReference
     const agreement = await Agreement.findByPk(id)
 
@@ -62,7 +72,7 @@ const handlers = {
     logger.info(`Agreement ${id} was topped up with ${event.returnValues.amount}.`)
   },
 
-  async AgreementFundsWithdrawn (event: EventData): Promise<void> {
+  async AgreementFundsWithdrawn (event: AgreementFundsWithdrawn): Promise<void> {
     const id = event.returnValues.agreementReference
     const agreement = await Agreement.findByPk(id)
 
@@ -76,7 +86,7 @@ const handlers = {
     logger.info(`${event.returnValues.amount} was withdrawn from funds of Agreement ${id}.`)
   },
 
-  async AgreementFundsPayout (event: EventData, eth: Eth): Promise<void> {
+  async AgreementFundsPayout (event: AgreementFundsPayout, eth: Eth): Promise<void> {
     const id = event.returnValues.agreementReference
     const agreement = await Agreement.findByPk(id)
 
@@ -98,12 +108,12 @@ function isValidEvent (value: string): value is keyof typeof handlers {
 
 const handler: Handler = {
   events: ['NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
-  process (event: EventData, eth: Eth): Promise<void> {
+  process (event: EventData, eth: Eth, manager?: ProviderManager): Promise<void> {
     if (!isValidEvent(event.event)) {
       return Promise.reject(new Error(`Unknown event ${event.event}`))
     }
 
-    return handlers[event.event](event, eth)
+    return handlers[event.event](event as any, eth, manager)
   }
 }
 export default handler

@@ -24,14 +24,24 @@
 ### npm
 
 ```sh
-> npm install @rsksmart/rif-storage-ipfs-pinning-ipfs-pinning
+> npm install @rsksmart/rif-storage-ipfs-pinning
 ```
 
 **WARNING: This package still have not been released!**
 
 ## Usage
 
-TBD
+Example of usage:
+```bash
+$ rif-pinning --offerId 0x123456789 --provider 'ws://localhost:8546' --ipfs '/ip4/127.0.0.1/tcp/5001' --network testnet
+```
+
+This will:
+ - start the pinning service
+ - listens only for events for the offer ID `0x123456789`
+ - use blockchain node for listening on events at `ws://localhost:8546` that is connected to testnet network
+ - thanks to `--network testnet` will use predefined deployed smart-contracts on testnet
+ - connects to your locally running IPFS node at `/ip4/127.0.0.1/tcp/5001`
 
 ## Contribute
 
@@ -42,6 +52,19 @@ There are some ways you can make this module better:
 
 ### Development
 
+**Requirements:**
+
+ * IPFSv5 and higher
+ * Ganache
+ * Node & NPM
+
+Please on how to setup the development environment see [Development guide](./DEVELOPMENT.md)
+
+#### Tips
+
+ - Using the `npm run ipfs:consumer` and `npm run ipfs:provider` you can interact with
+ each IPFS node using the standard commands that IPFS supports.
+ - You can interact with the CLI using `npm run bin` script from the local folder.
 
 ## License
 
