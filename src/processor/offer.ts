@@ -1,6 +1,6 @@
 import { EventData } from 'web3-eth-contract'
 import { loggingFactory } from '../logger'
-import { Handler } from '../definitions'
+import type { Handler } from '../definitions'
 import { decodeByteArray } from '../utils'
 import { getObject } from 'sequelize-store'
 
@@ -24,11 +24,12 @@ const handler: Handler = {
           break
         }
 
-        const [firstMsg, ...restMsg] = msg[0].replace('0x', '')
-        const flag = firstMsg.substring(0, 2)
+        const [firstMsg, ...restMsg] = msg
+        const flag = firstMsg.substring(2, 4)
 
         if (flag === '01') { // PeerId definition
-          store.peerId = decodeByteArray([firstMsg.substring(2), ...restMsg])
+          store.peerId = decodeByteArray([`0x${firstMsg.substring(4)}`, ...restMsg])
+
           logger.info(`PeerId ${store.peerId} defined`)
         } else {
           logger.error(`Unknown message flag ${flag}!`)

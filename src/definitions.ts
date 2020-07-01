@@ -1,8 +1,18 @@
 /**
  * Basic logger interface used around the application.
  */
-import { EventData } from 'web3-eth-contract'
-import { Eth } from 'web3-eth'
+import type { EventData } from 'web3-eth-contract'
+import type { Eth } from 'web3-eth'
+import type { ProviderManager } from './providers'
+
+export enum Providers {
+  IPFS = 'ipfs'
+}
+
+export interface Provider {
+  pin(hash: string, expectedSize: number): Promise<void>
+  unpin(hash: string): Promise<void>
+}
 
 export interface Logger {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,6 +74,11 @@ export interface Config {
     newBlockEmitter?: NewBlockEmitterOptions
   }
 
+  ipfs?: {
+    // URL to the IPFS running node
+    connection?: string
+  }
+
   log?: {
     level?: string
     filter?: string
@@ -76,5 +91,5 @@ export interface Config {
  */
 export interface Handler {
   events: string[]
-  process: (event: EventData, eth: Eth) => Promise<void>
+  process: (event: EventData, eth: Eth, manager?: ProviderManager) => Promise<void>
 }
