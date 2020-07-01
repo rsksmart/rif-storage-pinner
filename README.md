@@ -43,6 +43,27 @@ This will:
  - thanks to `--network testnet` will use predefined deployed smart-contracts on testnet
  - connects to your locally running IPFS node at `/ip4/127.0.0.1/tcp/5001`
 
+```
+USAGE
+  $ rif-pinning --offerId=OFFER_ID
+
+OPTIONS
+  -n, --network=testnet|mainnet        specifies to which network is the provider connected
+  -o, --offerId=offerId                (required) ID of Offer to which should the service listen to
+  -p, --provider=provider              URL to blockchain node provider
+
+  --ipfs=ipfs                          specifies a connection URL to IPFS node. Default is go-ipfs
+                                       listening configuration.
+
+  --log=error|warn|info|verbose|debug  [default: error] what level of information to log
+
+  --log-filter=log-filter              what components should be logged (+-, chars allowed)
+
+  --log-path=log-path                  log to file, default is STDOUT
+
+  --remove-cache                       removes the local database
+```
+
 ## Contribute
 
 There are some ways you can make this module better:
