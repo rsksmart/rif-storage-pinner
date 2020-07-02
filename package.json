@@ -1,17 +1,51 @@
 {
   "name": "@rsksmart/rif-storage-ipfs-pinning",
+  "version": "0.0.1",
   "description": "Application for providing your storage space to other to use in exchange of RIF Tokens",
-  "version": "0.1.0",
-  "author": "Adam Uhlíř @AuHau",
-  "bin": {
-    "rif-pinning": "./bin/run"
-  },
+  "keywords": [
+    "IPFS",
+    "Pinning",
+    "RIF"
+  ],
+  "homepage": "https://github.com/rsksmart/rds-ipfs",
   "bugs": {
     "url": "https://github.com/rsksmart/rds-ipfs/issues/"
   },
-  "contributors": [
-    "Adam Uhlíř <adam@uhlir.dev>"
+  "license": "MIT",
+  "author": {
+    "name": "Adam Uhlíř",
+    "email": "adam@uhlir.dev"
+  },
+  "files": [
+    "/bin",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json",
+    "lib",
+    "types"
   ],
+  "main": "src/cli.ts",
+  "bin": {
+    "rif-pinning": "./bin/run"
+  },
+  "repository": "https://github.com/rsksmart/rds-ipfs.git",
+  "scripts": {
+    "bin": "tasegir run --watch ./bin/run -- ",
+    "compile": "tasegir compile",
+    "compile:watch": "tasegir compile -- --watch",
+    "docs": "typedoc --mode modules --excludeNotExported --readme none --excludePrivate  --tsconfig ./node_modules/tasegir/src/config/tsconfig.json --exclude 'src/providers/*,test/**/*' --out docs src",
+    "exec": "tasegir run",
+    "init": "./.repos/init.sh",
+    "ipfs:consumer": "cross-env IPFS_PATH='./.repos/consumer' ipfs",
+    "ipfs:provider": "cross-env IPFS_PATH='./.repos/provider' ipfs",
+    "lint": "tasegir lint",
+    "postpack": "rm -f oclif.manifest.json",
+    "prepack": "tasegir run --watch node_modules/.bin/oclif-dev -- manifest",
+    "release": "tasegir release --no-build",
+    "start": "tasegir run --watch ./bin/run --",
+    "test": "tasegir test --target node",
+    "types-check": "tasegir types-check",
+    "version": "oclif-dev readme && git add README.md"
+  },
   "dependencies": {
     "@oclif/command": "^1.6.1",
     "@oclif/config": "^1.15.1",
@@ -74,45 +108,14 @@
     "node": ">=10.0.0",
     "npm": ">=6.0.0"
   },
-  "files": [
-    "/bin",
-    "/npm-shrinkwrap.json",
-    "/oclif.manifest.json",
-    "lib",
-    "types"
+  "types": "types/index.d.ts",
+  "contributors": [
+    "Adam Uhlíř <adam@uhlir.dev>"
   ],
-  "homepage": "https://github.com/rsksmart/rds-ipfs",
-  "keywords": [
-    "IPFS",
-    "Pinning",
-    "RIF"
-  ],
-  "license": "MIT",
-  "main": "src/cli.ts",
   "oclif": {
     "bin": "rif-pinning",
     "plugins": [
       "@oclif/plugin-help"
     ]
-  },
-  "repository": "https://github.com/rsksmart/rds-ipfs.git",
-  "scripts": {
-    "bin": "tasegir run --watch ./bin/run -- ",
-    "compile": "tasegir compile",
-    "compile:watch": "tasegir compile -- --watch",
-    "docs": "typedoc --mode modules --excludeNotExported --readme none --excludePrivate  --tsconfig ./node_modules/tasegir/src/config/tsconfig.json --exclude 'src/providers/*,test/**/*' --out docs src",
-    "exec": "tasegir run",
-    "init": "./.repos/init.sh",
-    "ipfs:consumer": "cross-env IPFS_PATH='./.repos/consumer' ipfs",
-    "ipfs:provider": "cross-env IPFS_PATH='./.repos/provider' ipfs",
-    "lint": "tasegir lint",
-    "postpack": "rm -f oclif.manifest.json",
-    "prepack": "tasegir run --watch node_modules/.bin/oclif-dev -- manifest",
-    "release": "tasegir release --no-build",
-    "start": "tasegir run --watch ./bin/run --",
-    "test": "tasegir test --target node",
-    "types-check": "tasegir types-check",
-    "version": "oclif-dev readme && git add README.md"
-  },
-  "types": "types/index.d.ts"
+  }
 }
