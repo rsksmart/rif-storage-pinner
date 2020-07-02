@@ -1,10 +1,12 @@
 import { AbiItem } from 'web3-utils'
 import Eth from 'web3-eth'
+import { EventEmitter } from 'events'
 import config from 'config'
 
 import { loggingFactory } from '../logger'
 import eventsEmitterFactory, { BaseEventsEmitter, EventsEmitterOptions } from './events'
 import { AppOptions, NewBlockEmitterOptions } from '../definitions'
+import { ListeningNewBlockEmitter, PollingNewBlockEmitter } from './new-block-emitters'
 
 const logger = loggingFactory('blockchain')
 
@@ -41,22 +43,37 @@ export function ethFactory (): Eth {
   return new Eth(provider)
 }
 
-export function getEventsEmitter (eth: Eth, contractAbi: AbiItem[], opt?: AppOptions): BaseEventsEmitter {
-  const contractAddresses = opt?.contractAddress || config.get<string>('blockchain.contractAddress')
+export function getNewBlockEmitter (eth: Eth): EventEmitter {
+  const newBlockEmitterOptions = config.get<NewBlockEmitterOptions>('blockchain.newBlockEmitter')
+
+  if (newBlockEmitterOptions.polling) {
+    return new PollingNewBlockEmitter(eth, newBlockEmitterOptions.pollingInterval)
+  } else {
+    return new ListeningNewBlockEmitter(eth)
+  }
+}
+
+function duplicate<T = object> (obj: T): T {
+  return JSON.parse(JSON.stringify(obj))
+}
+
+export function getEventsEmitter (eth: Eth, contractAbi: AbiItem[], options?: EventsEmitterOptions & { contractAddress?: string }): BaseEventsEmitter {
+  const contractAddresses = options?.contractAddress || config.get<string>('blockchain.contractAddress')
   const contract = new eth.Contract(contractAbi, contractAddresses)
   const logger = loggingFactory('blockchain:')
 
   const eventsToListen = config.get<string[]>('blockchain.events')
   logger.info(`For listening on service 'blockchain' for events ${eventsToListen.join(', ')} using contract on address: ${contractAddresses}`)
-  const eventsEmitterOptions = config.get<EventsEmitterOptions>('blockchain.eventsEmitter')
-  const newBlockEmitterOptions = config.get<NewBlockEmitterOptions>('blockchain.newBlockEmitter')
-  const options = Object.assign(
+  const eventsEmitterOptions = duplicate(config.get<EventsEmitterOptions>('blockchain.eventsEmitter'))
+  const newBlockEmitterOptions = duplicate(config.get<NewBlockEmitterOptions>('blockchain.newBlockEmitter'))
+  const configOptions = Object.assign(
     {},
     eventsEmitterOptions,
     {
       newBlockEmitter: newBlockEmitterOptions
-    } as EventsEmitterOptions
+    } as EventsEmitterOptions,
+    options
   )
 
-  return eventsEmitterFactory(eth, contract, eventsToListen, options)
+  return eventsEmitterFactory(eth, contract, eventsToListen, configOptions)
 }

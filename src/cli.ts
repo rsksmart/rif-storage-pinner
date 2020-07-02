@@ -53,6 +53,7 @@ export default class PinningServiceCommand extends Command {
         description: 'log to file, default is STDOUT'
       }
     )
+    // TODO: Add --startingBlock flag which will tells from which block to precache from
   }
 
   private configSetup (flags: OutputFlags<typeof PinningServiceCommand.flags>): void {
