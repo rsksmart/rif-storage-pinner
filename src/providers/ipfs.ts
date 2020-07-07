@@ -21,13 +21,14 @@ export class IpfsProvider implements Provider {
       options = '/ip4/127.0.0.1/tcp/5001'
     }
 
-    const ipfs = ipfsClient(options)
+    const ipfs = await ipfsClient(options)
 
     let versionObject: Version
     try {
-      versionObject = await ipfs.version()
+      // todo handle timeout
+      versionObject = await ipfs.version({ timeout: 2000 })
     } catch (e) {
-      if (e.code === 'ECONNREFUSED') {
+      if (e.code === 'ECONNREFUSED' || e.message === 'Request timed out') {
         throw new Error(`No running IPFS daemon on ${typeof options === 'object' ? JSON.stringify(options) : options}`)
       }
 

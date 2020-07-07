@@ -104,7 +104,7 @@ declare module 'ipfs-http-client' {
   export interface MiscellaneousCommands {
     send (options: object, cb: () => void): void
     id (): Promise<Identity>
-    version (): Promise<Version>
+    version (options?: object): Promise<Version>
   }
 
   export interface PinCommands {
