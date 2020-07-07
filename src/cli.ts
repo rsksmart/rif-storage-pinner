@@ -22,7 +22,7 @@ import { Config } from './definitions'
 
 const logger = loggingFactory()
 
-function getProcessor (offerId: string, eth: Eth, manager?: ProviderManager): (event: EventData) => Promise<void> {
+export function getProcessor (offerId: string, eth: Eth, manager?: ProviderManager): (event: EventData) => Promise<void> {
   return filterEvents(offerId, errorHandler(process(eth, manager), loggingFactory('processor')))
 }
 
