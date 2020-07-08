@@ -345,7 +345,7 @@ export class PollingEventsEmitter extends BaseEventsEmitter {
         return
       }
 
-      this.logger.info(`Checking new events between blocks ${lastFetchedBlockNumber}-${currentBlock}`)
+      this.logger.info(`Checking new events between blocks ${lastFetchedBlockNumber}-${currentBlock.number}`)
       // TODO: Possible to filter-out the events with "topics" property directly from the node
       const events = await this.contract.getPastEvents('allEvents', {
         fromBlock: (lastFetchedBlockNumber as number) + 1, // +1 because both fromBlock and toBlock is "or equal"

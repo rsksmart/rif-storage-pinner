@@ -20,7 +20,7 @@
       startingBlock: "genesis",
 
       // Number of blocks that will be waited before passing an event for further processing.
-      confirmations: 6
+      confirmations: 0
     },
 
     // Specify behavior of NewBlockEmitter, that detects new blocks on blockchain.
