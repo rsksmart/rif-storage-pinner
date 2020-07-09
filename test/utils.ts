@@ -129,26 +129,8 @@ export class AppSingleton {
 
   async initIpfsManager (): Promise<void> {
     this.ipfsManager = new ProviderManager()
-    // TODO Handle configuration of ipfs
-
-    // Create a factory to spawn two test disposable controllers, get access to an IPFS api
-    // print node ids and clean all the controllers from the factory.
-    // const factory = Ctl.create(
-    //   {
-    //     type: 'js',
-    //     test: true,
-    //     disposable: true,
-    //     ipfsHttpModule: ipfsClient,
-    //     ipfsModule: require('ipfs') // only if you gonna spawn 'proc' controllers
-    //   }
-    // )
-    // const ipfsd1 = await factory.spawn() // Spawns using options from `createFactory`
-    // const ipfsd2 = await factory.spawn() // Spawns using options from `createFactory` but overrides `type` to spawn a `go` controller
-    // this.ipfsProvider = new IpfsProvider(ipfsd1.api as IpfsClient)
-    // this.ipfsConsumer = new IpfsProvider(ipfsd2.api as IpfsClient)
-
-    this.ipfsProvider = await IpfsProvider.bootstrap()
-    this.ipfsConsumer = await IpfsProvider.bootstrap('/ip4/127.0.0.1/tcp/5002')
+    this.ipfsProvider = await IpfsProvider.bootstrap(config.get<string>('ipfs.provider'))
+    this.ipfsConsumer = await IpfsProvider.bootstrap(config.get<string>('ipfs.consumer'))
     this.ipfsManager.register(this.ipfsProvider)
   }
 
