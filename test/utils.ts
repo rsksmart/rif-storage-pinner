@@ -188,7 +188,7 @@ export class AppSingleton {
     const msg = [padRight(asciiToHex('some string'), 64), padRight(asciiToHex('some other string'), 64)]
     const offerCall = this.contract
       .methods
-      .setOffer(1000, [10, 100], [10, 80], msg)
+      .setOffer(1000, [1, 100], [10, 80], msg)
     await offerCall.send({ from: this.providerAddress, gas: await offerCall.estimateGas() })
   }
 }
