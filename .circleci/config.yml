@@ -82,7 +82,7 @@ jobs:
       - run:
           name: "Node tests"
           command: npx tasegir test --target node --reporter lcovonly -- --bail
-
+# RSK node tests
 #  node-tests-rsk:
 #    # Enable docker
 #    machine: true
