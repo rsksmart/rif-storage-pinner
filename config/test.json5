@@ -14,7 +14,7 @@
       polling: true,
 
       // Interval in milliseconds, how often is blockchain checked.
-      pollingInterval: 5000,
+      pollingInterval: 500,
 
       // Starting block that upon first start of the service, will the blockchain be crawled for the past events.
       startingBlock: "genesis",

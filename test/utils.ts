@@ -1,5 +1,8 @@
 import config from 'config'
 import ganache from 'ganache-core'
+import sinon from 'sinon'
+// import Ctl from 'ipfsd-ctl'
+// import ipfsClient, { IpfsClient } from 'ipfs-http-client'
 
 import { getObject } from 'sequelize-store'
 import { StoreObject } from 'sequelize-store/types/definitions'
@@ -17,25 +20,57 @@ import { IpfsProvider } from '../src/providers/ipfs'
 import { getEventsEmitter } from '../src/blockchain/utils'
 import { loggingFactory } from '../src/logger'
 import process, { precache } from '../src/processor'
-import { errorHandler, filterEvents } from '../src/utils'
+import { filterEvents } from '../src/utils'
+import { Logger } from '../src/definitions'
 
 const logger = loggingFactory('test:pinning')
 
-function getProcessor (offerId: string, eth: Eth, manager?: ProviderManager): (event: EventData) => Promise<void> {
-  return filterEvents(offerId, errorHandler(process(eth, manager), loggingFactory('processor')))
+export const errorSpy = sinon.spy()
+
+const errorHandlerStub = (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> => {
+  return (...args) => {
+    return fn(...args).catch(err => {
+      logger.error(err)
+      errorSpy(err)
+    })
+  }
+}
+
+export const getProcessor = (offerId: string, eth: Eth, manager?: ProviderManager): (event: EventData) => Promise<void> => {
+  return filterEvents(offerId, errorHandlerStub(process(eth, manager), loggingFactory('processor')))
+}
+
+export const sleep = (timeout: number) => new Promise(resolve => setTimeout(resolve, timeout))
+
+export const encodeHash = (hash: string): string[] => {
+  if (hash.length <= 32) {
+    return [asciiToHex(hash)]
+  }
+
+  return [asciiToHex(hash.slice(0, 32)), ...encodeHash(hash.slice(32))]
+}
+
+export const asyncIterableToArray = async (asyncIterable: any): Promise<Array<any>>  => {
+  const result = [];
+  for await (const value of asyncIterable) {
+    result.push(value);
+  }
+  return result;
 }
 
 export interface App {
-  sequelize: Sequelize | undefined
-  store: StoreObject | undefined
-  ipfsManager: ProviderManager | undefined
-  contract: Contract | undefined
-  eth: Eth | undefined
+  sequelize: Sequelize
+  store: StoreObject
+  ipfsManager: ProviderManager
+  ipfsConsumer: IpfsProvider
+  ipfsProvider: IpfsProvider
+  contract: Contract
+  eth: Eth
   consumerAddress: string
   providerAddress: string
 }
 
-export class AppSingleton implements App {
+export class AppSingleton {
   static app: AppSingleton
 
   public sequelize: Sequelize | undefined = undefined
@@ -43,15 +78,17 @@ export class AppSingleton implements App {
   public contract: Contract| undefined = undefined
   public eth: Eth | undefined = undefined
   public ipfsManager: ProviderManager | undefined = undefined
+  public ipfsConsumer: IpfsProvider | undefined = undefined
+  public ipfsProvider: IpfsProvider | undefined = undefined
   public consumerAddress = ''
   public providerAddress = ''
 
-  static async getApp (): Promise<AppSingleton> {
+  static async getApp (): Promise<App> {
     if (!AppSingleton.app) {
       AppSingleton.app = new AppSingleton()
       await AppSingleton.app.init()
     }
-    return AppSingleton.app
+    return AppSingleton.app as App
   }
 
   async init (): Promise<void> {
@@ -92,8 +129,27 @@ export class AppSingleton implements App {
 
   async initIpfsManager (): Promise<void> {
     this.ipfsManager = new ProviderManager()
-    const ipfs = await IpfsProvider.bootstrap()
-    this.ipfsManager.register(ipfs)
+    // TODO Handle configuration of ipfs
+
+    // Create a factory to spawn two test disposable controllers, get access to an IPFS api
+    // print node ids and clean all the controllers from the factory.
+    // const factory = Ctl.create(
+    //   {
+    //     type: 'js',
+    //     test: true,
+    //     disposable: true,
+    //     ipfsHttpModule: ipfsClient,
+    //     ipfsModule: require('ipfs') // only if you gonna spawn 'proc' controllers
+    //   }
+    // )
+    // const ipfsd1 = await factory.spawn() // Spawns using options from `createFactory`
+    // const ipfsd2 = await factory.spawn() // Spawns using options from `createFactory` but overrides `type` to spawn a `go` controller
+    // this.ipfsProvider = new IpfsProvider(ipfsd1.api as IpfsClient)
+    // this.ipfsConsumer = new IpfsProvider(ipfsd2.api as IpfsClient)
+
+    this.ipfsProvider = await IpfsProvider.bootstrap()
+    this.ipfsConsumer = await IpfsProvider.bootstrap('/ip4/127.0.0.1/tcp/5002')
+    this.ipfsManager.register(this.ipfsProvider)
   }
 
   async deployStorageManager (): Promise<void> {

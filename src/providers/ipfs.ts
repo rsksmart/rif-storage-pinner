@@ -1,4 +1,4 @@
-import ipfsClient, { CID, ClientOptions, IpfsClient, Version } from 'ipfs-http-client'
+import ipfsClient, { CID, ClientOptions, IpfsClient, IpfsResult, Version } from 'ipfs-http-client'
 import * as semver from 'semver'
 
 import type { Provider } from '../definitions'
@@ -70,5 +70,16 @@ export class IpfsProvider implements Provider {
     hash = hash.replace('/ipfs/', '')
     const cid = new CID(hash)
     await this.ipfs.pin.rm(cid)
+  }
+
+  add (data: any): Promise<Array<IpfsResult>> {
+    logger.info(`Upload file`)
+    return this.ipfs.add(data)
+  }
+
+  ls (hash: string): AsyncIterable<{ cid: CID, type: string }> {
+    hash = hash.replace('/ipfs/', '')
+    const cid = new CID(hash)
+    return this.ipfs.pin.ls(cid)
   }
 }
