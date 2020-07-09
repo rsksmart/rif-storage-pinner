@@ -6,9 +6,19 @@ jobs:
       - image: circleci/node:10
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            # when lock file changes, use increasingly general patterns to restore cache
+            - node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - node-10-{{ .Branch }}-
+            - node-10-
       - run:
           name: "Install deps"
           command: npm ci
+      - save_cache:
+          paths:
+            - ./node_modules
+          key: node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - run:
           name: "Commit linting"
           command: |
@@ -29,9 +39,19 @@ jobs:
       - image: circleci/node:<< parameters.version >>
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            # when lock file changes, use increasingly general patterns to restore cache
+            - node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - node-10-{{ .Branch }}-
+            - node-10-
       - run:
           name: "Install deps"
           command: npm ci
+      - save_cache:
+          paths:
+            - ./node_modules
+          key: node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - run:
           name: install dockerize
           command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
