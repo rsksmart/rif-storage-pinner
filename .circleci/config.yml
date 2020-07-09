@@ -37,6 +37,8 @@ jobs:
         type: string
     docker:
       - image: circleci/node:<< parameters.version >>
+      - image: trufflesuite/ganache-cli
+        command: ganache-cli -i 8545 -e 100000000000 -l 4700038
     steps:
       - checkout
       - restore_cache:
@@ -105,10 +107,9 @@ workflows:
           #          context: SonarCloud
           requires:
             - check
-# TODO: Ganache doesn't works with 14 node. Possible can be removed from code and running ganache using CI
-#      - node-tests:
-#          version: '14'
-#          name: node-14
-#          #          context: SonarCloud
-#          requires:
-#            - check
+      - node-tests:
+          version: '14'
+          name: node-14
+          #          context: SonarCloud
+          requires:
+            - check

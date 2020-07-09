@@ -58,7 +58,6 @@
     "cids": "^0.8.3",
     "cli-ux": "^5.4.6",
     "config": "^3.3.1",
-    "ganache-core": "^2.10.2",
     "ipfs-http-client": "^44.3.0",
     "multiaddr": "^7.5.0",
     "oclif": "^1.16.1",

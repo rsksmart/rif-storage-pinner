@@ -1,8 +1,5 @@
 import config from 'config'
-import ganache from 'ganache-core'
 import sinon from 'sinon'
-// import Ctl from 'ipfsd-ctl'
-// import ipfsClient, { IpfsClient } from 'ipfs-http-client'
 
 import { getObject } from 'sequelize-store'
 import { StoreObject } from 'sequelize-store/types/definitions'
@@ -112,10 +109,8 @@ export class AppSingleton {
   }
 
   async initProvider (): Promise<void> {
-    // Start ganache and init Web3
-    const ganacheProvider = ganache.provider()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.eth = new Eth(ganacheProvider as any)
+    const nodeUrl = config.get<string>('blockchain.provider')
+    this.eth = new Eth(nodeUrl)
     const [provider, consumer] = await this.eth.getAccounts()
     this.providerAddress = provider
     this.consumerAddress = consumer
