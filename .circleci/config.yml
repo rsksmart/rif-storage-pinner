@@ -21,7 +21,6 @@ jobs:
       - run:
           name: "Code linting"
           command: npx tasegir lint
-
   node-tests:
     parameters:
       version:
@@ -34,16 +33,31 @@ jobs:
           name: "Install deps"
           command: npm ci
       - run:
-          name: "Init and run IPFS nodes"
-          command: npm run init && npm i -g ipfs npm run ipfs:consumer && npm run ipfs:provider
-      - run:
           name: install dockerize
           command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
           environment:
             DOCKERIZE_VERSION: v0.3.0
       - run:
-          name: Wait for IPFS
-          command: dockerize -wait http://127.0.0.1:5001 -timeout 2m && dockerize -wait http://127.0.0.1:5001 -timeout 2m
+          name: install ipfs
+          command: wget https://dist.ipfs.io/go-ipfs/v0.6.0/go-ipfs_v0.6.0_linux-amd64.tar.gz && tar -xvzf go-ipfs_v0.6.0_linux-amd64.tar.gz && cd go-ipfs && sudo bash install.sh && ipfs --version
+      - run:
+          name: "Init IPFS repo"
+          command: npm run init
+      - run:
+          name: "Run Consumer Node"
+          command: export IPFS_PATH=./.repos/consumer && ipfs daemon
+          background: true
+      - run:
+          name: "Run Provider Node"
+          command: export IPFS_PATH=./.repos/provider && ipfs daemon
+          background: true
+      - run:
+          name: Waiting for the IPFS daemons
+          no_output_timeout: 30s
+          command: |
+            while (! ipfs id --api=/ip4/127.0.0.1/tcp/5001 2>/dev/null) || ! ipfs id --api=/ip4/127.0.0.1/tcp/5002 2>/dev/null; do
+              sleep 1
+            done
       - run:
           name: "Install sqlite"
           command: npm install sqlite3
