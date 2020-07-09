@@ -50,12 +50,12 @@ export const encodeHash = (hash: string): string[] => {
   return [asciiToHex(hash.slice(0, 32)), ...encodeHash(hash.slice(32))]
 }
 
-export const asyncIterableToArray = async (asyncIterable: any): Promise<Array<any>>  => {
-  const result = [];
+export const asyncIterableToArray = async (asyncIterable: any): Promise<Array<any>> => {
+  const result = []
   for await (const value of asyncIterable) {
-    result.push(value);
+    result.push(value)
   }
-  return result;
+  return result
 }
 
 export interface App {

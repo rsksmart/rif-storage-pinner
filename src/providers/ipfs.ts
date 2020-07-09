@@ -73,7 +73,7 @@ export class IpfsProvider implements Provider {
   }
 
   add (data: any): Promise<Array<IpfsResult>> {
-    logger.info(`Upload file`)
+    logger.info('Upload file')
     return this.ipfs.add(data)
   }
 

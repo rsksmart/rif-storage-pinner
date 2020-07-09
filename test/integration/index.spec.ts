@@ -1,4 +1,4 @@
-import chai from "chai"
+import chai from 'chai'
 
 import { AppSingleton, asyncIterableToArray, sleep, encodeHash, App, errorSpy } from '../utils'
 import { loggingFactory } from '../../src/logger'
@@ -8,11 +8,13 @@ const logger = loggingFactory('test:pinning')
 
 const expect = chai.expect
 
-const uploadRandomData = async (ipfsClient: IpfsProvider) => {
-  const [file] = await asyncIterableToArray(ipfsClient.add([{
-    path: `${Math.random().toString(36).substring(7)}.txt`,
-    content: `Nice to be on IPFS ${Math.random().toString(36).substring(7)}`
-  }]))
+const uploadRandomData = async (ipfsClient: IpfsProvider): Promise<{ fileHash: string, size: number, cid: string }> => {
+  const [file] = await asyncIterableToArray(ipfsClient.add([
+    {
+      path: `${Math.random().toString(36).substring(7)}.txt`,
+      content: `Nice to be on IPFS ${Math.random().toString(36).substring(7)}`
+    }
+  ]))
   return {
     ...file,
     fileHash: `/ipfs/${file.cid.toString()}`,
@@ -108,7 +110,6 @@ describe('Pinning service', function () {
 
     await sleep(5000)
 
-
     const payoutGas = await app.contract
       ?.methods
       .payoutFunds([agreementReference])
@@ -125,6 +126,5 @@ describe('Pinning service', function () {
 
     // Should not be be pinned
     expect(await asyncIterableToArray(app.ipfsProvider.ls(file.fileHash)).catch(e => e.message)).to.be.eql(`path '${file.cid}' is not pinned`)
-
   })
 })
