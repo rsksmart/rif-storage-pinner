@@ -25,9 +25,9 @@ jobs:
             git config --global user.email "you@example.com"
             git config --global user.name "Your Name"
             npx tasegir commitlint --circleci
-#      - run:
-#          name: "Dependency check"
-#          command: npx tasegir dep-check
+      - run:
+          name: "Dependency check"
+          command: npx tasegir dep-check
       - run:
           name: "Code linting"
           command: npx tasegir lint
@@ -105,9 +105,10 @@ workflows:
           #          context: SonarCloud
           requires:
             - check
-      - node-tests:
-          version: '14'
-          name: node-14
-          #          context: SonarCloud
-          requires:
-            - check
+# TODO: Ganache doesn't works with 14 node. Possible can be removed from code and running ganache using CI
+#      - node-tests:
+#          version: '14'
+#          name: node-14
+#          #          context: SonarCloud
+#          requires:
+#            - check
