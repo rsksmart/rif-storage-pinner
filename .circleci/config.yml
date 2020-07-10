@@ -6,6 +6,15 @@ commands:
     steps:
       - run: npm ci
 
+  run-rsk:
+    description: "Install and Run RSK Node"
+    steps:
+      - run:
+          command: |
+            docker build -t regtest -f Dockerfile .
+            docker run -d --name regtest-node-01  -p 4444:8545 -p 30305:30305 regtest
+
+
   install-ipfs:
     description: "Install IPFS"
     steps:
@@ -14,6 +23,7 @@ commands:
           tar -xvzf go-ipfs_v0.6.0_linux-amd64.tar.gz
           cd go-ipfs && sudo bash install.sh
           ipfs --version
+
 
   install-sqlite:
     description: "Install SQLite"
@@ -37,6 +47,7 @@ commands:
             while (! ipfs id --api=/ip4/127.0.0.1/tcp/5001 2>/dev/null) || ! ipfs id --api=/ip4/127.0.0.1/tcp/5002 2>/dev/null; do
               sleep 1
             done
+
 
 
 
@@ -81,6 +92,7 @@ jobs:
           name: "Code linting"
           command: npx tasegir lint
 
+
   # Run test on top of Ganache
   node-tests:
     parameters:
@@ -121,9 +133,10 @@ jobs:
 
   # Run test on top of PSK node
   node-tests-rsk:
-    # Enable docker
-#    machine: true
     parameters:
+      cache:
+        type: boolean
+        default: true
       version:
         type: string
     docker:
@@ -132,25 +145,27 @@ jobs:
     steps:
       - setup_remote_docker
       - checkout
-      - restore_cache:
-          keys:
-            # when lock file changes, use increasingly general patterns to restore cache
-            - node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
-            - node-10-{{ .Branch }}-
-            - node-10-
-      - run:
-          name: "Install and Run RSK Node"
-          command: |
-            docker build -t regtest -f Dockerfile .
-            docker run -d --name regtest-node-01  -p 4444:8545 -p 30305:30305 regtest
+      - when:
+          condition: <<parameters.cache>>
+          steps:
+            - restore_cache:
+                keys:
+                  # when lock file changes, use increasingly general patterns to restore cache
+                  - node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
+                  - node-10-{{ .Branch }}-
+                  - node-10-
       - install-deps
-      - save_cache:
-          paths:
-            - ./node_modules
-          key: node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - when:
+          condition: <<parameters.cache>>
+          steps:
+            - save_cache:
+                paths:
+                  - ./node_modules
+                key: node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - install-ipfs
       - spawn-ipfs-nodes
       - install-sqlite
+      - run-rsk
       - run:
           name: "Node tests"
           command: npx tasegir test --target node --reporter lcovonly -- --bail
@@ -162,29 +177,29 @@ jobs:
 workflows:
   test:
     jobs:
-#      - check
-#      - node-tests:
-#          version: '10'
-#          name: node-10
-#          #          context: SonarCloud
-#          requires:
-#            - check
-#      - node-tests:
-#          version: '12'
-#          name: node-12
-#          #          context: SonarCloud
-#          requires:
-#            - check
-#      - node-tests:
-#          version: '14'
-#          name: node-14
-#          #          context: SonarCloud
-#          requires:
-#            - check
-      - node-tests-rsk:
+      - check
+      - node-tests:
           version: '10'
           name: node-10
           #          context: SonarCloud
+          requires:
+            - check
+      - node-tests:
+          version: '12'
+          name: node-12
+          #          context: SonarCloud
+          requires:
+            - check
+      - node-tests:
+          version: '14'
+          name: node-14
+          #          context: SonarCloud
+          requires:
+            - check
+#      - node-tests-rsk:
+#          version: '10'
+#          name: node-rsk
+#                    context: SonarCloud
 #          requires:
 #            - check
 
