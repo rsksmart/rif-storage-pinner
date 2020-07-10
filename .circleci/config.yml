@@ -81,6 +81,7 @@ jobs:
           name: "Code linting"
           command: npx tasegir lint
 
+  # Run test on top of Ganache
   node-tests:
     parameters:
       version:
@@ -118,6 +119,42 @@ jobs:
           name: "Node tests"
           command: npx tasegir test --target node --reporter lcovonly -- --bail
 
+  # Run test on top of PSK node
+  node-tests-rsk:
+    # Enable docker
+#    machine: true
+    parameters:
+      version:
+        type: string
+    docker:
+      - image: circleci/node:<< parameters.version >>
+
+    steps:
+      - setup_remote_docker
+      - checkout
+      - restore_cache:
+          keys:
+            # when lock file changes, use increasingly general patterns to restore cache
+            - node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - node-10-{{ .Branch }}-
+            - node-10-
+      - run:
+          name: "Install and Run RSK Node"
+          command: |
+            docker build -t regtest -f Dockerfile .
+            docker run -d --name regtest-node-01  -p 4444:8545 -p 30305:30305 regtest
+      - install-deps
+      - save_cache:
+          paths:
+            - ./node_modules
+          key: node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - install-ipfs
+      - spawn-ipfs-nodes
+      - install-sqlite
+      - run:
+          name: "Node tests"
+          command: npx tasegir test --target node --reporter lcovonly -- --bail
+  #      - sonarcloud/scan
 
 #orbs:
 #  sonarcloud: sonarsource/sonarcloud@1.0.1
@@ -125,66 +162,29 @@ jobs:
 workflows:
   test:
     jobs:
-      - check
-      - node-tests:
-          version: '10'
-          name: node-10
-          #          context: SonarCloud
-          requires:
-            - check
-      - node-tests:
-          version: '12'
-          name: node-12
-          #          context: SonarCloud
-          requires:
-            - check
-      - node-tests:
-          version: '14'
-          name: node-14
-          #          context: SonarCloud
-          requires:
-            - check
-#      - node-tests-rsk:
+#      - check
+#      - node-tests:
 #          version: '10'
 #          name: node-10
 #          #          context: SonarCloud
 #          requires:
 #            - check
-
-
-# RSK node tests
-#  node-tests-rsk:
-#    # Enable docker
-#    machine: true
-#    parameters:
-#      version:
-#        type: string
-#    docker:
-#      - image: circleci/node:<< parameters.version >>
-#
-#    steps:
-#      - checkout
-#      - restore_cache:
-#          keys:
-#            # when lock file changes, use increasingly general patterns to restore cache
-#            - node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
-#            - node-10-{{ .Branch }}-
-#            - node-10-
-#      - run:
-#          name: "Install and Run RSK Node"
-#          command:|
-#            docker build -t regtest -f Dockerfile .
-#            docker run -d --name regtest-node-01  -p 4444:8545 -p 30305:30305 regtest
-#      - install-deps
-#      - save_cache:
-#          paths:
-#            - ./node_modules
-#          key: node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
-#      - install-pfs
-#      - spawn-ipfs-nodes
-#      - install-sqlite
-#      - run:
-#          name: "Node tests"
-#          command: npx tasegir test --target node --reporter lcovonly -- --bail
-#      - sonarcloud/scan
+#      - node-tests:
+#          version: '12'
+#          name: node-12
+#          #          context: SonarCloud
+#          requires:
+#            - check
+#      - node-tests:
+#          version: '14'
+#          name: node-14
+#          #          context: SonarCloud
+#          requires:
+#            - check
+      - node-tests-rsk:
+          version: '10'
+          name: node-10
+          #          context: SonarCloud
+#          requires:
+#            - check
 
