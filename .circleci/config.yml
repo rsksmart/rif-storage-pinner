@@ -2,46 +2,53 @@ version: 2.1
 
 commands:
   install-deps:
-    description: "Install deps"
-    steps:
-      - run: npm ci
-
-  run-rsk:
-    description: "Install and Run RSK Node"
     steps:
       - run:
+          name: "Install deps"
+          command: npm ci
+
+  run-rsk:
+    steps:
+      - run:
+          name: 'Install and Run RSK Node'
           command: |
             docker build -t regtest -f Dockerfile .
             docker run -d --name regtest-node-01  -p 4444:8545 -p 30305:30305 regtest
 
 
   install-ipfs:
-    description: "Install IPFS"
     steps:
-      - run: |
-          wget https://dist.ipfs.io/go-ipfs/v0.6.0/go-ipfs_v0.6.0_linux-amd64.tar.gz
-          tar -xvzf go-ipfs_v0.6.0_linux-amd64.tar.gz
-          cd go-ipfs && sudo bash install.sh
-          ipfs --version
+      - run:
+          name: "Install IPFS"
+          command: |
+            wget https://dist.ipfs.io/go-ipfs/v0.6.0/go-ipfs_v0.6.0_linux-amd64.tar.gz
+            tar -xvzf go-ipfs_v0.6.0_linux-amd64.tar.gz
+            cd go-ipfs && sudo bash install.sh
+            ipfs --version
 
 
   install-sqlite:
-    description: "Install SQLite"
     steps:
-      - run: npm install sqlite3
+      - run:
+          name: "Install SQLite"
+          command: npm install sqlite3
 
   spawn-ipfs-nodes:
     description: "Init 2 IPFS repos and spawn 2 nodes in background"
     steps:
-      - run: npm run init
       - run:
+          name: "Init IPFS repos"
+          command: npm run init
+      - run:
+          name: "Run IPFS Consumer node"
           command: export IPFS_PATH=./.repos/consumer && ipfs daemon
           background: true
       - run:
+          name: "Run IPFS Provider node"
           command: export IPFS_PATH=./.repos/provider && ipfs daemon
           background: true
       - run:
-          name: Waiting for the IPFS daemons
+          name: "Waiting for the IPFS daemons"
           no_output_timeout: 60s
           command: |
             while (! ipfs id --api=/ip4/127.0.0.1/tcp/5001 2>/dev/null) || ! ipfs id --api=/ip4/127.0.0.1/tcp/5002 2>/dev/null; do
@@ -169,10 +176,7 @@ jobs:
       - run:
           name: "Node tests"
           command: npx tasegir test --target node --reporter lcovonly -- --bail
-  #      - sonarcloud/scan
 
-#orbs:
-#  sonarcloud: sonarsource/sonarcloud@1.0.1
 
 workflows:
   test:
@@ -181,25 +185,21 @@ workflows:
       - node-tests:
           version: '10'
           name: node-10
-          #          context: SonarCloud
           requires:
             - check
       - node-tests:
           version: '12'
           name: node-12
-          #          context: SonarCloud
           requires:
             - check
       - node-tests:
           version: '14'
           name: node-14
-          #          context: SonarCloud
           requires:
             - check
 #      - node-tests-rsk:
 #          version: '10'
 #          name: node-rsk
-#                    context: SonarCloud
 #          requires:
 #            - check
 
