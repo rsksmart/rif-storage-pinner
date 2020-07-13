@@ -15,7 +15,6 @@ commands:
             docker build -t regtest -f Dockerfile .
             docker run -d --name regtest-node-01  -p 4444:8545 -p 30305:30305 regtest
 
-
   install-ipfs:
     steps:
       - run:
@@ -25,7 +24,6 @@ commands:
             tar -xvzf go-ipfs_v0.6.0_linux-amd64.tar.gz
             cd go-ipfs && sudo bash install.sh
             ipfs --version
-
 
   install-sqlite:
     steps:
@@ -54,9 +52,6 @@ commands:
             while (! ipfs id --api=/ip4/127.0.0.1/tcp/5001 2>/dev/null) || ! ipfs id --api=/ip4/127.0.0.1/tcp/5002 2>/dev/null; do
               sleep 1
             done
-
-
-
 
 
 jobs:
@@ -120,9 +115,9 @@ jobs:
             - restore_cache:
                 keys:
                   # when lock file changes, use increasingly general patterns to restore cache
-                  - node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
-                  - node-10-{{ .Branch }}-
-                  - node-10-
+                  - node-<< parameters.version >>-{{ .Branch }}-{{ checksum "package-lock.json" }}
+                  - node-<< parameters.version >>-{{ .Branch }}-
+                  - node-<< parameters.version >>-
       - install-deps
       - when:
           condition: <<parameters.cache>>
@@ -130,13 +125,14 @@ jobs:
             - save_cache:
                 paths:
                   - ./node_modules
-                key: node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
+                key: node-<< parameters.version >>-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - install-ipfs
       - spawn-ipfs-nodes
       - install-sqlite
       - run:
           name: "Node tests"
           command: npx tasegir test --target node --reporter lcovonly -- --bail
+
 
   # Run test on top of PSK node
   node-tests-rsk:
@@ -158,9 +154,9 @@ jobs:
             - restore_cache:
                 keys:
                   # when lock file changes, use increasingly general patterns to restore cache
-                  - node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
-                  - node-10-{{ .Branch }}-
-                  - node-10-
+                  - node-<< parameters.version >>-{{ .Branch }}-{{ checksum "package-lock.json" }}
+                  - node-<< parameters.version >>-{{ .Branch }}-
+                  - node-<< parameters.version >>-
       - install-deps
       - when:
           condition: <<parameters.cache>>
@@ -168,7 +164,7 @@ jobs:
             - save_cache:
                 paths:
                   - ./node_modules
-                key: node-10-{{ .Branch }}-{{ checksum "package-lock.json" }}
+                key: node-<< parameters.version >>-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - install-ipfs
       - spawn-ipfs-nodes
       - install-sqlite
