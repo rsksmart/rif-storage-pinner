@@ -1,4 +1,5 @@
 {
+  db: 'db.sqlite',
   blockchain: {
 
     // Events that will be listened to

@@ -42,8 +42,8 @@ export function ethFactory (): Eth {
   return new Eth(provider)
 }
 
-export function getEventsEmitter (eth: Eth, contractAbi: AbiItem[], opt?: { contractAddress?: string }): EventEmitter {
-  const contractAddresses = opt?.contractAddress || config.get<string>('blockchain.contractAddress')
+export function getEventsEmitter (eth: Eth, contractAbi: AbiItem[]): EventEmitter {
+  const contractAddresses = config.get<string>('blockchain.contractAddress')
   const contract = new eth.Contract(contractAbi, contractAddresses)
   const logger = loggingFactory('blockchain:')
 
