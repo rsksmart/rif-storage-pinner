@@ -42,7 +42,9 @@
     "prepack": "tasegir run --watch node_modules/.bin/oclif-dev -- manifest",
     "release": "tasegir release --no-build",
     "start": "tasegir run --watch ./bin/run --",
-    "test": "tasegir test --target node",
+    "test:integration": "tasegir test --target node --files ./test/integration/*.spec.ts",
+    "test:unit": "tasegir test --target node --files ./test/unit/*.spec.ts",
+    "test": "tasegir test --target node --files ./test/**/*.spec.ts",
     "types-check": "tasegir types-check",
     "version": "oclif-dev readme && git add README.md"
   },
