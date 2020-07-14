@@ -1,4 +1,6 @@
 import config from 'config'
+import { promises as fs } from 'fs'
+import path from 'path'
 import { AbiItem } from 'web3-utils'
 import { getObject } from 'sequelize-store'
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
@@ -11,8 +13,19 @@ import { getProcessor, precache } from './processor'
 import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
 
-export default async (offerId: string) => {
+interface AppOptions {
+  removeCache?: boolean
+  forcePrecache?: boolean
+}
+
+export default async (offerId: string, options?: AppOptions) => {
   if (!offerId) throw new Error('Offer id is required')
+
+  if (options?.removeCache) {
+    await fs
+      .unlink(path.join(process.cwd(), config.get<string>('db')))
+      .catch(_ => true)
+  }
 
   const sequelize = await sequelizeFactory(config.get<string>('db'))
   await initStore(sequelize)
@@ -31,7 +44,7 @@ export default async (offerId: string) => {
   })
 
   // If not set then it is first time running ==> precache
-  if (!store.lastFetchedBlockNumber) {
+  if (!store.lastFetchedBlockNumber && !options?.forcePrecache) {
     await precache(eventEmitter, manager, getProcessor(offerId, eth))
   }
 

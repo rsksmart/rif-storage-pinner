@@ -1,12 +1,10 @@
 import config from 'config'
-
 import initApp from '../src'
-
-import { Sequelize } from 'sequelize-typescript'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 import Eth from 'web3-eth'
 import { Contract } from 'web3-eth-contract'
+import { Sequelize } from 'sequelize-typescript'
 import { AbiItem, asciiToHex, padRight } from 'web3-utils'
 
 import { ProviderManager } from '../src/providers'

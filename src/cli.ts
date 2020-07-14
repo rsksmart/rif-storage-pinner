@@ -77,6 +77,7 @@ export default class PinningServiceCommand extends Command {
     if (flags.config) {
       config.util.extendDeep(config, config.util.parseFile(flags.config))
     }
+
     config.util.extendDeep(config, configObject)
 
     if (flags.network) {
@@ -94,12 +95,6 @@ export default class PinningServiceCommand extends Command {
     const flags = originalFlags as OutputFlags<typeof PinningServiceCommand.flags>
     this.configSetup(flags)
 
-    const dbFile = path.join(this.config.dataDir, config.get<string>('db'))
-
-    if (flags['remove-cache']) {
-      await fs.unlink(dbFile)
-    }
-
-    await initApp(flags.offerId)
+    await initApp(flags.offerId, { removeCache: Boolean(flags['remove-cache']) })
   }
 }
