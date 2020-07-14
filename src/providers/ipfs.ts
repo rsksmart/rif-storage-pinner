@@ -26,9 +26,9 @@ export class IpfsProvider implements Provider {
     let versionObject: Version
     try {
       // todo handle timeout
-      versionObject = await ipfs.version({ timeout: 2000 })
+      versionObject = await ipfs.version()
     } catch (e) {
-      if (e.code === 'ECONNREFUSED' || e.message === 'Request timed out') {
+      if (e.code === 'ECONNREFUSED') {
         throw new Error(`No running IPFS daemon on ${typeof options === 'object' ? JSON.stringify(options) : options}`)
       }
 
