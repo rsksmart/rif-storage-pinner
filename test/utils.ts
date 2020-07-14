@@ -1,4 +1,5 @@
 import config from 'config'
+import sinon from 'sinon'
 import initApp from '../src'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
@@ -6,11 +7,23 @@ import Eth from 'web3-eth'
 import { Contract } from 'web3-eth-contract'
 import { Sequelize } from 'sequelize-typescript'
 import { AbiItem, asciiToHex, padRight } from 'web3-utils'
+import { Logger } from '../src/definitions'
 
 import { ProviderManager } from '../src/providers'
 import { IpfsProvider } from '../src/providers/ipfs'
 
 const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
+
+export const errorSpy = sinon.spy()
+
+const errorHandlerStub = (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> => {
+  return (...args) => {
+    return fn(...args).catch(err => {
+      logger.error(err)
+      errorSpy(err)
+    })
+  }
+}
 
 export const sleep = (timeout: number) => new Promise(resolve => setTimeout(resolve, timeout))
 
@@ -72,7 +85,7 @@ export class AppSingleton {
     await this.createOffer()
 
     config.util.extendDeep(config, { blockchain: { contractAddress: this.contract?.options.address } })
-    const { ipfs, providerManager, sequelize } = await initApp(this.providerAddress)
+    const { ipfs, providerManager, sequelize } = await initApp(this.providerAddress, { errorHandler: errorHandlerStub })
 
     this.sequelize = sequelize
     this.ipfsManager = providerManager

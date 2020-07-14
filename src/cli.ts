@@ -4,7 +4,6 @@ import { Command, flags } from '@oclif/command'
 import type { Input, OutputFlags } from '@oclif/parser'
 import config from 'config'
 import path from 'path'
-import { promises as fs } from 'fs'
 
 import { Config } from './definitions'
 

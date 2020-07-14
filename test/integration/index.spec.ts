@@ -1,6 +1,6 @@
 import chai from 'chai'
 
-import { AppSingleton, asyncIterableToArray, sleep, encodeHash, App } from '../utils'
+import { AppSingleton, asyncIterableToArray, sleep, encodeHash, App, errorSpy } from '../utils'
 import { loggingFactory } from '../../src/logger'
 import { IpfsProvider } from '../../src/providers/ipfs'
 
@@ -82,11 +82,10 @@ describe('Pinning service', function () {
 
     // Should not be pinned
     expect(await asyncIterableToArray(app.ipfsProvider.ls(file.fileHash)).catch(e => e.message)).to.be.eql(`path '${file.cid}' is not pinned`)
-    // TODO find a way to spy on internally imported function
-    // expect(errorSpy.called).to.be.eql(true)
-    // const [error] = errorSpy.getCall(-1).args
-    // expect(error).to.be.instanceOf(Error)
-    // expect(error.message).to.be.eql('The hash exceeds payed size!')
+    expect(errorSpy.called).to.be.eql(true)
+    const [error] = errorSpy.getCall(-1).args
+    expect(error).to.be.instanceOf(Error)
+    expect(error.message).to.be.eql('The hash exceeds payed size!')
   })
   it('Should unpin when agreement is expired', async () => {
     const file = await uploadRandomData(app.ipfsConsumer)

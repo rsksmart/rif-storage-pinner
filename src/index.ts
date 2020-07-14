@@ -9,22 +9,25 @@ import { initStore } from './store'
 import { sequelizeFactory } from './sequelize'
 import { ethFactory, getEventsEmitter } from './blockchain/utils'
 import { loggingFactory } from './logger'
-import { getProcessor, precache } from './processor'
+import { ErrorHandler, getProcessor, precache } from './processor'
 import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
 
 interface AppOptions {
   removeCache?: boolean
   forcePrecache?: boolean
+  errorHandler?: ErrorHandler
 }
 
 export default async (offerId: string, options?: AppOptions) => {
+  const logger = loggingFactory()
+
   if (!offerId) throw new Error('Offer id is required')
 
   if (options?.removeCache) {
     await fs
       .unlink(path.join(process.cwd(), config.get<string>('db')))
-      .catch(_ => true)
+      .catch(e => logger.info(e.message))
   }
 
   const sequelize = await sequelizeFactory(config.get<string>('db'))
@@ -48,7 +51,7 @@ export default async (offerId: string, options?: AppOptions) => {
     await precache(eventEmitter, manager, getProcessor(offerId, eth))
   }
 
-  eventEmitter.on('newEvent', getProcessor(offerId, eth, manager))
+  eventEmitter.on('newEvent', getProcessor(offerId, eth, manager, { errorHandler: options?.errorHandler }))
 
   return { ipfs, providerManager: manager, eth, sequelize }
 }
