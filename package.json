@@ -44,7 +44,7 @@
     "start": "tasegir run --watch ./bin/run --",
     "test:integration": "tasegir test --target node --files ./test/integration/*.spec.ts",
     "test:unit": "tasegir test --target node --files ./test/unit/*.spec.ts",
-    "test": "tasegir test --target node --files ./test/**/*.spec.ts",
+    "test": "tasegir test --target node",
     "types-check": "tasegir types-check",
     "version": "oclif-dev readme && git add README.md"
   },
