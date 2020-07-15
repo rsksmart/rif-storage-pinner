@@ -1,8 +1,8 @@
 {
-  db: "db_test.sqlite",
+  db: 'db_test.sqlite',
   ipfs: { connection:  '/ip4/127.0.0.1/tcp/5001' },
   blockchain: {
-    provider: "ws://localhost:8545",
+    provider: 'ws://localhost:8545',
     // Specify behavior of EventsEmitter, that retrieves events from blockchain and pass them onwards for further processing.
     eventsEmitter: {
       // Number of blocks that will be waited before passing an event for further processing.
@@ -10,8 +10,8 @@
     },
   },
   log: {
-    "filter": "*",
-    "level": "info",
-    "path": ""
+    filter: '*',
+    level: 'info',
+    path: ''
   }
 }

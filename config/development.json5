@@ -1,6 +1,6 @@
 {
   blockchain: {
-    provider: "ws://localhost:8545",
+    provider: 'ws://localhost:8545',
     eventsEmitter: {
       confirmations: 1
     }

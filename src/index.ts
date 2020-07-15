@@ -16,7 +16,7 @@ import { IpfsProvider } from './providers/ipfs'
 interface AppOptions {
   removeCache?: boolean
   forcePrecache?: boolean
-  errorHandler?: ErrorHandler,
+  errorHandler?: ErrorHandler
   contractAddress?: string
 }
 

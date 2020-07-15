@@ -6,10 +6,8 @@ import { Contract } from 'web3-eth-contract'
 import { AbiItem, asciiToHex, padRight } from 'web3-utils'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
-
 import initApp from '../src'
 import { Logger } from '../src/definitions'
-
 
 const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 
