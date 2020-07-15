@@ -1,10 +1,9 @@
-import initApp from './'
-
 import { Command, flags } from '@oclif/command'
 import type { Input, OutputFlags } from '@oclif/parser'
 import config from 'config'
 import path from 'path'
 
+import initApp from './'
 import { Config } from './definitions'
 
 export default class PinningServiceCommand extends Command {

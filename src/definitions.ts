@@ -93,3 +93,12 @@ export interface Handler {
   events: string[]
   process: (event: EventData, eth: Eth, manager?: ProviderManager) => Promise<void>
 }
+
+export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
+
+export interface AppOptions {
+  removeCache?: boolean
+  forcePrecache?: boolean
+  errorHandler?: ErrorHandler
+  contractAddress?: string
+}

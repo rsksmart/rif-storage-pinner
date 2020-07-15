@@ -5,7 +5,7 @@ import type { EventEmitter } from 'events'
 import { errorHandler, filterEvents } from '../utils'
 import offer from './offer'
 import request from './agreement'
-import type { Handler, Logger } from '../definitions'
+import type { ErrorHandler, Handler } from '../definitions'
 import type { ProviderManager } from '../providers'
 import { loggingFactory } from '../logger'
 import Agreement from '../models/agreement.model'
@@ -21,8 +21,6 @@ export default function processor (eth: Eth, manager?: ProviderManager) {
     await Promise.all(promises)
   }
 }
-
-export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
 
 export function getProcessor (offerId: string, eth: Eth, manager?: ProviderManager, options?: { errorHandler: ErrorHandler | undefined }): (event: EventData) => Promise<void> {
   return filterEvents(offerId, (options?.errorHandler || errorHandler)(processor(eth, manager), loggingFactory('processor')))

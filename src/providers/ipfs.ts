@@ -21,7 +21,7 @@ export class IpfsProvider implements Provider {
       options = '/ip4/127.0.0.1/tcp/5001'
     }
 
-    const ipfs = await ipfsClient(options)
+    const ipfs = ipfsClient(options)
 
     let versionObject: Version
     try {

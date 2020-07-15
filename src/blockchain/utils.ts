@@ -1,11 +1,10 @@
 import { AbiItem } from 'web3-utils'
 import Eth from 'web3-eth'
-import { EventEmitter } from 'events'
 import config from 'config'
 
 import { loggingFactory } from '../logger'
-import eventsEmitterFactory, { EventsEmitterOptions } from './events'
-import { NewBlockEmitterOptions } from '../definitions'
+import eventsEmitterFactory, { BaseEventsEmitter, EventsEmitterOptions } from './events'
+import { AppOptions, NewBlockEmitterOptions } from '../definitions'
 
 const logger = loggingFactory('blockchain')
 
@@ -42,7 +41,7 @@ export function ethFactory (): Eth {
   return new Eth(provider)
 }
 
-export function getEventsEmitter (eth: Eth, contractAbi: AbiItem[], opt?: { contractAddress: string | undefined }): EventEmitter {
+export function getEventsEmitter (eth: Eth, contractAbi: AbiItem[], opt?: AppOptions): BaseEventsEmitter {
   const contractAddresses = opt?.contractAddress || config.get<string>('blockchain.contractAddress')
   const contract = new eth.Contract(contractAbi, contractAddresses)
   const logger = loggingFactory('blockchain:')

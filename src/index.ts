@@ -1,7 +1,7 @@
 import config from 'config'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { AbiItem } from 'web3-utils'
+import type { AbiItem } from 'web3-utils'
 import { getObject } from 'sequelize-store'
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
@@ -9,16 +9,10 @@ import { initStore } from './store'
 import { sequelizeFactory } from './sequelize'
 import { ethFactory, getEventsEmitter } from './blockchain/utils'
 import { loggingFactory } from './logger'
-import { ErrorHandler, getProcessor, precache } from './processor'
+import { getProcessor, precache } from './processor'
 import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
-
-interface AppOptions {
-  removeCache?: boolean
-  forcePrecache?: boolean
-  errorHandler?: ErrorHandler
-  contractAddress?: string
-}
+import { AppOptions } from './definitions'
 
 export default async (offerId: string, options?: AppOptions) => {
   const logger = loggingFactory()
@@ -52,4 +46,6 @@ export default async (offerId: string, options?: AppOptions) => {
   }
 
   eventEmitter.on('newEvent', getProcessor(offerId, eth, manager, { errorHandler: options?.errorHandler }))
+
+  return { stop: () => eventEmitter.stop() }
 }
