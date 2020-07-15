@@ -8,6 +8,10 @@
       // Number of blocks that will be waited before passing an event for further processing.
       confirmations: 0
     },
+    newBlockEmitter: {
+      // Interval in milliseconds, how often is blockchain checked.
+      pollingInterval: 100
+    }
   },
   log: {
     filter: '*',

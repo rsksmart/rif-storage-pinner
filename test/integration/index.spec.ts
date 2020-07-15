@@ -54,7 +54,7 @@ describe('Pinning service', function () {
     logger.info('Agreement created')
 
     // Wait until we receive Event
-    await sleep(5000)
+    await sleep(500)
 
     const [{ cid }] = await asyncIterableToArray(app.ipfsProvider.pin.ls(file.cid))
     expect(cid.toString()).to.be.eql(file.cidString)
@@ -78,7 +78,7 @@ describe('Pinning service', function () {
     logger.info('Agreement created')
 
     // Wait until we receive Event
-    await sleep(5000)
+    await sleep(500)
 
     // Should not be pinned
     expect(await asyncIterableToArray(app.ipfsProvider.pin.ls(file.cid)).catch(e => e.message)).to.be.eql(`path '${file.cid}' is not pinned`)
@@ -107,7 +107,7 @@ describe('Pinning service', function () {
 
     const agreementReference = getAgreementReference(receipt)
 
-    await sleep(5000)
+    await sleep(500)
 
     // Should be pinned
     const [{ cid }] = await asyncIterableToArray(app.ipfsProvider.pin.ls(file.cid))
@@ -125,7 +125,7 @@ describe('Pinning service', function () {
     logger.debug('Payed out')
 
     // Wait until we receive Event
-    await sleep(5000)
+    await sleep(500)
 
     // Should not be be pinned
     expect(await asyncIterableToArray(app.ipfsProvider.pin.ls(file.cid)).catch(e => e.message)).to.be.eql(`path '${file.cid}' is not pinned`)
