@@ -16,7 +16,8 @@ import { IpfsProvider } from './providers/ipfs'
 interface AppOptions {
   removeCache?: boolean
   forcePrecache?: boolean
-  errorHandler?: ErrorHandler
+  errorHandler?: ErrorHandler,
+  contractAddress?: string
 }
 
 export default async (offerId: string, options?: AppOptions) => {
@@ -35,15 +36,14 @@ export default async (offerId: string, options?: AppOptions) => {
   const store = getObject()
 
   const manager = new ProviderManager()
-
   const ipfs = await IpfsProvider.bootstrap(config.get<string>('ipfs.connection'))
   manager.register(ipfs)
 
   const eth = ethFactory()
-  const eventEmitter = getEventsEmitter(eth, storageManagerContractAbi.abi as AbiItem[])
+  const eventEmitter = getEventsEmitter(eth, storageManagerContractAbi.abi as AbiItem[], { contractAddress: options?.contractAddress })
 
   eventEmitter.on('error', (e: Error) => {
-    loggingFactory().error(`There was unknown error in the blockchain's Events Emitter! ${e}`)
+    logger.error(`There was unknown error in the blockchain's Events Emitter! ${e}`)
   })
 
   // If not set then it is first time running ==> precache
@@ -52,6 +52,4 @@ export default async (offerId: string, options?: AppOptions) => {
   }
 
   eventEmitter.on('newEvent', getProcessor(offerId, eth, manager, { errorHandler: options?.errorHandler }))
-
-  return { ipfs, providerManager: manager, eth, sequelize }
 }

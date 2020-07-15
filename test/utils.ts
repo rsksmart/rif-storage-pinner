@@ -1,16 +1,15 @@
 import config from 'config'
 import sinon from 'sinon'
-import initApp from '../src'
-
-import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
+import ipfsClient, { ClientOptions, IpfsClient } from 'ipfs-http-client'
 import Eth from 'web3-eth'
 import { Contract } from 'web3-eth-contract'
-import { Sequelize } from 'sequelize-typescript'
 import { AbiItem, asciiToHex, padRight } from 'web3-utils'
+
+import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
+
+import initApp from '../src'
 import { Logger } from '../src/definitions'
 
-import { ProviderManager } from '../src/providers'
-import { IpfsProvider } from '../src/providers/ipfs'
 
 const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 
@@ -43,11 +42,24 @@ export const asyncIterableToArray = async (asyncIterable: any): Promise<Array<an
   return result
 }
 
+const initIpfsClient = async (options: ClientOptions | string): Promise<IpfsClient> => {
+  const ipfs = await ipfsClient(options)
+
+  try {
+    await ipfs.version()
+  } catch (e) {
+    if (e.code === 'ECONNREFUSED') {
+      throw new Error(`No running IPFS daemon on ${typeof options === 'object' ? JSON.stringify(options) : options}`)
+    }
+
+    throw e
+  }
+  return ipfs
+}
+
 export interface App {
-  sequelize: Sequelize
-  ipfsManager: ProviderManager
-  ipfsConsumer: IpfsProvider
-  ipfsProvider: IpfsProvider
+  ipfsConsumer: IpfsClient
+  ipfsProvider: IpfsClient
   contract: Contract
   eth: Eth
   consumerAddress: string
@@ -57,12 +69,10 @@ export interface App {
 export class AppSingleton {
   static app: AppSingleton
 
-  public sequelize: Sequelize | undefined = undefined
   public contract: Contract| undefined = undefined
   public eth: Eth | undefined = undefined
-  public ipfsManager: ProviderManager | undefined = undefined
-  public ipfsConsumer: IpfsProvider | undefined = undefined
-  public ipfsProvider: IpfsProvider | undefined = undefined
+  public ipfsConsumer: IpfsClient | undefined = undefined
+  public ipfsProvider: IpfsClient | undefined = undefined
   public consumerAddress = ''
   public providerAddress = ''
 
@@ -84,22 +94,23 @@ export class AppSingleton {
     // Create an Offer for provider account
     await this.createOffer()
 
-    config.util.extendDeep(config, { blockchain: { contractAddress: this.contract?.options.address } })
-    const { ipfs, providerManager, sequelize } = await initApp(this.providerAddress, { errorHandler: errorHandlerStub })
+    // Run Pinning job
+    await initApp(this.providerAddress, { errorHandler: errorHandlerStub, contractAddress: this.contract?.options.address })
 
-    this.sequelize = sequelize
-    this.ipfsManager = providerManager
-    this.ipfsProvider = ipfs
-    this.ipfsConsumer = await IpfsProvider.bootstrap(consumerIpfsUrl)
+    // Connection to IPFS consumer/provider nodes
+    await this.initIpfs()
   }
 
   async initProvider (): Promise<void> {
-	// We can't use node-config here as we need to extend it with deployed contract's address
-    const nodeUrl = 'ws://localhost:8545'
-    this.eth = new Eth(nodeUrl)
+    this.eth = new Eth(config.get<string>('blockchain.provider'))
     const [provider, consumer] = await this.eth.getAccounts()
     this.providerAddress = provider
     this.consumerAddress = consumer
+  }
+
+  async initIpfs (): Promise<void> {
+    this.ipfsProvider = await initIpfsClient(config.get<string>('ipfs.connection'))
+    this.ipfsConsumer = await initIpfsClient(consumerIpfsUrl)
   }
 
   async createOffer (): Promise<void> {
