@@ -94,6 +94,7 @@ export class AppSingleton {
   }
 
   async initProvider (): Promise<void> {
+	// We can't use node-config here as we need to extend it with deployed contract's address
     const nodeUrl = 'ws://localhost:8545'
     this.eth = new Eth(nodeUrl)
     const [provider, consumer] = await this.eth.getAccounts()
