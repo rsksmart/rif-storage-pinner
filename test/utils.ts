@@ -22,7 +22,7 @@ const errorHandlerStub = (fn: (...args: any[]) => Promise<void>, logger: Logger)
   }
 }
 
-export const sleep = (timeout: number) => new Promise(resolve => setTimeout(resolve, timeout))
+export const sleep = (timeout: number): Promise<void> => new Promise(resolve => setTimeout(resolve, timeout))
 
 export const encodeHash = (hash: string): string[] => {
   if (hash.length <= 32) {

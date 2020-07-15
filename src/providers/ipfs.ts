@@ -25,7 +25,6 @@ export class IpfsProvider implements Provider {
 
     let versionObject: Version
     try {
-      // todo handle timeout
       versionObject = await ipfs.version()
     } catch (e) {
       if (e.code === 'ECONNREFUSED') {

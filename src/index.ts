@@ -14,7 +14,7 @@ import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
 import { AppOptions } from './definitions'
 
-export default async (offerId: string, options?: AppOptions) => {
+export default async (offerId: string, options?: AppOptions): Promise<{ stop: () => void }> => {
   const logger = loggingFactory()
 
   if (!offerId) throw new Error('Offer id is required')
@@ -47,5 +47,5 @@ export default async (offerId: string, options?: AppOptions) => {
 
   eventEmitter.on('newEvent', getProcessor(offerId, eth, manager, { errorHandler: options?.errorHandler }))
 
-  return { stop: () => eventEmitter.stop() }
+  return { stop: (): void => eventEmitter.stop() }
 }
