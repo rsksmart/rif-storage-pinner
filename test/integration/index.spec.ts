@@ -8,8 +8,18 @@ const logger = loggingFactory('test:pinning')
 
 const expect = chai.expect
 
-const uploadRandomData = async (ipfsClient: IpfsClient): Promise<{ fileHash: string, size: number, cid: CID, cidString: string }> => {
-  const [file] = await asyncIterableToArray(ipfsClient.add([
+const isPinned = async (ipfs: IpfsClient, cid: CID): Promise<boolean> => {
+  try {
+    const [file] = await asyncIterableToArray(ipfs.pin.ls(cid))
+    return file.cid.toString() === cid.toString()
+  } catch (e) {
+    if (e.message === `path '${cid}' is not pinned`) return false
+    throw e
+  }
+}
+
+const uploadRandomData = async (ipfs: IpfsClient): Promise<{ fileHash: string, size: number, cid: CID, cidString: string }> => {
+  const [file] = await asyncIterableToArray(ipfs.add([
     {
       path: `${Math.random().toString(36).substring(7)}.txt`,
       content: `Nice to be on IPFS ${Math.random().toString(36).substring(7)}`
@@ -38,7 +48,7 @@ describe('Pinning service', function () {
   it('should pin hash on NewAgreement', async () => {
     const file = await uploadRandomData(app.ipfsConsumer)
     // Check if not pinned
-    expect(await asyncIterableToArray(app.ipfsProvider.pin.ls(file.cid)).catch(e => e.message)).to.be.eql(`path '${file.cid}' is not pinned`)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(false)
 
     const encodedFileHash = encodeHash(file.fileHash)
 
@@ -54,15 +64,14 @@ describe('Pinning service', function () {
     logger.info('Agreement created')
 
     // Wait until we receive Event
-    await sleep(500)
+    await sleep(1000)
 
-    const [{ cid }] = await asyncIterableToArray(app.ipfsProvider.pin.ls(file.cid))
-    expect(cid.toString()).to.be.eql(file.cidString)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(true)
   })
   it('should reject if size limit exceed', async () => {
     const file = await uploadRandomData(app.ipfsConsumer)
     // Check if not pinned
-    expect(await asyncIterableToArray(app.ipfsProvider.pin.ls(file.cid)).catch(e => e.message)).to.be.eql(`path '${file.cid}' is not pinned`)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(false)
 
     const encodedFileHash = encodeHash(file.fileHash)
 
@@ -78,10 +87,10 @@ describe('Pinning service', function () {
     logger.info('Agreement created')
 
     // Wait until we receive Event
-    await sleep(500)
+    await sleep(1000)
 
     // Should not be pinned
-    expect(await asyncIterableToArray(app.ipfsProvider.pin.ls(file.cid)).catch(e => e.message)).to.be.eql(`path '${file.cid}' is not pinned`)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(false)
     expect(errorSpy.called).to.be.eql(true)
     const [error] = errorSpy.getCall(-1).args
     expect(error).to.be.instanceOf(Error)
@@ -90,7 +99,7 @@ describe('Pinning service', function () {
   it('should unpin when agreement is expired', async () => {
     const file = await uploadRandomData(app.ipfsConsumer)
     // Check if not pinned
-    expect(await asyncIterableToArray(app.ipfsProvider.pin.ls(file.cid)).catch(e => e.message)).to.be.eql(`path '${file.cid}' is not pinned`)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(false)
 
     const encodedFileHash = encodeHash(file.fileHash)
 
@@ -107,11 +116,10 @@ describe('Pinning service', function () {
 
     const agreementReference = getAgreementReference(receipt)
 
-    await sleep(500)
+    await sleep(1000)
 
     // Should be pinned
-    const [{ cid }] = await asyncIterableToArray(app.ipfsProvider.pin.ls(file.cid))
-    expect(cid.toString()).to.be.eql(file.cidString)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(true)
 
     const payoutGas = await app.contract
       ?.methods
@@ -125,9 +133,9 @@ describe('Pinning service', function () {
     logger.debug('Payed out')
 
     // Wait until we receive Event
-    await sleep(500)
+    await sleep(1000)
 
     // Should not be be pinned
-    expect(await asyncIterableToArray(app.ipfsProvider.pin.ls(file.cid)).catch(e => e.message)).to.be.eql(`path '${file.cid}' is not pinned`)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(false)
   })
 })

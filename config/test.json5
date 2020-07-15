@@ -10,7 +10,7 @@
     },
     newBlockEmitter: {
       // Interval in milliseconds, how often is blockchain checked.
-      pollingInterval: 100
+      pollingInterval: 200
     }
   },
   log: {
