@@ -1,8 +1,11 @@
 import chai from 'chai'
+import dirtyChai from 'dirty-chai'
 import { CID, IpfsClient } from 'ipfs-http-client'
 
 import { AppSingleton, asyncIterableToArray, sleep, encodeHash, App, errorSpy } from '../utils'
 import { loggingFactory } from '../../src/logger'
+
+chai.use(dirtyChai)
 
 const logger = loggingFactory('test:pinning')
 
@@ -48,7 +51,7 @@ describe('Pinning service', function () {
   it('should pin hash on NewAgreement', async () => {
     const file = await uploadRandomData(app.ipfsConsumer)
     // Check if not pinned
-    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(false)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.false()
 
     const encodedFileHash = encodeHash(file.fileHash)
 
@@ -66,12 +69,12 @@ describe('Pinning service', function () {
     // Wait until we receive Event
     await sleep(1000)
 
-    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(true)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.true()
   })
   it('should reject if size limit exceed', async () => {
     const file = await uploadRandomData(app.ipfsConsumer)
     // Check if not pinned
-    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(false)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.false()
 
     const encodedFileHash = encodeHash(file.fileHash)
 
@@ -90,16 +93,16 @@ describe('Pinning service', function () {
     await sleep(1000)
 
     // Should not be pinned
-    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(false)
-    expect(errorSpy.called).to.be.eql(true)
-    const [error] = errorSpy.getCall(-1).args
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.false()
+    expect(errorSpy.calledOnce).to.be.eql(true)
+    const [error] = errorSpy.lastCall.args
     expect(error).to.be.instanceOf(Error)
     expect(error.message).to.be.eql('The hash exceeds payed size!')
   })
   it('should unpin when agreement is expired', async () => {
     const file = await uploadRandomData(app.ipfsConsumer)
     // Check if not pinned
-    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(false)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.false()
 
     const encodedFileHash = encodeHash(file.fileHash)
 
@@ -119,7 +122,7 @@ describe('Pinning service', function () {
     await sleep(1000)
 
     // Should be pinned
-    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(true)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.true()
 
     const payoutGas = await app.contract
       ?.methods
@@ -136,6 +139,6 @@ describe('Pinning service', function () {
     await sleep(1000)
 
     // Should not be be pinned
-    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.eql(false)
+    expect(await isPinned(app.ipfsProvider, file.cid)).to.be.false()
   })
 })
