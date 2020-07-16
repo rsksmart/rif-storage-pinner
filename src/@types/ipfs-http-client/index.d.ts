@@ -65,7 +65,7 @@ declare module 'ipfs-http-client' {
     }
 
     export interface RegularFilesCommands {
-      add (data: Buffer | File | Readable | Array<IpfsObject<Buffer | File | Readable>>, options?: AddOptions): Promise<Array<IpfsResult>>
+      add (data: Buffer | File | Readable | Array<IpfsObject<Buffer | File | Readable | string>>, options?: AddOptions): Promise<Array<IpfsResult>>
       // addFromFs
       // addFromStream
       // addFromUrl

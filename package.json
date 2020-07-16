@@ -42,6 +42,8 @@
     "prepack": "tasegir run --watch node_modules/.bin/oclif-dev -- manifest",
     "release": "tasegir release --no-build",
     "start": "tasegir run --watch ./bin/run --",
+    "test:integration": "tasegir test --target node --files ./test/integration/*.spec.ts",
+    "test:unit": "tasegir test --target node --files ./test/unit/*.spec.ts",
     "test": "tasegir test --target node",
     "types-check": "tasegir types-check",
     "version": "oclif-dev readme && git add README.md"
@@ -96,7 +98,7 @@
     "cross-env": "^7.0.2",
     "dirty-chai": "^2.0.1",
     "globby": "^11.0.1",
-    "ipfs": "^0.40.0",
+    "ipfs": "^0.47.0",
     "ipfsd-ctl": "^0.47.4",
     "merge-options": "^2.0.0",
     "sinon": "^9.0.2",
