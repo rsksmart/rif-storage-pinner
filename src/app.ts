@@ -7,6 +7,7 @@ import { AppOptions, Logger, Strategy } from './definitions'
 import { loggingFactory } from './logger'
 import { EventProcessor } from './processor'
 import { BlockchainEventsProcessor } from './processor/blockchain-events'
+import { CacheEventsProcessor } from './processor/cache-events'
 import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
 import { initStore } from './store'
@@ -39,6 +40,9 @@ export default class PinningService {
     switch (PinningService.strategy) {
       case Strategy.Blockchain:
         this.eventProcessor = new BlockchainEventsProcessor(offerId, this.manager, options)
+        break
+      case Strategy.Cache:
+        this.eventProcessor = new CacheEventsProcessor(offerId, this.manager, options)
         break
       default:
         this.eventProcessor = new BlockchainEventsProcessor(offerId, this.manager, options)

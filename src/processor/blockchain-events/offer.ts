@@ -5,7 +5,7 @@ import type { Handler, Event } from '../../definitions'
 import { loggingFactory } from '../../logger'
 import { decodeByteArray } from '../../utils'
 
-const logger = loggingFactory('processor:offer')
+const logger = loggingFactory('processor:blockchain:offer')
 
 const handler: Handler = {
   events: ['TotalCapacitySet', 'MessageEmitted'],

@@ -1,4 +1,3 @@
-import type { EventData } from 'web3-eth-contract'
 import type { Eth } from 'web3-eth'
 import { soliditySha3 } from 'web3-utils'
 
@@ -13,10 +12,10 @@ import { EventError } from '../../errors'
 import { decodeByteArray } from '../../utils'
 import { getBlockDate } from '../../blockchain/utils'
 import Agreement from '../../models/agreement.model'
-import type { Handler, NodeEventsProcessorOptions, Event } from '../../definitions'
+import type { Handler, NodeEventsProcessorOptions, AgreementEvents } from '../../definitions'
 import type { ProviderManager } from '../../providers'
 
-const logger = loggingFactory('processor:agreement')
+const logger = loggingFactory('processor:blockchain:agreement')
 
 const handlers = {
   async NewAgreement (event: NewAgreement, eth: Eth, manager?: ProviderManager): Promise<void> {
@@ -109,14 +108,14 @@ function isValidEvent (value: string): value is keyof typeof handlers {
 
 const handler: Handler = {
   events: ['NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
-  process (event: Event<EventData>, options: NodeEventsProcessorOptions): Promise<void> {
+  process (event: AgreementEvents, options: NodeEventsProcessorOptions): Promise<void> {
     const { eth, manager } = options
 
     if (!isValidEvent(event.event)) {
       return Promise.reject(new Error(`Unknown event ${event.event}`))
     }
 
-    return handlers[event.event](event as any, eth, manager)
+    return handlers[event.event](event, eth, manager)
   }
 }
 export default handler

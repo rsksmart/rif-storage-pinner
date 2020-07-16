@@ -1,7 +1,11 @@
 /**
  * Basic logger interface used around the application.
  */
-import type { EventData } from 'web3-eth-contract'
+import {
+  AgreementFundsDeposited, AgreementFundsPayout, AgreementFundsWithdrawn,
+  AgreementStopped,
+  NewAgreement
+} from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
 import type { Eth } from 'web3-eth'
 import type { ClientOptions as IpfsOptions } from 'ipfs-http-client'
 
@@ -109,7 +113,7 @@ export interface AppOptions {
   contractAddress?: string
 }
 
-export enum Strategy { Blockchain, Node }
+export enum Strategy { Blockchain, Cache }
 
 export type Processor = (event: Event<any>) => Promise<void>
 
@@ -129,4 +133,6 @@ export interface CacheEvent {
   payload: object
 }
 
-export type Event<T> = T extends any & { event: string }? EventData : CacheEvent
+export type Event<T> = T & { event: string }
+
+export type AgreementEvents = Event<NewAgreement & AgreementStopped & AgreementFundsDeposited & AgreementFundsWithdrawn & AgreementFundsPayout>

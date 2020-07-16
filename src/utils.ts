@@ -30,7 +30,7 @@ export function filterEvents (offerId: string, callback: (event: Event<EventData
   }
 }
 
-export const processor2 = (handlers: Handler[]) => (options?: ProcessorOptions) => async (event: Event<any>) => {
+export const processor = (handlers: Handler[]) => (options?: ProcessorOptions) => async (event: Event<any>) => {
   const promises = handlers
     .filter(handler => handler.events.includes(event.event))
     .map(handler => handler.process(event, options))

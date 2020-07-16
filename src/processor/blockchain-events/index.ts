@@ -7,7 +7,7 @@ import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/c
 import offer from './offer'
 import request from './agreement'
 import { EventProcessor } from '../index'
-import { errorHandler, filterEvents, processor2 } from '../../utils'
+import { errorHandler, filterEvents, processor } from '../../utils'
 import { BaseEventsEmitter } from '../../blockchain/events'
 import { ethFactory, getEventsEmitter } from '../../blockchain/utils'
 import { AppOptions, Logger } from '../../definitions'
@@ -20,11 +20,11 @@ import type { ProviderManager } from '../../providers'
 const HANDLERS: Handler[] = [offer, request]
 
 export function getProcessor (offerId: string, eth: Eth, manager?: ProviderManager, options?: { errorHandler: ErrorHandler | undefined }): Processor {
-  return filterEvents(offerId, (options?.errorHandler || errorHandler)(processor2(HANDLERS)({ eth, manager }), loggingFactory('processor')))
+  return filterEvents(offerId, (options?.errorHandler || errorHandler)(processor(HANDLERS)({ eth, manager }), loggingFactory('processor')))
 }
 
 export class BlockchainEventsProcessor extends EventProcessor {
-  private logger: Logger = loggingFactory('blockchain:event-processor')
+  private logger: Logger = loggingFactory('processor:blockchain')
   private options?: AppOptions
 
   private eventsEmitter: BaseEventsEmitter | undefined
@@ -57,13 +57,13 @@ export class BlockchainEventsProcessor extends EventProcessor {
       this.logger.error(`There was unknown error in the blockchain's Events Emitter! ${e}`)
     })
 
-    this.eventsEmitter?.on('newEvent', getProcessor(this.offerId, this.eth, this.manager, { errorHandler: this.options?.errorHandler }))
+    this.eventsEmitter?.on('newEvent', this.processor)
   }
 
   async precache (): Promise<void> {
     if (!this.initialized) await this.initialize()
 
-    const precacheLogger = loggingFactory('blockchain:event-processor:precache')
+    const precacheLogger = loggingFactory('processor:blockchain:precache')
     const _eventsEmitter = this.eventsEmitter
     const processor = getProcessor(this.offerId, this.eth, undefined, { errorHandler: this.options?.errorHandler })
 
