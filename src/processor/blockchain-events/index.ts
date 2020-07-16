@@ -5,41 +5,33 @@ import { AbiItem } from 'web3-utils'
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
 import offer from './offer'
-import request from './agreement'
+import agreement from './agreement'
 import { EventProcessor } from '../index'
-import { errorHandler, filterEvents, processor } from '../../utils'
+import { filterEvents, getProcessor } from '../../utils'
 import { BaseEventsEmitter } from '../../blockchain/events'
 import { ethFactory, getEventsEmitter } from '../../blockchain/utils'
 import { AppOptions, Logger } from '../../definitions'
 import { loggingFactory } from '../../logger'
 import Agreement from '../../models/agreement.model'
 
-import type { ErrorHandler, Handler, Processor } from '../../definitions'
+import type { Handler, Processor } from '../../definitions'
 import type { ProviderManager } from '../../providers'
 
-const HANDLERS: Handler[] = [offer, request]
-
-export function getProcessor (offerId: string, eth: Eth, manager?: ProviderManager, options?: { errorHandler: ErrorHandler | undefined }): Processor {
-  return filterEvents(offerId, (options?.errorHandler || errorHandler)(processor(HANDLERS)({ eth, manager }), loggingFactory('processor')))
-}
+const HANDLERS: Handler[] = [offer, agreement]
 
 export class BlockchainEventsProcessor extends EventProcessor {
   private logger: Logger = loggingFactory('processor:blockchain')
-  private options?: AppOptions
 
   private eventsEmitter: BaseEventsEmitter | undefined
-  private processor: Processor
+  private readonly processor: Processor
   private readonly eth: Eth
-  private readonly manager: ProviderManager
 
   constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
-    super(offerId)
-    this.options = options
-    this.manager = manager
-    this.offerId = offerId
+    super(offerId, manager, options)
 
     this.eth = ethFactory()
-    this.processor = getProcessor(this.offerId, this.eth, this.manager, { errorHandler: this.options?.errorHandler })
+    const processorOptions = { manager: this.manager, eth: this.eth, errorHandler: this.options?.errorHandler, logger: this.logger }
+    this.processor = filterEvents(this.offerId, getProcessor(HANDLERS, processorOptions))
   }
 
   initialize (): Promise<void> {
@@ -65,7 +57,8 @@ export class BlockchainEventsProcessor extends EventProcessor {
 
     const precacheLogger = loggingFactory('processor:blockchain:precache')
     const _eventsEmitter = this.eventsEmitter
-    const processor = getProcessor(this.offerId, this.eth, undefined, { errorHandler: this.options?.errorHandler })
+    const processorOptions = { eth: this.eth, errorHandler: this.options?.errorHandler, logger: precacheLogger }
+    const processor = filterEvents(this.offerId, getProcessor(HANDLERS, processorOptions))
 
     // Wait to build up the database with latest data
     precacheLogger.verbose('Populating database')

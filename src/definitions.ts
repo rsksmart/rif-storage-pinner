@@ -117,7 +117,7 @@ export enum Strategy { Blockchain, Cache }
 
 export type Processor = (event: Event<any>) => Promise<void>
 
-export interface NodeEventsProcessorOptions {
+export interface BlockchainEventsProcessorOptions {
   eth: Eth
   manager?: ProviderManager
 }
@@ -126,7 +126,7 @@ export interface CacheEventsProcessorOptions {
   manager?: ProviderManager
 }
 
-export type ProcessorOptions = any | NodeEventsProcessorOptions | CacheEventsProcessorOptions
+export type ProcessorOptions = any | BlockchainEventsProcessorOptions | CacheEventsProcessorOptions
 
 export interface CacheEvent {
   event: string

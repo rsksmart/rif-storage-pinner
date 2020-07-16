@@ -1,4 +1,3 @@
-import { EventData } from 'web3-eth-contract'
 import { getObject } from 'sequelize-store'
 
 import type { Handler, Event, CacheEvent } from '../../definitions'
@@ -14,14 +13,11 @@ const handler: Handler = {
 
     switch (event.event) {
       case 'TotalCapacitySet':
-        // logger.info(`Updating capacity ${event.returnValues.capacity}`)
         break
       case 'MessageEmitted': {
         break
       }
-      default: {
-        logger.error(`Unknown event ${event.event}!`)
-      }
+      default: {}
     }
   }
 }

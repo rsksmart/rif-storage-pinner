@@ -1,4 +1,3 @@
-import type { Eth } from 'web3-eth'
 import { soliditySha3 } from 'web3-utils'
 
 import {
@@ -12,13 +11,12 @@ import { EventError } from '../../errors'
 import { decodeByteArray } from '../../utils'
 import { getBlockDate } from '../../blockchain/utils'
 import Agreement from '../../models/agreement.model'
-import type { Handler, NodeEventsProcessorOptions, AgreementEvents } from '../../definitions'
-import type { ProviderManager } from '../../providers'
+import type { Handler, BlockchainEventsProcessorOptions, AgreementEvents } from '../../definitions'
 
 const logger = loggingFactory('processor:blockchain:agreement')
 
 const handlers = {
-  async NewAgreement (event: NewAgreement, eth: Eth, manager?: ProviderManager): Promise<void> {
+  async NewAgreement (event: NewAgreement, options: BlockchainEventsProcessorOptions): Promise<void> {
     const { provider: offerId } = event.returnValues
     const id = soliditySha3(event.returnValues.agreementCreator, ...event.returnValues.dataReference)
     const dataReference = decodeByteArray(event.returnValues.dataReference)
@@ -33,16 +31,16 @@ const handlers = {
       billingPrice: event.returnValues.billingPrice,
       availableFunds: event.returnValues.availableFunds,
       expiredAtBlockNumber: null, // If not new, then lets reset the expiredAt column
-      lastPayout: await getBlockDate(eth, event.blockNumber)
+      lastPayout: await getBlockDate(options.eth, event.blockNumber)
     }
 
-    if (manager) await manager.pin(dataReference, parseInt(data.size))
+    if (options.manager) await options.manager.pin(dataReference, parseInt(data.size))
 
     await Agreement.upsert(data) // Agreement might already exist
     logger.info(`Created new Agreement with ID ${id} for offer ${offerId}`)
   },
 
-  async AgreementStopped (event: AgreementStopped, eth: Eth, manager?: ProviderManager): Promise<void> {
+  async AgreementStopped (event: AgreementStopped, options: BlockchainEventsProcessorOptions): Promise<void> {
     const id = event.returnValues.agreementReference
     const agreement = await Agreement.findByPk(id)
 
@@ -50,7 +48,7 @@ const handlers = {
       throw new EventError(`Agreement with ID ${id} was not found!`, 'AgreementStopped')
     }
 
-    if (manager) await manager.unpin(agreement.dataReference)
+    if (options.manager) await options.manager.unpin(agreement.dataReference)
 
     agreement.isActive = false
     await agreement.save()
@@ -86,7 +84,7 @@ const handlers = {
     logger.info(`${event.returnValues.amount} was withdrawn from funds of Agreement ${id}.`)
   },
 
-  async AgreementFundsPayout (event: AgreementFundsPayout, eth: Eth): Promise<void> {
+  async AgreementFundsPayout (event: AgreementFundsPayout, options: BlockchainEventsProcessorOptions): Promise<void> {
     const id = event.returnValues.agreementReference
     const agreement = await Agreement.findByPk(id)
 
@@ -94,7 +92,7 @@ const handlers = {
       throw new EventError(`Agreement with ID ${id} was not found!`, 'AgreementFundsWithdrawn')
     }
 
-    agreement.lastPayout = await getBlockDate(eth, event.blockNumber)
+    agreement.lastPayout = await getBlockDate(options.eth, event.blockNumber)
     agreement.availableFunds -= parseInt(event.returnValues.amount)
     await agreement.save()
 
@@ -108,14 +106,12 @@ function isValidEvent (value: string): value is keyof typeof handlers {
 
 const handler: Handler = {
   events: ['NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
-  process (event: AgreementEvents, options: NodeEventsProcessorOptions): Promise<void> {
-    const { eth, manager } = options
-
+  process (event: AgreementEvents, options: BlockchainEventsProcessorOptions): Promise<void> {
     if (!isValidEvent(event.event)) {
       return Promise.reject(new Error(`Unknown event ${event.event}`))
     }
 
-    return handlers[event.event](event, eth, manager)
+    return handlers[event.event](event, options)
   }
 }
 export default handler

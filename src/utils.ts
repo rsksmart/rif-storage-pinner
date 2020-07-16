@@ -1,7 +1,7 @@
 import { EventData } from 'web3-eth-contract'
 import { hexToAscii } from 'web3-utils'
 
-import { Handler, Logger } from './definitions'
+import { ErrorHandler, Handler, Logger, Processor } from './definitions'
 import type { Event, ProcessorOptions } from './definitions'
 import Agreement from './models/agreement.model'
 import { loggingFactory } from './logger'
@@ -30,11 +30,16 @@ export function filterEvents (offerId: string, callback: (event: Event<EventData
   }
 }
 
-export const processor = (handlers: Handler[]) => (options?: ProcessorOptions) => async (event: Event<any>) => {
+export const processor = (handlers: Handler[], options?: ProcessorOptions) => async (event: Event<any>) => {
   const promises = handlers
     .filter(handler => handler.events.includes(event.event))
     .map(handler => handler.process(event, options))
   await Promise.all(promises)
+}
+
+export function getProcessor (handlers: Handler[], options?: { errorHandler: ErrorHandler | undefined, logger?: Logger } & ProcessorOptions): Processor {
+  const errHandler = options?.errorHandler || errorHandler
+  return errHandler(processor(handlers, options), options?.logger || loggingFactory('processor'))
 }
 
 /**

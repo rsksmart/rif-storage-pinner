@@ -53,12 +53,12 @@ export default class PinningService {
     PinningService.strategy = strategy
   }
 
-  async initProviderManger (): Promise<void> {
+  private async initProviderManger (): Promise<void> {
     const ipfs = await IpfsProvider.bootstrap(config.get<string>('ipfs.connection'))
     this.manager.register(ipfs)
   }
 
-  async initDb (): Promise<void> {
+  private async initDb (): Promise<void> {
     const sequelize = await sequelizeFactory(config.get<string>('db'))
     await initStore(sequelize)
   }

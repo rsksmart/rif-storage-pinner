@@ -1,36 +1,28 @@
 import offer from './offer'
-import request from './agreement'
+import agreement from './agreement'
 import { EventProcessor } from '../index'
-import { errorHandler, processor } from '../../utils'
+import { getProcessor } from '../../utils'
 import { AppOptions, Logger } from '../../definitions'
 import { loggingFactory } from '../../logger'
 
-import type { ErrorHandler, Handler, Processor } from '../../definitions'
+import type { Handler, Processor } from '../../definitions'
 import type { ProviderManager } from '../../providers'
 
-const HANDLERS: Handler[] = [offer, request]
-
-export function getProcessor (offerId: string, featherClient: any | undefined, manager?: ProviderManager, options?: { errorHandler: ErrorHandler | undefined }): Processor {
-  // todo add filtering by offerId
-  return (options?.errorHandler || errorHandler)(processor(HANDLERS)({ featherClient, manager }), loggingFactory('processor'))
-}
+const HANDLERS: Handler[] = [offer, agreement]
 
 export class CacheEventsProcessor extends EventProcessor {
     private logger: Logger = loggingFactory('processor:blockchain')
-    private options?: AppOptions
 
     private featherClient: any
     private processor: Processor
-    private readonly manager: ProviderManager
 
     constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
-      super(offerId)
-      this.options = options
-      this.manager = manager
-      this.offerId = offerId
+      super(offerId, manager, options)
 
       // this.featherClient =
-      this.processor = getProcessor(this.offerId, this.featherClient, this.manager, { errorHandler: this.options?.errorHandler })
+      const processorOptions = { featherClient: this.featherClient, manager: this.manager, errorHandler: this.options?.errorHandler, logger: this.logger }
+      // todo add filtering for offer
+      this.processor = getProcessor(HANDLERS, processorOptions)
     }
 
     async initialize (): Promise<void> {
