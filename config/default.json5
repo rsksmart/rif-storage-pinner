@@ -1,4 +1,5 @@
 {
+  db: 'db.sqlite',
   blockchain: {
 
     // Events that will be listened to
@@ -16,7 +17,7 @@
       pollingInterval: 5000,
 
       // Starting block that upon first start of the service, will the blockchain be crawled for the past events.
-      startingBlock: "genesis",
+      startingBlock: 'genesis',
 
       // Number of blocks that will be waited before passing an event for further processing.
       confirmations: 6

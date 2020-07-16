@@ -2,9 +2,10 @@ import type { EventData } from 'web3-eth-contract'
 import type { Eth } from 'web3-eth'
 import type { EventEmitter } from 'events'
 
+import { errorHandler, filterEvents } from '../utils'
 import offer from './offer'
 import request from './agreement'
-import type { Handler } from '../definitions'
+import type { ErrorHandler, Handler } from '../definitions'
 import type { ProviderManager } from '../providers'
 import { loggingFactory } from '../logger'
 import Agreement from '../models/agreement.model'
@@ -19,6 +20,10 @@ export default function processor (eth: Eth, manager?: ProviderManager) {
       .map(handler => handler.process(event, eth, manager))
     await Promise.all(promises)
   }
+}
+
+export function getProcessor (offerId: string, eth: Eth, manager?: ProviderManager, options?: { errorHandler: ErrorHandler | undefined }): (event: EventData) => Promise<void> {
+  return filterEvents(offerId, (options?.errorHandler || errorHandler)(processor(eth, manager), loggingFactory('processor')))
 }
 
 export async function precache (eventsEmitter: EventEmitter, manager: ProviderManager, processor: (event: EventData) => Promise<void>): Promise<void> {
