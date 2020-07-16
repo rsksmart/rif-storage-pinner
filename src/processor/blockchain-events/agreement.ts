@@ -2,19 +2,19 @@ import type { EventData } from 'web3-eth-contract'
 import type { Eth } from 'web3-eth'
 import { soliditySha3 } from 'web3-utils'
 
-import type { Handler } from '../definitions'
-import { loggingFactory } from '../logger'
-import { EventError } from '../errors'
-import { decodeByteArray } from '../utils'
-import { getBlockDate } from '../blockchain/utils'
-
-import Agreement from '../models/agreement.model'
-import type { ProviderManager } from '../providers'
 import {
   AgreementFundsDeposited, AgreementFundsPayout, AgreementFundsWithdrawn,
   AgreementStopped,
   NewAgreement
 } from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
+
+import { loggingFactory } from '../../logger'
+import { EventError } from '../../errors'
+import { decodeByteArray } from '../../utils'
+import { getBlockDate } from '../../blockchain/utils'
+import Agreement from '../../models/agreement.model'
+import type { Handler, NodeEventsProcessorOptions, Event } from '../../definitions'
+import type { ProviderManager } from '../../providers'
 
 const logger = loggingFactory('processor:agreement')
 
@@ -109,7 +109,9 @@ function isValidEvent (value: string): value is keyof typeof handlers {
 
 const handler: Handler = {
   events: ['NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
-  process (event: EventData, eth: Eth, manager?: ProviderManager): Promise<void> {
+  process (event: Event<EventData>, options: NodeEventsProcessorOptions): Promise<void> {
+    const { eth, manager } = options
+
     if (!isValidEvent(event.event)) {
       return Promise.reject(new Error(`Unknown event ${event.event}`))
     }

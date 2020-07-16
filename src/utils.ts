@@ -1,6 +1,8 @@
-import { Logger } from './definitions'
 import { EventData } from 'web3-eth-contract'
 import { hexToAscii } from 'web3-utils'
+
+import { Handler, Logger } from './definitions'
+import type { Event, ProcessorOptions } from './definitions'
 import Agreement from './models/agreement.model'
 import { loggingFactory } from './logger'
 
@@ -12,8 +14,8 @@ export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Log
   }
 }
 
-export function filterEvents (offerId: string, callback: (event: EventData) => Promise<void>) {
-  return async (event: EventData): Promise<void> => {
+export function filterEvents (offerId: string, callback: (event: Event<EventData>) => Promise<void>) {
+  return async (event: Event<EventData>): Promise<void> => {
     logger.debug(`Got ${event.event} for provider ${event.returnValues.provider}`)
 
     if (event.returnValues.provider && event.returnValues.provider === offerId) {
@@ -26,6 +28,13 @@ export function filterEvents (offerId: string, callback: (event: EventData) => P
 
     return Promise.resolve()
   }
+}
+
+export const processor2 = (handlers: Handler[]) => (options?: ProcessorOptions) => async (event: Event<any>) => {
+  const promises = handlers
+    .filter(handler => handler.events.includes(event.event))
+    .map(handler => handler.process(event, options))
+  await Promise.all(promises)
 }
 
 /**

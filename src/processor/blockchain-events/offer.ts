@@ -1,15 +1,16 @@
 import { EventData } from 'web3-eth-contract'
-import { loggingFactory } from '../logger'
-import type { Handler } from '../definitions'
-import { decodeByteArray } from '../utils'
 import { getObject } from 'sequelize-store'
+
+import type { Handler, Event } from '../../definitions'
+import { loggingFactory } from '../../logger'
+import { decodeByteArray } from '../../utils'
 
 const logger = loggingFactory('processor:offer')
 
 const handler: Handler = {
   events: ['TotalCapacitySet', 'MessageEmitted'],
   // eslint-disable-next-line require-await
-  async process (event: EventData): Promise<void> {
+  async process (event: Event<EventData>): Promise<void> {
     const store = getObject()
 
     switch (event.event) {

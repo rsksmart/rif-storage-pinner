@@ -96,7 +96,7 @@ export interface Config {
  */
 export interface Handler {
   events: string[]
-  process: (event: EventData, eth: Eth, manager?: ProviderManager) => Promise<void>
+  process: (event: Event<any>, options?: ProcessorOptions) => Promise<void>
 }
 
 export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
@@ -108,3 +108,25 @@ export interface AppOptions {
   errorHandler?: ErrorHandler
   contractAddress?: string
 }
+
+export enum Strategy { Blockchain, Node }
+
+export type Processor = (event: Event<any>) => Promise<void>
+
+export interface NodeEventsProcessorOptions {
+  eth: Eth
+  manager?: ProviderManager
+}
+
+export interface CacheEventsProcessorOptions {
+  manager?: ProviderManager
+}
+
+export type ProcessorOptions = any | NodeEventsProcessorOptions | CacheEventsProcessorOptions
+
+export interface CacheEvent {
+  event: string
+  payload: object
+}
+
+export type Event<T> = T extends any & { event: string }? EventData : CacheEvent
