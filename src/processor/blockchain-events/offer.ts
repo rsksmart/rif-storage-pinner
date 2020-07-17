@@ -4,32 +4,32 @@ import type {
   TotalCapacitySet,
   MessageEmitted
 } from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
-import { StoreObject } from 'sequelize-store/types/definitions'
 
 import type {
-  Handler,
   BlockchainEventProcessorOptions,
-  BlockchainOfferEvents
+  BlockchainOfferEvents, HandlersObject
 } from '../../definitions'
 import { loggingFactory } from '../../logger'
-import { decodeByteArray } from '../../utils'
+import { buildHandler, decodeByteArray } from '../../utils'
 
 const logger = loggingFactory('processor:blockchain:offer')
 
-const handlers = {
-  TotalCapacitySet (event: TotalCapacitySet, options: { store: StoreObject }): void {
-    const { store } = options
+const handlers: HandlersObject<BlockchainOfferEvents, BlockchainEventProcessorOptions> = {
+  async TotalCapacitySet (event: BlockchainOfferEvents): Promise<void> {
+    const store = getObject()
+    const { returnValues: { capacity } } = event as TotalCapacitySet
 
-    store.totalCapacity = parseInt(event.returnValues.capacity)
-    logger.info(`Updating capacity ${event.returnValues.capacity}`)
+    store.totalCapacity = parseInt(capacity)
+    logger.info(`Updating capacity ${capacity}`)
+    return await Promise.resolve()
   },
 
-  MessageEmitted (event: MessageEmitted, options: { store: StoreObject }): void {
-    const { store } = options
-    const msg = event.returnValues.message
+  async MessageEmitted (event: BlockchainOfferEvents): Promise<void> {
+    const store = getObject()
+    const { returnValues: { message: msg } } = event as MessageEmitted
 
     if (!msg || msg.length === 0) {
-      return
+      return Promise.resolve()
     }
 
     const [firstMsg, ...restMsg] = msg
@@ -38,29 +38,15 @@ const handlers = {
     if (flag === '01') { // PeerId definition
       store.peerId = decodeByteArray([`0x${firstMsg.substring(4)}`, ...restMsg])
 
-      logger.info(`PeerId ${options.store.peerId} defined`)
+      logger.info(`PeerId ${store} defined`)
     } else {
       logger.error(`Unknown message flag ${flag}!`)
     }
+    return await Promise.resolve()
   }
 }
 
-function isValidEvent (value: string): value is keyof typeof handlers {
-  return value in handlers
-}
-
-const handler: Handler<BlockchainOfferEvents, BlockchainEventProcessorOptions> = {
-  events: ['TotalCapacitySet', 'MessageEmitted'],
-  // eslint-disable-next-line require-await
-  async process (event: BlockchainOfferEvents): Promise<void> {
-    const store = getObject()
-
-    if (!isValidEvent(event.event)) {
-      return Promise.reject(new Error(`Unknown event ${event.event}`))
-    }
-
-    return handlers[event.event](event as MessageEmitted & TotalCapacitySet, { store })
-  }
-}
-
-export default handler
+export default buildHandler<BlockchainOfferEvents, BlockchainEventProcessorOptions>(
+  handlers,
+  ['TotalCapacitySet', 'MessageEmitted']
+)

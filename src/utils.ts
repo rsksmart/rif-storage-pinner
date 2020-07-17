@@ -4,12 +4,13 @@ import type {
   BlockchainAgreementEvents,
   BlockchainEvent,
   BlockchainEventsWithProvider,
-  ErrorHandler,
   EventProcessorOptions,
-  Handler,
+  GetProcessorOptions,
+  EventsHandler,
   Logger,
   Processor,
-  StorageEvents
+  StorageEvents,
+  HandlersObject
 } from './definitions'
 import Agreement from './models/agreement.model'
 import { loggingFactory } from './logger'
@@ -22,11 +23,11 @@ export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Log
   }
 }
 
-const isEventWithProvider = (event: BlockchainEvent): event is BlockchainEventsWithProvider => {
+export function isEventWithProvider (event: BlockchainEvent): event is BlockchainEventsWithProvider {
   return Boolean((event as BlockchainEventsWithProvider).returnValues.provider)
 }
 
-export function filterEvents (offerId: string, callback: (event: BlockchainEvent) => Promise<void>) {
+export function filterBlockchainEvents (offerId: string, callback: (event: BlockchainEvent) => Promise<void>) {
   return async (event: BlockchainEvent): Promise<void> => {
     logger.debug(`Got ${event.event} for provider ${(event as BlockchainEventsWithProvider).returnValues.provider}`)
 
@@ -42,16 +43,32 @@ export function filterEvents (offerId: string, callback: (event: BlockchainEvent
   }
 }
 
-export const processor = (handlers: Handler<any, any>[], options?: EventProcessorOptions) => async (event: StorageEvents) => {
-  const promises = handlers
-    .filter(handler => handler.events.includes(event.event))
-    .map(handler => handler.process(event, options))
-  await Promise.all(promises)
+export function getProcessor<T extends StorageEvents, O extends EventProcessorOptions> (handlers: EventsHandler<T, O>[], options?: GetProcessorOptions): Processor<T> {
+  const errHandler = options?.errorHandler ?? errorHandler
+  const processor = async (event: T): Promise<void> => {
+    const promises = handlers
+      .filter(handler => handler.events.includes(event.event))
+      .map(handler => handler.process(event, options?.processorDeps as O))
+    await Promise.all(promises)
+  }
+  return errHandler(processor, options?.errorLogger ?? loggingFactory('processor'))
 }
 
-export function getProcessor (handlers: Handler<any, any>[], options?: { errorHandler?: ErrorHandler, logger?: Logger, processorDeps: EventProcessorOptions }): Processor<StorageEvents> {
-  const errHandler = options?.errorHandler || errorHandler
-  return errHandler(processor(handlers, options?.processorDeps), options?.logger || loggingFactory('processor'))
+export function isValidEvent (value: string, handlers: object): value is keyof typeof handlers {
+  return value in handlers
+}
+
+export function buildHandler<T extends StorageEvents, O extends EventProcessorOptions> (handlers: HandlersObject<T, O>, events: string[]): EventsHandler<T, O> {
+  return {
+    events,
+    process: (event: T, options: O): Promise<void> => {
+      if (!isValidEvent(event.event, handlers)) {
+        return Promise.reject(new Error(`Unknown event ${event.event}`))
+      }
+
+      return handlers[event.event](event, options ?? {} as O)
+    }
+  }
 }
 
 /**

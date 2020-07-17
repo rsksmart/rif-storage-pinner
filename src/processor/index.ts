@@ -2,14 +2,14 @@ import { AppOptions } from '../definitions'
 import { ProviderManager } from '../providers'
 
 interface EventProcessorI {
-    offerId: string
+    readonly offerId: string
     initialized: boolean
 }
 
 export abstract class EventProcessor implements EventProcessorI {
-    offerId: string
+    readonly offerId: string
     readonly manager: ProviderManager
-    options?: AppOptions
+    readonly options?: AppOptions
     initialized = false
 
     protected constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
@@ -21,5 +21,5 @@ export abstract class EventProcessor implements EventProcessorI {
     abstract async precache (): Promise<void>
     abstract async initialize (): Promise<void>
     abstract async run (): Promise<void>
-    abstract stop (): void
+    async abstract stop (): Promise<void>
 }

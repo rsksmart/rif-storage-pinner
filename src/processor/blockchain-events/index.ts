@@ -6,45 +6,48 @@ import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/c
 import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
-import { filterEvents, getProcessor } from '../../utils'
+import { filterBlockchainEvents, getProcessor } from '../../utils'
 import { BaseEventsEmitter } from '../../blockchain/events'
 import { ethFactory, getEventsEmitter } from '../../blockchain/utils'
-import {
-  AppOptions, BlockchainAgreementEvents,
-  BlockchainEvent,
-  BlockchainEventProcessorOptions,
-  BlockchainOfferEvents,
-  Logger
-} from '../../definitions'
 import { loggingFactory } from '../../logger'
 import Agreement from '../../models/agreement.model'
 
-import type { Handler, Processor } from '../../definitions'
+import type {
+  AppOptions,
+  BlockchainEvent,
+  BlockchainEventProcessorOptions,
+  Logger,
+  EventsHandler,
+  Processor
+} from '../../definitions'
 import type { ProviderManager } from '../../providers'
 
-const HANDLERS: Handler<BlockchainAgreementEvents & BlockchainOfferEvents, BlockchainEventProcessorOptions>[] = [offer, agreement]
-
 export class BlockchainEventsProcessor extends EventProcessor {
-  private logger: Logger = loggingFactory('processor:blockchain')
+  private readonly handlers = [offer, agreement] as EventsHandler<BlockchainEvent, BlockchainEventProcessorOptions>[]
+  private readonly logger: Logger = loggingFactory('processor:blockchain')
 
-  private eventsEmitter: BaseEventsEmitter | undefined
   private readonly processor: Processor<BlockchainEvent>
   private readonly eth: Eth
+  private eventsEmitter: BaseEventsEmitter | undefined
 
   constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
     super(offerId, manager, options)
 
     this.eth = ethFactory()
-    const processorOptions = { processorDeps: { manager: this.manager, eth: this.eth }, errorHandler: this.options?.errorHandler, logger: this.logger }
-    this.processor = filterEvents(this.offerId, getProcessor(HANDLERS, processorOptions))
+    const processorOptions = {
+      processorDeps: { manager: this.manager, eth: this.eth },
+      errorHandler: this.options?.errorHandler,
+      errorLogger: this.logger
+    }
+    this.processor = filterBlockchainEvents(this.offerId, getProcessor(this.handlers, processorOptions))
   }
 
-  initialize (): Promise<void> {
-    if (this.initialized) Promise.reject(new Error('Already Initialized'))
+  async initialize (): Promise<void> {
+    if (this.initialized) throw new Error('Already Initialized')
 
     this.eventsEmitter = getEventsEmitter(this.eth, storageManagerContractAbi.abi as AbiItem[], { contractAddress: this.options?.contractAddress })
     this.initialized = true
-    return Promise.resolve()
+    return await Promise.resolve()
   }
 
   async run (): Promise<void> {
@@ -63,7 +66,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     const precacheLogger = loggingFactory('processor:blockchain:precache')
     const _eventsEmitter = this.eventsEmitter
     const processorOptions = { processorDeps: { eth: this.eth }, errorHandler: this.options?.errorHandler, logger: precacheLogger }
-    const processor = filterEvents(this.offerId, getProcessor(HANDLERS, processorOptions))
+    const processor = filterBlockchainEvents(this.offerId, getProcessor(this.handlers, processorOptions))
 
     // Wait to build up the database with latest data
     precacheLogger.verbose('Populating database')
@@ -96,8 +99,9 @@ export class BlockchainEventsProcessor extends EventProcessor {
     }
   }
 
-  stop (): void {
+  async stop (): Promise<void> {
     if (!this.eventsEmitter) throw new Error('No processor running')
     this.eventsEmitter.stop()
+    return await Promise.resolve()
   }
 }

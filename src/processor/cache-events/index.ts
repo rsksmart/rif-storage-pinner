@@ -6,18 +6,22 @@ import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
 import { getProcessor } from '../../utils'
-import { AppOptions, BaseEventProcessorOptions, CacheEvent, Logger } from '../../definitions'
+import {
+  AppOptions,
+  BaseEventProcessorOptions,
+  CacheEvent,
+  Logger
+} from '../../definitions'
 import { loggingFactory } from '../../logger'
 
-import type { Handler, Processor } from '../../definitions'
+import type { EventsHandler, Processor } from '../../definitions'
 import type { ProviderManager } from '../../providers'
 
-const HANDLERS: Handler<CacheEvent, BaseEventProcessorOptions>[] = [offer, agreement]
-
 export class CacheEventsProcessor extends EventProcessor {
-    private logger: Logger = loggingFactory('processor:blockchain')
+    private readonly handlers = [offer, agreement] as EventsHandler<CacheEvent, BaseEventProcessorOptions>[]
+    private readonly logger: Logger = loggingFactory('processor:blockchain')
 
-    private processor: Processor<CacheEvent>
+    private readonly processor: Processor<CacheEvent>
 
     constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
       super(offerId, manager, options)
@@ -26,9 +30,13 @@ export class CacheEventsProcessor extends EventProcessor {
       const client = feathers()
       client.configure(socketio(socket))
 
-      const processorOptions = { processorDeps: { manager: this.manager }, errorHandler: this.options?.errorHandler, logger: this.logger }
+      const processorOptions = {
+        processorDeps: { manager: this.manager },
+        errorHandler: this.options?.errorHandler,
+        errorLogger: this.logger
+      }
       // todo add filtering for offer
-      this.processor = getProcessor(HANDLERS, processorOptions)
+      this.processor = getProcessor<CacheEvent, BaseEventProcessorOptions>(this.handlers, processorOptions)
     }
 
     async initialize (): Promise<void> {
@@ -50,7 +58,8 @@ export class CacheEventsProcessor extends EventProcessor {
       // Cache logic here
     }
 
-    stop (): void {
+    async stop (): Promise<void> {
       // Unsubscribe from events
+      return await Promise.resolve()
     }
 }

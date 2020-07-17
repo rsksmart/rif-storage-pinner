@@ -1,46 +1,36 @@
 import { loggingFactory } from '../../logger'
 import type {
-  Handler,
   BaseEventProcessorOptions,
-  CacheEvent
+  CacheEvent,
+  HandlersObject
 } from '../../definitions'
+import { buildHandler } from '../../utils'
 
 const logger = loggingFactory('processor:blockchain:agreement')
 
-const handlers = {
-  NewAgreement (event: CacheEvent, options?: BaseEventProcessorOptions): Promise<void> {
-    return Promise.resolve()
+const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
+  NewAgreement (event: CacheEvent, options: BaseEventProcessorOptions): Promise<void> {
+    return Promise.reject(new Error('Not implemented!'))
   },
 
-  AgreementStopped (event: CacheEvent, options?: BaseEventProcessorOptions): Promise<void> {
-    return Promise.resolve()
+  AgreementStopped (event: CacheEvent, options: BaseEventProcessorOptions): Promise<void> {
+    return Promise.reject(new Error('Not implemented!'))
   },
 
   AgreementFundsDeposited (event: CacheEvent): Promise<void> {
-    return Promise.resolve()
+    return Promise.reject(new Error('Not implemented!'))
   },
 
   AgreementFundsWithdrawn (event: CacheEvent): Promise<void> {
-    return Promise.resolve()
+    return Promise.reject(new Error('Not implemented!'))
   },
 
-  AgreementFundsPayout (event: CacheEvent, options?: BaseEventProcessorOptions): Promise<void> {
-    return Promise.resolve()
+  AgreementFundsPayout (event: CacheEvent, options: BaseEventProcessorOptions): Promise<void> {
+    return Promise.reject(new Error('Not implemented!'))
   }
 }
 
-function isValidEvent (value: string): value is keyof typeof handlers {
-  return value in handlers
-}
-
-const handler: Handler<CacheEvent, BaseEventProcessorOptions> = {
-  events: ['NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
-  process (event: CacheEvent, options?: BaseEventProcessorOptions): Promise<void> {
-    if (!isValidEvent(event.event)) {
-      return Promise.reject(new Error(`Unknown event ${event.event}`))
-    }
-
-    return handlers[event.event](event, options)
-  }
-}
-export default handler
+export default buildHandler<CacheEvent, BaseEventProcessorOptions>(
+  handlers,
+  ['NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped']
+)

@@ -107,32 +107,35 @@ export interface AppOptions {
   forcePrecache?: boolean
   errorHandler?: ErrorHandler
   contractAddress?: string
+  strategy?: Strategy
 }
 
-export enum Strategy { Blockchain, Cache }
+export enum Strategy { Blockchain = 'blockchain', Cache = 'cache' }
 
 /**
  * Interface for more complex handling of events.
  */
-export interface Handler<T, O> {
+export interface EventsHandler<T extends StorageEvents, O extends EventProcessorOptions> {
   events: string[]
-  process: (event: T, options?: O) => Promise<void>
+  process: (event: T, options: O) => Promise<void>
 }
+/**
+ * Interface for object with event handler functions
+ */
+export type HandlersObject<T extends StorageEvents, O extends EventProcessorOptions> = { [key: string]: (event: T, options: O) => Promise<void> }
 
 /**
- * Interface for processor.
+ * Interfaces for Processor.
  */
-export type Processor<T> = (event: T) => Promise<void>
+export type Processor<T extends StorageEvents> = (event: T) => Promise<void>
 
-export interface BaseEventProcessorOptions {
-  manager?: ProviderManager
-}
+export type BaseEventProcessorOptions = { manager?: ProviderManager }
 
-export interface BlockchainEventProcessorOptions extends BaseEventProcessorOptions {
-  eth: Eth
-}
+export type BlockchainEventProcessorOptions = { eth: Eth } & BaseEventProcessorOptions
 
 export type EventProcessorOptions = BaseEventProcessorOptions | BlockchainEventProcessorOptions
+
+export type GetProcessorOptions = { errorHandler?: ErrorHandler, errorLogger?: Logger, processorDeps: EventProcessorOptions }
 
 /**
  * Events interfaces.
@@ -143,9 +146,11 @@ export interface CacheEvent {
 }
 
 export type BlockchainAgreementEvents = NewAgreement | AgreementStopped | AgreementFundsDeposited | AgreementFundsWithdrawn | AgreementFundsPayout
+
 export type BlockchainOfferEvents = TotalCapacitySet | MessageEmitted
 
 export type BlockchainEventsWithProvider = BlockchainOfferEvents | NewAgreement
+
 export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEvents
 
 export type StorageEvents = BlockchainEvent | CacheEvent

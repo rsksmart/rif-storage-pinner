@@ -9,5 +9,5 @@ export default async (offerId: string, options?: AppOptions): Promise<{ stop: ()
   // Subscribe and start processing events
   await pinningApp.start()
 
-  return { stop: (): void => pinningApp.stop() }
+  return { stop: (): Promise<void> => pinningApp.stop() }
 }

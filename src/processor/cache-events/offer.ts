@@ -1,25 +1,19 @@
-import { getObject } from 'sequelize-store'
-
-import type { Handler, CacheEvent, BaseEventProcessorOptions } from '../../definitions'
+import type { CacheEvent, BaseEventProcessorOptions, HandlersObject } from '../../definitions'
 import { loggingFactory } from '../../logger'
+import { buildHandler } from '../../utils'
 
 const logger = loggingFactory('processor:cache:offer')
 
-const handler: Handler<CacheEvent, BaseEventProcessorOptions> = {
-  events: ['TotalCapacitySet', 'MessageEmitted'],
-  // eslint-disable-next-line require-await
-  async process (event: CacheEvent): Promise<void> {
-    const store = getObject()
-
-    switch (event.event) {
-      case 'TotalCapacitySet':
-        break
-      case 'MessageEmitted': {
-        break
-      }
-      default: {}
-    }
+const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
+  TotalCapacitySet (event: CacheEvent): Promise<void> {
+    return Promise.reject(new Error('Not implemented!'))
+  },
+  MessageEmitted (event: CacheEvent): Promise<void> {
+    return Promise.reject(new Error('Not implemented!'))
   }
 }
 
-export default handler
+export default buildHandler<CacheEvent, BaseEventProcessorOptions>(
+  handlers,
+  ['TotalCapacitySet', 'MessageEmitted']
+)
