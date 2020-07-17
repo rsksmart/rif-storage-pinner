@@ -2,9 +2,13 @@
  * Basic logger interface used around the application.
  */
 import {
-  AgreementFundsDeposited, AgreementFundsPayout, AgreementFundsWithdrawn,
+  AgreementFundsDeposited,
+  AgreementFundsPayout,
+  AgreementFundsWithdrawn,
   AgreementStopped,
-  NewAgreement
+  NewAgreement,
+  TotalCapacitySet,
+  MessageEmitted
 } from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
 import type { Eth } from 'web3-eth'
 import type { ClientOptions as IpfsOptions } from 'ipfs-http-client'
@@ -95,14 +99,6 @@ export interface Config {
   }
 }
 
-/**
- * Interface for more complex handling of events.
- */
-export interface Handler {
-  events: string[]
-  process: (event: Event<any>, options?: ProcessorOptions) => Promise<void>
-}
-
 export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
 
 export interface AppOptions {
@@ -115,24 +111,44 @@ export interface AppOptions {
 
 export enum Strategy { Blockchain, Cache }
 
-export type Processor = (event: Event<any>) => Promise<void>
+/**
+ * Interface for more complex handling of events.
+ */
+export interface Handler<T extends StorageEvents, O extends EventProcessorOptions> {
+  events: string[]
+  process: (event: T, options?: O) => Promise<void>
+}
 
-export interface BlockchainEventsProcessorOptions {
+/**
+ * Interface for processor.
+ */
+export type Processor<T extends StorageEvents> = (event: T) => Promise<void>
+
+export interface BaseEventProcessorOptions {
+  manager?: ProviderManager
+}
+
+export interface BlockchainEventProcessorOptions extends BaseEventProcessorOptions{
   eth: Eth
-  manager?: ProviderManager
 }
 
-export interface CacheEventsProcessorOptions {
-  manager?: ProviderManager
+export interface CacheEventProcessorOptions extends BaseEventProcessorOptions {
+  featherClient: any
 }
 
-export type ProcessorOptions = any | BlockchainEventsProcessorOptions | CacheEventsProcessorOptions
+export type EventProcessorOptions = CacheEventProcessorOptions | BlockchainEventProcessorOptions
 
+/**
+ * Events interfaces.
+ */
 export interface CacheEvent {
   event: string
   payload: object
 }
 
-export type Event<T> = T & { event: string }
+export type BlockchainAgreementEvents = NewAgreement & AgreementStopped & AgreementFundsDeposited & AgreementFundsWithdrawn & AgreementFundsPayout
+export type BlockchainOfferEvents = TotalCapacitySet & MessageEmitted
 
-export type AgreementEvents = Event<NewAgreement & AgreementStopped & AgreementFundsDeposited & AgreementFundsWithdrawn & AgreementFundsPayout>
+export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEvents
+
+export type StorageEvents = BlockchainEvent | CacheEvent

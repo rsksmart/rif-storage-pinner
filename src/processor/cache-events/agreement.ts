@@ -1,14 +1,18 @@
 import { loggingFactory } from '../../logger'
-import type { Handler, Event, CacheEventsProcessorOptions, CacheEvent } from '../../definitions'
+import type {
+  Handler,
+  CacheEventProcessorOptions,
+  CacheEvent
+} from '../../definitions'
 
 const logger = loggingFactory('processor:blockchain:agreement')
 
 const handlers = {
-  NewAgreement (event: CacheEvent, options: CacheEventsProcessorOptions): Promise<void> {
+  NewAgreement (event: CacheEvent, options?: CacheEventProcessorOptions): Promise<void> {
     return Promise.resolve()
   },
 
-  AgreementStopped (event: CacheEvent, options: CacheEventsProcessorOptions): Promise<void> {
+  AgreementStopped (event: CacheEvent, options?: CacheEventProcessorOptions): Promise<void> {
     return Promise.resolve()
   },
 
@@ -20,7 +24,7 @@ const handlers = {
     return Promise.resolve()
   },
 
-  AgreementFundsPayout (event: CacheEvent, options: CacheEventsProcessorOptions): Promise<void> {
+  AgreementFundsPayout (event: CacheEvent, options?: CacheEventProcessorOptions): Promise<void> {
     return Promise.resolve()
   }
 }
@@ -29,9 +33,9 @@ function isValidEvent (value: string): value is keyof typeof handlers {
   return value in handlers
 }
 
-const handler: Handler = {
+const handler: Handler<CacheEvent, CacheEventProcessorOptions> = {
   events: ['NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
-  process (event: Event<CacheEvent>, options: CacheEventsProcessorOptions): Promise<void> {
+  process (event: CacheEvent, options?: CacheEventProcessorOptions): Promise<void> {
     if (!isValidEvent(event.event)) {
       return Promise.reject(new Error(`Unknown event ${event.event}`))
     }

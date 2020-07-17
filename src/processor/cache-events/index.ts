@@ -2,19 +2,19 @@ import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
 import { getProcessor } from '../../utils'
-import { AppOptions, Logger } from '../../definitions'
+import { AppOptions, CacheEvent, CacheEventProcessorOptions, Logger } from '../../definitions'
 import { loggingFactory } from '../../logger'
 
 import type { Handler, Processor } from '../../definitions'
 import type { ProviderManager } from '../../providers'
 
-const HANDLERS: Handler[] = [offer, agreement]
+const HANDLERS: Handler<CacheEvent, CacheEventProcessorOptions>[] = [offer, agreement]
 
 export class CacheEventsProcessor extends EventProcessor {
     private logger: Logger = loggingFactory('processor:blockchain')
 
     private featherClient: any
-    private processor: Processor
+    private processor: Processor<CacheEvent>
 
     constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
       super(offerId, manager, options)

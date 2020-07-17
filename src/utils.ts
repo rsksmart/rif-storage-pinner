@@ -1,8 +1,15 @@
-import { EventData } from 'web3-eth-contract'
 import { hexToAscii } from 'web3-utils'
 
-import { ErrorHandler, Handler, Logger, Processor } from './definitions'
-import type { Event, ProcessorOptions } from './definitions'
+import type {
+  BlockchainAgreementEvents,
+  BlockchainEvent,
+  ErrorHandler,
+  EventProcessorOptions,
+  Handler,
+  Logger,
+  Processor,
+  StorageEvents
+} from './definitions'
 import Agreement from './models/agreement.model'
 import { loggingFactory } from './logger'
 
@@ -14,15 +21,15 @@ export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Log
   }
 }
 
-export function filterEvents (offerId: string, callback: (event: Event<EventData>) => Promise<void>) {
-  return async (event: Event<EventData>): Promise<void> => {
+export function filterEvents (offerId: string, callback: (event: BlockchainEvent) => Promise<void>) {
+  return async (event: BlockchainEvent): Promise<void> => {
     logger.debug(`Got ${event.event} for provider ${event.returnValues.provider}`)
 
     if (event.returnValues.provider && event.returnValues.provider === offerId) {
       return callback(event)
     }
 
-    if (event.event.startsWith('Agreement') && await Agreement.findByPk(event.returnValues.agreementReference)) {
+    if (event.event.startsWith('Agreement') && await Agreement.findByPk((event as BlockchainAgreementEvents).returnValues.agreementReference)) {
       return callback(event)
     }
 
@@ -30,16 +37,16 @@ export function filterEvents (offerId: string, callback: (event: Event<EventData
   }
 }
 
-export const processor = (handlers: Handler[], options?: ProcessorOptions) => async (event: Event<any>) => {
+export const processor = (handlers: Handler<any, any>[], options?: EventProcessorOptions) => async (event: StorageEvents) => {
   const promises = handlers
     .filter(handler => handler.events.includes(event.event))
     .map(handler => handler.process(event, options))
   await Promise.all(promises)
 }
 
-export function getProcessor (handlers: Handler[], options?: { errorHandler: ErrorHandler | undefined, logger?: Logger } & ProcessorOptions): Processor {
+export function getProcessor (handlers: Handler<any, any>[], options?: { errorHandler: ErrorHandler | undefined, logger?: Logger } & EventProcessorOptions): Processor<StorageEvents> {
   const errHandler = options?.errorHandler || errorHandler
-  return errHandler(processor(handlers, options), options?.logger || loggingFactory('processor'))
+  return errHandler(processor(handlers, options as EventProcessorOptions), options?.logger || loggingFactory('processor'))
 }
 
 /**

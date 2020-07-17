@@ -11,12 +11,12 @@ import { EventError } from '../../errors'
 import { decodeByteArray } from '../../utils'
 import { getBlockDate } from '../../blockchain/utils'
 import Agreement from '../../models/agreement.model'
-import type { Handler, BlockchainEventsProcessorOptions, AgreementEvents } from '../../definitions'
+import type { Handler, BlockchainEventProcessorOptions, BlockchainAgreementEvents } from '../../definitions'
 
 const logger = loggingFactory('processor:blockchain:agreement')
 
 const handlers = {
-  async NewAgreement (event: NewAgreement, options: BlockchainEventsProcessorOptions): Promise<void> {
+  async NewAgreement (event: NewAgreement, options: BlockchainEventProcessorOptions): Promise<void> {
     const { provider: offerId } = event.returnValues
     const id = soliditySha3(event.returnValues.agreementCreator, ...event.returnValues.dataReference)
     const dataReference = decodeByteArray(event.returnValues.dataReference)
@@ -40,7 +40,7 @@ const handlers = {
     logger.info(`Created new Agreement with ID ${id} for offer ${offerId}`)
   },
 
-  async AgreementStopped (event: AgreementStopped, options: BlockchainEventsProcessorOptions): Promise<void> {
+  async AgreementStopped (event: AgreementStopped, options: BlockchainEventProcessorOptions): Promise<void> {
     const id = event.returnValues.agreementReference
     const agreement = await Agreement.findByPk(id)
 
@@ -84,7 +84,7 @@ const handlers = {
     logger.info(`${event.returnValues.amount} was withdrawn from funds of Agreement ${id}.`)
   },
 
-  async AgreementFundsPayout (event: AgreementFundsPayout, options: BlockchainEventsProcessorOptions): Promise<void> {
+  async AgreementFundsPayout (event: AgreementFundsPayout, options: BlockchainEventProcessorOptions): Promise<void> {
     const id = event.returnValues.agreementReference
     const agreement = await Agreement.findByPk(id)
 
@@ -100,18 +100,18 @@ const handlers = {
   }
 }
 
-function isValidEvent (value: string): value is keyof typeof handlers {
+function isValidEvent<T> (value: string): value is keyof typeof handlers {
   return value in handlers
 }
 
-const handler: Handler = {
+const handler: Handler<BlockchainAgreementEvents, BlockchainEventProcessorOptions> = {
   events: ['NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
-  process (event: AgreementEvents, options: BlockchainEventsProcessorOptions): Promise<void> {
+  process (event: BlockchainAgreementEvents, options?: BlockchainEventProcessorOptions): Promise<void> {
     if (!isValidEvent(event.event)) {
       return Promise.reject(new Error(`Unknown event ${event.event}`))
     }
 
-    return handlers[event.event](event, options)
+    return handlers[event.event](event, options || {} as BlockchainEventProcessorOptions)
   }
 }
 export default handler

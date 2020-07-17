@@ -1,4 +1,3 @@
-import type { EventData } from 'web3-eth-contract'
 import type { Eth } from 'web3-eth'
 import { AbiItem } from 'web3-utils'
 
@@ -10,20 +9,26 @@ import { EventProcessor } from '../index'
 import { filterEvents, getProcessor } from '../../utils'
 import { BaseEventsEmitter } from '../../blockchain/events'
 import { ethFactory, getEventsEmitter } from '../../blockchain/utils'
-import { AppOptions, Logger } from '../../definitions'
+import {
+  AppOptions, BlockchainAgreementEvents,
+  BlockchainEvent,
+  BlockchainEventProcessorOptions,
+  BlockchainOfferEvents,
+  Logger
+} from '../../definitions'
 import { loggingFactory } from '../../logger'
 import Agreement from '../../models/agreement.model'
 
 import type { Handler, Processor } from '../../definitions'
 import type { ProviderManager } from '../../providers'
 
-const HANDLERS: Handler[] = [offer, agreement]
+const HANDLERS: Handler<BlockchainOfferEvents & BlockchainAgreementEvents, BlockchainEventProcessorOptions>[] = [offer, agreement]
 
 export class BlockchainEventsProcessor extends EventProcessor {
   private logger: Logger = loggingFactory('processor:blockchain')
 
   private eventsEmitter: BaseEventsEmitter | undefined
-  private readonly processor: Processor
+  private readonly processor: Processor<BlockchainEvent>
   private readonly eth: Eth
 
   constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
@@ -35,7 +40,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
   }
 
   initialize (): Promise<void> {
-    if (this.initialized) throw new Error('Already Initialized')
+    if (this.initialized) Promise.reject(new Error('Already Initialized'))
 
     this.eventsEmitter = getEventsEmitter(this.eth, storageManagerContractAbi.abi as AbiItem[], { contractAddress: this.options?.contractAddress })
     this.initialized = true
@@ -64,8 +69,8 @@ export class BlockchainEventsProcessor extends EventProcessor {
     precacheLogger.verbose('Populating database')
 
     await new Promise<void>((resolve, reject) => {
-      const dataQueue: EventData[] = []
-      const dataQueuePusher = (event: EventData): void => { dataQueue.push(event) }
+      const dataQueue: BlockchainEvent[] = []
+      const dataQueuePusher = (event: BlockchainEvent): void => { dataQueue.push(event) }
 
       _eventsEmitter?.on('initFinished', async function () {
         _eventsEmitter?.off('newEvent', dataQueuePusher)
