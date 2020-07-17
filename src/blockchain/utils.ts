@@ -53,10 +53,6 @@ export function getNewBlockEmitter (eth: Eth): EventEmitter {
   }
 }
 
-function duplicate<T = object> (obj: T): T {
-  return JSON.parse(JSON.stringify(obj))
-}
-
 export function getEventsEmitter (eth: Eth, contractAbi: AbiItem[], options?: EventsEmitterOptions & { contractAddress?: string }): BaseEventsEmitter {
   const contractAddresses = options?.contractAddress || config.get<string>('blockchain.contractAddress')
   const contract = new eth.Contract(contractAbi, contractAddresses)
@@ -64,8 +60,8 @@ export function getEventsEmitter (eth: Eth, contractAbi: AbiItem[], options?: Ev
 
   const eventsToListen = config.get<string[]>('blockchain.events')
   logger.info(`For listening on service 'blockchain' for events ${eventsToListen.join(', ')} using contract on address: ${contractAddresses}`)
-  const eventsEmitterOptions = duplicate(config.get<EventsEmitterOptions>('blockchain.eventsEmitter'))
-  const newBlockEmitterOptions = duplicate(config.get<NewBlockEmitterOptions>('blockchain.newBlockEmitter'))
+  const eventsEmitterOptions = config.get<EventsEmitterOptions>('blockchain.eventsEmitter')
+  const newBlockEmitterOptions = config.get<NewBlockEmitterOptions>('blockchain.newBlockEmitter')
   const configOptions = Object.assign(
     {},
     eventsEmitterOptions,
