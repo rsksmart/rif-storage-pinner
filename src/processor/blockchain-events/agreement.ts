@@ -111,7 +111,9 @@ const handler: Handler<BlockchainAgreementEvents, BlockchainEventProcessorOption
       return Promise.reject(new Error(`Unknown event ${event.event}`))
     }
 
-    return handlers[event.event](event, options || {} as BlockchainEventProcessorOptions)
+    return handlers[event.event](event as CombinedEvents, options || {} as BlockchainEventProcessorOptions)
   }
 }
+
+type CombinedEvents = NewAgreement & AgreementStopped & AgreementFundsDeposited & AgreementFundsWithdrawn & AgreementFundsPayout
 export default handler

@@ -3,6 +3,7 @@ import { hexToAscii } from 'web3-utils'
 import type {
   BlockchainAgreementEvents,
   BlockchainEvent,
+  BlockchainEventsWithProvider,
   ErrorHandler,
   EventProcessorOptions,
   Handler,
@@ -21,11 +22,15 @@ export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Log
   }
 }
 
+const isEventWithProvider = (event: BlockchainEvent): event is BlockchainEventsWithProvider => {
+  return Boolean((event as BlockchainEventsWithProvider).returnValues.provider)
+}
+
 export function filterEvents (offerId: string, callback: (event: BlockchainEvent) => Promise<void>) {
   return async (event: BlockchainEvent): Promise<void> => {
-    logger.debug(`Got ${event.event} for provider ${event.returnValues.provider}`)
+    logger.debug(`Got ${event.event} for provider ${(event as BlockchainEventsWithProvider).returnValues.provider}`)
 
-    if (event.returnValues.provider && event.returnValues.provider === offerId) {
+    if (isEventWithProvider(event) && event.returnValues.provider === offerId) {
       return callback(event)
     }
 
@@ -44,9 +49,9 @@ export const processor = (handlers: Handler<any, any>[], options?: EventProcesso
   await Promise.all(promises)
 }
 
-export function getProcessor (handlers: Handler<any, any>[], options?: { errorHandler: ErrorHandler | undefined, logger?: Logger } & EventProcessorOptions): Processor<StorageEvents> {
+export function getProcessor (handlers: Handler<any, any>[], options?: { errorHandler?: ErrorHandler, logger?: Logger, processorDeps: EventProcessorOptions }): Processor<StorageEvents> {
   const errHandler = options?.errorHandler || errorHandler
-  return errHandler(processor(handlers, options as EventProcessorOptions), options?.logger || loggingFactory('processor'))
+  return errHandler(processor(handlers, options?.processorDeps), options?.logger || loggingFactory('processor'))
 }
 
 /**

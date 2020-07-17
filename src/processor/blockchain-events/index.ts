@@ -22,7 +22,7 @@ import Agreement from '../../models/agreement.model'
 import type { Handler, Processor } from '../../definitions'
 import type { ProviderManager } from '../../providers'
 
-const HANDLERS: Handler<BlockchainOfferEvents & BlockchainAgreementEvents, BlockchainEventProcessorOptions>[] = [offer, agreement]
+const HANDLERS: Handler<BlockchainAgreementEvents & BlockchainOfferEvents, BlockchainEventProcessorOptions>[] = [offer, agreement]
 
 export class BlockchainEventsProcessor extends EventProcessor {
   private logger: Logger = loggingFactory('processor:blockchain')
@@ -35,7 +35,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     super(offerId, manager, options)
 
     this.eth = ethFactory()
-    const processorOptions = { manager: this.manager, eth: this.eth, errorHandler: this.options?.errorHandler, logger: this.logger }
+    const processorOptions = { processorDeps: { manager: this.manager, eth: this.eth }, errorHandler: this.options?.errorHandler, logger: this.logger }
     this.processor = filterEvents(this.offerId, getProcessor(HANDLERS, processorOptions))
   }
 
@@ -62,7 +62,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
 
     const precacheLogger = loggingFactory('processor:blockchain:precache')
     const _eventsEmitter = this.eventsEmitter
-    const processorOptions = { eth: this.eth, errorHandler: this.options?.errorHandler, logger: precacheLogger }
+    const processorOptions = { processorDeps: { eth: this.eth }, errorHandler: this.options?.errorHandler, logger: precacheLogger }
     const processor = filterEvents(this.offerId, getProcessor(HANDLERS, processorOptions))
 
     // Wait to build up the database with latest data

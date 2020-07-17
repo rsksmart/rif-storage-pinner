@@ -114,7 +114,7 @@ export enum Strategy { Blockchain, Cache }
 /**
  * Interface for more complex handling of events.
  */
-export interface Handler<T extends StorageEvents, O extends EventProcessorOptions> {
+export interface Handler<T, O> {
   events: string[]
   process: (event: T, options?: O) => Promise<void>
 }
@@ -122,21 +122,17 @@ export interface Handler<T extends StorageEvents, O extends EventProcessorOption
 /**
  * Interface for processor.
  */
-export type Processor<T extends StorageEvents> = (event: T) => Promise<void>
+export type Processor<T> = (event: T) => Promise<void>
 
 export interface BaseEventProcessorOptions {
   manager?: ProviderManager
 }
 
-export interface BlockchainEventProcessorOptions extends BaseEventProcessorOptions{
+export interface BlockchainEventProcessorOptions extends BaseEventProcessorOptions {
   eth: Eth
 }
 
-export interface CacheEventProcessorOptions extends BaseEventProcessorOptions {
-  featherClient: any
-}
-
-export type EventProcessorOptions = CacheEventProcessorOptions | BlockchainEventProcessorOptions
+export type EventProcessorOptions = BaseEventProcessorOptions | BlockchainEventProcessorOptions
 
 /**
  * Events interfaces.
@@ -146,9 +142,10 @@ export interface CacheEvent {
   payload: object
 }
 
-export type BlockchainAgreementEvents = NewAgreement & AgreementStopped & AgreementFundsDeposited & AgreementFundsWithdrawn & AgreementFundsPayout
-export type BlockchainOfferEvents = TotalCapacitySet & MessageEmitted
+export type BlockchainAgreementEvents = NewAgreement | AgreementStopped | AgreementFundsDeposited | AgreementFundsWithdrawn | AgreementFundsPayout
+export type BlockchainOfferEvents = TotalCapacitySet | MessageEmitted
 
+export type BlockchainEventsWithProvider = BlockchainOfferEvents | NewAgreement
 export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEvents
 
 export type StorageEvents = BlockchainEvent | CacheEvent

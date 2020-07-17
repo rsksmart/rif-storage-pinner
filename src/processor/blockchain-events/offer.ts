@@ -59,7 +59,7 @@ const handler: Handler<BlockchainOfferEvents, BlockchainEventProcessorOptions> =
       return Promise.reject(new Error(`Unknown event ${event.event}`))
     }
 
-    return handlers[event.event](event, { store })
+    return handlers[event.event](event as MessageEmitted & TotalCapacitySet, { store })
   }
 }
 
