@@ -1,7 +1,6 @@
 {
   db: 'db.sqlite',
   blockchain: {
-
     // Events that will be listened to
     events: ['TotalCapacitySet', 'MessageEmitted', 'NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
 
@@ -28,5 +27,11 @@
       // If to use polling strategy, if false then listening is used.
       polling: true
     }
+  },
+
+  log: {
+    level: "warn",
+    filter: null,
+    path: null
   }
 }

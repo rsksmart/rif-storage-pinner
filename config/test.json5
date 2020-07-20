@@ -6,7 +6,7 @@
     // Specify behavior of EventsEmitter, that retrieves events from blockchain and pass them onwards for further processing.
     eventsEmitter: {
       // Number of blocks that will be waited before passing an event for further processing.
-      confirmations: 0
+      confirmations: 1
     },
     newBlockEmitter: {
       // Interval in milliseconds, how often is blockchain checked.
@@ -14,8 +14,6 @@
     }
   },
   log: {
-    filter: '*',
-    level: 'info',
-    path: ''
+    level: 'info'
   }
 }

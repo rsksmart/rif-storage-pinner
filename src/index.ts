@@ -7,12 +7,14 @@ import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/c
 
 import { initStore } from './store'
 import { sequelizeFactory } from './sequelize'
-import { ethFactory, getEventsEmitter } from './blockchain/utils'
+import { ethFactory, getEventsEmitter, getNewBlockEmitter } from './blockchain/utils'
 import { loggingFactory } from './logger'
 import { getProcessor, precache } from './processor'
 import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
 import { AppOptions } from './definitions'
+import { collectPinsClosure } from './gc'
+import { errorHandler } from './utils'
 
 export default async (offerId: string, options?: AppOptions): Promise<{ stop: () => void }> => {
   const logger = loggingFactory()
@@ -25,7 +27,7 @@ export default async (offerId: string, options?: AppOptions): Promise<{ stop: ()
       .catch(e => logger.info(e.message))
   }
 
-  const sequelize = await sequelizeFactory(config.get<string>('db'))
+  const sequelize = await sequelizeFactory()
   await initStore(sequelize)
   const store = getObject()
 
@@ -34,7 +36,8 @@ export default async (offerId: string, options?: AppOptions): Promise<{ stop: ()
   manager.register(ipfs)
 
   const eth = ethFactory()
-  const eventEmitter = getEventsEmitter(eth, storageManagerContractAbi.abi as AbiItem[], { contractAddress: options?.contractAddress })
+  const newBlockEmitter = getNewBlockEmitter(eth)
+  const eventEmitter = getEventsEmitter(eth, storageManagerContractAbi.abi as AbiItem[], { newBlockEmitter, contractAddress: options?.contractAddress })
 
   eventEmitter.on('error', (e: Error) => {
     logger.error(`There was unknown error in the blockchain's Events Emitter! ${e}`)
@@ -46,6 +49,9 @@ export default async (offerId: string, options?: AppOptions): Promise<{ stop: ()
   }
 
   eventEmitter.on('newEvent', getProcessor(offerId, eth, manager, { errorHandler: options?.errorHandler }))
+
+  // Pinning Garbage Collecting
+  newBlockEmitter.on('newBlock', errorHandler(collectPinsClosure(manager), loggingFactory('gc')))
 
   return { stop: (): void => eventEmitter.stop() }
 }
