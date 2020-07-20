@@ -41,10 +41,13 @@ export function collectPinsClosure (manager: ProviderManager) {
       }
     })
     for (const agreement of agreementsToUnpins) {
-      logger.info(`Unpinning agreement ${agreement.agreementReference}.`)
-      await manager.unpin(agreement.dataReference)
-
-      agreement.isActive = false
+      if (agreement.hasSufficientFunds) { // Agreement received funds in meanwhile, lets continue!
+        agreement.expiredAtBlockNumber = null
+      } else { // Agreement is still without funds!
+        logger.info(`Unpinning agreement ${agreement.agreementReference}.`)
+        await manager.unpin(agreement.dataReference)
+        agreement.isActive = false
+      }
       await agreement.save()
     }
   }
