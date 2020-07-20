@@ -90,7 +90,7 @@ export class TestingApp {
     // Remove current testing db
     await this.purgeDb()
 
-    // Run Pinning job
+    // Run Pinning service
     await initApp(this.providerAddress, {
       errorHandler: errorHandlerStub,
       contractAddress: this.contract?.options.address

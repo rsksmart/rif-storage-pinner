@@ -8,7 +8,7 @@ import { buildHandler } from '../../utils'
 import Agreement from '../../models/agreement.model'
 import { EventError } from '../../errors'
 
-const logger = loggingFactory('processor:blockchain:agreement')
+const logger = loggingFactory('processor:cache:agreement')
 
 const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
   async NewAgreement (event: CacheEvent, options: BaseEventProcessorOptions): Promise<void> {

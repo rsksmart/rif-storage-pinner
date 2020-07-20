@@ -1,7 +1,6 @@
 import config from 'config'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { getObject } from 'sequelize-store'
 
 import { AppOptions, Logger, Strategy } from './definitions'
 import { loggingFactory } from './logger'
@@ -69,11 +68,6 @@ export default class PinningService {
     await PinningService.initDb()
     await this.initProviderManger()
     await this.eventProcessor.initialize()
-
-    // If not set then it is first time running ==> precache
-    if (!getObject().lastFetchedBlockNumber && !this.options?.forcePrecache) {
-      await this.eventProcessor.precache()
-    }
   }
 
   async start (): Promise<void> {
