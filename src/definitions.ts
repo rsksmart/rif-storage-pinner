@@ -142,7 +142,7 @@ export type GetProcessorOptions = { errorHandler?: ErrorHandler, errorLogger?: L
  */
 export interface CacheEvent {
   event: string
-  payload: object
+  payload: Record<string, any>
 }
 
 export type BlockchainAgreementEvents = NewAgreement | AgreementStopped | AgreementFundsDeposited | AgreementFundsWithdrawn | AgreementFundsPayout
