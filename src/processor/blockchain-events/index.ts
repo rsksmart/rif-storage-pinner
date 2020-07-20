@@ -6,11 +6,14 @@ import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/c
 import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
-import { filterBlockchainEvents, getProcessor } from '../../utils'
+import { filterBlockchainEvents, getProcessor, isEventWithProvider } from '../../utils'
 import { BaseEventsEmitter } from '../../blockchain/events'
-import { ethFactory, getEventsEmitter } from '../../blockchain/utils'
+import { ethFactory, getEventsEmitter, getNewBlockEmitter } from '../../blockchain/utils'
 import { loggingFactory } from '../../logger'
 import Agreement from '../../models/agreement.model'
+import { BlockchainAgreementEvents, BlockchainEventsWithProvider } from '../../definitions'
+import { collectPinsClosure } from '../../gc'
+import { AutoStartStopEventEmitter } from '../../blockchain/new-block-emitters'
 
 import type {
   AppOptions,
@@ -22,13 +25,15 @@ import type {
 } from '../../definitions'
 import type { ProviderManager } from '../../providers'
 
+const logger: Logger = loggingFactory('processor:blockchain')
+
 export class BlockchainEventsProcessor extends EventProcessor {
   private readonly handlers = [offer, agreement] as EventsHandler<BlockchainEvent, BlockchainEventProcessorOptions>[]
-  private readonly logger: Logger = loggingFactory('processor:blockchain')
-
   private readonly processor: Processor<BlockchainEvent>
+
   private readonly eth: Eth
   private eventsEmitter: BaseEventsEmitter | undefined
+  private newBlockEmitter: AutoStartStopEventEmitter | undefined
 
   constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
     super(offerId, manager, options)
@@ -36,16 +41,37 @@ export class BlockchainEventsProcessor extends EventProcessor {
     this.eth = ethFactory()
     const processorOptions = {
       processorDeps: { manager: this.manager, eth: this.eth },
-      errorHandler: this.options?.errorHandler,
-      errorLogger: this.logger
+      errorHandler: this.errorHandler,
+      errorLogger: logger
     }
-    this.processor = filterBlockchainEvents(this.offerId, getProcessor(this.handlers, processorOptions))
+    this.processor = this.filterEvents(this.offerId, getProcessor(this.handlers, processorOptions))
+  }
+
+  filterEvents (offerId: string, callback: Processor<BlockchainEvent>): Processor<BlockchainEvent> {
+    return async (event: BlockchainEvent): Promise<void> => {
+      logger.debug(`Got ${event.event} for provider ${(event as BlockchainEventsWithProvider).returnValues.provider}`)
+
+      if (isEventWithProvider(event) && event.returnValues.provider === offerId) {
+        return callback(event)
+      }
+
+      if (event.event.startsWith('Agreement') && await Agreement.findByPk((event as BlockchainAgreementEvents).returnValues.agreementReference)) {
+        return callback(event)
+      }
+
+      return Promise.resolve()
+    }
   }
 
   async initialize (): Promise<void> {
     if (this.initialized) throw new Error('Already Initialized')
 
-    this.eventsEmitter = getEventsEmitter(this.eth, storageManagerContractAbi.abi as AbiItem[], { contractAddress: this.options?.contractAddress })
+    this.newBlockEmitter = getNewBlockEmitter(this.eth)
+    this.eventsEmitter = getEventsEmitter(
+      this.eth,
+      storageManagerContractAbi.abi as AbiItem[],
+      { newBlockEmitter: this.newBlockEmitter, contractAddress: this.options?.contractAddress }
+    )
     this.initialized = true
     return await Promise.resolve()
   }
@@ -54,10 +80,14 @@ export class BlockchainEventsProcessor extends EventProcessor {
     if (!this.initialized) await this.initialize()
 
     this.eventsEmitter?.on('error', (e: Error) => {
-      this.logger.error(`There was unknown error in the blockchain's Events Emitter! ${e}`)
+      logger.error(`There was unknown error in the blockchain's Events Emitter! ${e}`)
     })
 
+    // Listen on Offer events
     this.eventsEmitter?.on('newEvent', this.processor)
+
+    // Pinning Garbage Collecting
+    this.newBlockEmitter?.on('newBlock', this.errorHandler(collectPinsClosure(this.manager), loggingFactory('gc')))
   }
 
   async precache (): Promise<void> {
@@ -100,8 +130,9 @@ export class BlockchainEventsProcessor extends EventProcessor {
   }
 
   async stop (): Promise<void> {
-    if (!this.eventsEmitter) throw new Error('No processor running')
-    this.eventsEmitter.stop()
+    if (!this.eventsEmitter && !this.eventsEmitter) throw new Error('No process running')
+    this.eventsEmitter?.stop()
+    this.newBlockEmitter?.stop()
     return await Promise.resolve()
   }
 }

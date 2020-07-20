@@ -1,5 +1,6 @@
-import { AppOptions } from '../definitions'
+import { AppOptions, ErrorHandler, Processor } from '../definitions'
 import { ProviderManager } from '../providers'
+import { errorHandler } from '../utils'
 
 interface EventProcessorI {
     readonly offerId: string
@@ -18,6 +19,11 @@ export abstract class EventProcessor implements EventProcessorI {
       this.options = options
     }
 
+    get errorHandler (): ErrorHandler {
+      return this.options?.errorHandler ?? errorHandler
+    }
+
+    abstract filterEvents (offerId: string, callback: Processor<any>): Processor<any>
     abstract async precache (): Promise<void>
     abstract async initialize (): Promise<void>
     abstract async run (): Promise<void>

@@ -17,33 +17,44 @@ import { loggingFactory } from '../../logger'
 import type { EventsHandler, Processor } from '../../definitions'
 import type { ProviderManager } from '../../providers'
 
+const logger: Logger = loggingFactory('processor:blockchain')
+
 export class CacheEventsProcessor extends EventProcessor {
     private readonly handlers = [offer, agreement] as EventsHandler<CacheEvent, BaseEventProcessorOptions>[]
-    private readonly logger: Logger = loggingFactory('processor:blockchain')
-    private readonly client: feathers.Application
     private readonly processor: Processor<CacheEvent>
+    private services: Record<string, feathers.Service<any>> = {}
 
     constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
       super(offerId, manager, options)
 
-      this.client = feathers()
-
       const processorOptions = {
         processorDeps: { manager: this.manager },
-        errorHandler: this.options?.errorHandler,
-        errorLogger: this.logger
+        errorHandler: this.errorHandler,
+        errorLogger: logger
       }
-      // TODO do add filtering for offer
-      this.processor = getProcessor<CacheEvent, BaseEventProcessorOptions>(this.handlers, processorOptions)
+      this.processor = this.filterEvents(this.offerId, getProcessor<CacheEvent, BaseEventProcessorOptions>(this.handlers, processorOptions))
+    }
+
+    filterEvents (offerId: string, callback: Processor<CacheEvent>): Processor<CacheEvent> {
+      return async (event: CacheEvent) => {
+        logger.info(`FilterEvents: Receive event ${event.event} with payload `, event.payload)
+
+        if (event.payload.address === offerId || event.payload.offerId === offerId) await callback(event)
+      }
     }
 
     async initialize (): Promise<void> {
       if (this.initialized) throw new Error('Already Initialized')
 
       // TODO add cache to config
+      const client = feathers()
       const socket = io('http://localhost:3030')
-      this.client.configure(socketio(socket))
-      this.logger.info('in connection to cache')
+      client.configure(socketio(socket))
+      logger.info('in connection to cache')
+      this.services = {
+        offer: client.service('/storage/v0/offers'),
+        agreement: client.service('/storage/v0/agreements')
+      }
 
       this.initialized = true
       return await Promise.resolve()
@@ -51,11 +62,13 @@ export class CacheEventsProcessor extends EventProcessor {
 
     async run (): Promise<void> {
       if (!this.initialized) await this.initialize()
-
-      this.client.service('/storage/v0/offers').on('created', this.processor)
-      this.client.service('/storage/v0/offers').on('updated', this.processor)
-      this.client.service('/storage/v0/agreements').on('created', this.processor)
-      this.client.service('/storage/v0/agreements').on('updated', this.processor)
+      // Subscribe for evenets
+      Object
+        .values(this.services)
+        .forEach(service => {
+          service.on('created', this.processor)
+          service.on('updated', this.processor)
+        })
     }
 
     async precache (): Promise<void> {
@@ -66,11 +79,14 @@ export class CacheEventsProcessor extends EventProcessor {
     }
 
     async stop (): Promise<void> {
-      this.client.service('/storage/v0/offers').removeListener('created')
-      this.client.service('/storage/v0/offers').removeListener('updated')
-      this.client.service('/storage/v0/agreements').removeListener('created')
-      this.client.service('/storage/v0/agreements').removeListener('updated')
       // Unsubscribe from events
+      Object
+        .values(this.services)
+        .forEach(service => {
+          service.removeListener('created', this.processor)
+          service.removeListener('updated', this.processor)
+        })
+
       return await Promise.resolve()
     }
 }

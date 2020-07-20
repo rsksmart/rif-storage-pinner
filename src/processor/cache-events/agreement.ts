@@ -64,7 +64,7 @@ const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
     logger.info(`${availableFunds} was withdrawn from funds of Agreement ${id}.`)
   },
 
-  async AgreementFundsPayout (event: CacheEvent, options: BaseEventProcessorOptions): Promise<void> {
+  async AgreementFundsPayout (event: CacheEvent): Promise<void> {
     const { agreementReference: id, availableFunds, lastPayout } = event.payload
     const agreement = await Agreement.findByPk(id)
 

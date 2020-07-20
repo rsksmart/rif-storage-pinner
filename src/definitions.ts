@@ -127,7 +127,7 @@ export type HandlersObject<T extends StorageEvents, O extends EventProcessorOpti
 /**
  * Interfaces for Processor.
  */
-export type Processor<T extends StorageEvents> = (event: T) => Promise<void>
+export type Processor<T> = (event: T) => Promise<void>
 
 export type BaseEventProcessorOptions = { manager?: ProviderManager }
 
