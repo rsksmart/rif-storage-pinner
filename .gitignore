@@ -34,3 +34,5 @@ node_modules
 # IPFS repos for development
 .repos/*
 !.repos/init.sh
+
+db_test.sqlite

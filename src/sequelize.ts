@@ -2,6 +2,7 @@ import { Sequelize, SequelizeOptions } from 'sequelize-typescript'
 import path from 'path'
 import sqlFormatter from 'sql-formatter'
 import { promises as fs } from 'fs'
+import config from 'config'
 
 import { loggingFactory } from './logger'
 
@@ -17,7 +18,9 @@ function formatLogs (msg: string): string {
   return `Executing SQL (${result[1]}):\n${sqlFormatter.format(result[2])}`
 }
 
-export async function sequelizeFactory (dbPath: string): Promise<Sequelize> {
+export async function sequelizeFactory (dbPath?: string): Promise<Sequelize> {
+  dbPath = dbPath ?? config.get<string>('db')
+
   await fs.mkdir(path.dirname(dbPath), { recursive: true })
   const dbSettings: SequelizeOptions = {
     models: [path.join(__dirname, '/**/*.model.+(ts|js)')],

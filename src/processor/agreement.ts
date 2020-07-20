@@ -33,6 +33,7 @@ const handlers = {
       billingPeriod: event.returnValues.billingPeriod,
       billingPrice: event.returnValues.billingPrice,
       availableFunds: event.returnValues.availableFunds,
+      expiredAtBlockNumber: null, // If not new, then lets reset the expiredAt column
       lastPayout: await getBlockDate(eth, event.blockNumber)
     }
 
