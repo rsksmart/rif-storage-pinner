@@ -7,6 +7,14 @@ import initApp from './'
 import { Config } from './definitions'
 
 export default class PinningServiceCommand extends Command {
+  static description = `
+Pinning Service that is part of RIF Storage.
+
+This service is needed to provide your storage space as part of RIF Marketplace. It listens on events from blockchain
+and when there is new Agreement for specified Offer it will pin the content to your configured IPFS node.
+`
+  static examples = ['rif-pinning --offerId 0x123456789 --provider \'ws://localhost:8546\' --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet']
+
   static flags = {
     offerId: flags.string({
       char: 'o',
@@ -26,7 +34,7 @@ export default class PinningServiceCommand extends Command {
       env: 'RIFS_PROVIDER'
     }),
     'remove-cache': flags.boolean({
-      description: 'removes the local database'
+      description: 'removes the local database prior running the service'
     }),
     config: flags.string({
       description: 'path to JSON config file to load',
@@ -53,7 +61,6 @@ export default class PinningServiceCommand extends Command {
         description: 'log to file, default is STDOUT'
       }
     )
-    // TODO: Add --startingBlock flag which will tells from which block to precache from
   }
 
   private configSetup (flags: OutputFlags<typeof PinningServiceCommand.flags>): void {
