@@ -16,6 +16,8 @@ import { loggingFactory } from '../../logger'
 
 import type { EventsHandler, Processor } from '../../definitions'
 import type { ProviderManager } from '../../providers'
+import { getObject } from 'sequelize-store'
+import Agreement from '../../models/agreement.model'
 
 const logger: Logger = loggingFactory('processor:blockchain')
 
@@ -37,8 +39,6 @@ export class CacheEventsProcessor extends EventProcessor {
 
     filterEvents (offerId: string, callback: Processor<CacheEvent>): Processor<CacheEvent> {
       return async (event: CacheEvent) => {
-        logger.info(`FilterEvents: Receive event ${event.event} with payload `, event.payload)
-
         if (event.payload.address === offerId || event.payload.offerId === offerId) await callback(event)
       }
     }
@@ -72,10 +72,27 @@ export class CacheEventsProcessor extends EventProcessor {
     }
 
     async precache (): Promise<void> {
+      const precacheLogger = loggingFactory('blockchain:event-processor:precache')
+
       if (!this.initialized) await this.initialize()
 
-      const precacheLogger = loggingFactory('blockchain:event-processor:precache')
-      // Cache logic here
+      const [offer] = await this.services.offer.find({ query: { address: this.offerId }, paginate: false })
+
+      if (!offer) throw new Error('Offer not exist')
+      const store = getObject()
+      store.peerId = offer?.peerId
+      store.totalCapacity = offer?.totalCapacity
+
+      const agreements = await this.services.agreement.find({ query: { offerId: this.offerId }, paginate: false })
+      for (const agreement of agreements as Array<Agreement>) {
+        // Pin/UnPin agreements
+        if (agreement.isActive) {
+          await this.manager.pin(agreement.dataReference, agreement.size + 1).catch(err => precacheLogger.debug(err))
+        } else {
+          await this.manager.unpin(agreement.dataReference).catch(err => precacheLogger.debug(err))
+        }
+        await Agreement.upsert(agreement)
+      }
     }
 
     async stop (): Promise<void> {
