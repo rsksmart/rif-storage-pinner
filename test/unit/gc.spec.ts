@@ -20,9 +20,13 @@ const expect = chai.expect
 
 describe('Pinning GC', function () {
   let sequelize: Sequelize
+  let originalConfirmations: number
 
   before(async (): Promise<void> => {
     sequelize = await sequelizeFactory()
+
+    // @ts-ignore
+    originalConfirmations = config.blockchain.eventsEmitter.confirmations
 
     // @ts-ignore
     config.blockchain.eventsEmitter.confirmations = 5
@@ -30,7 +34,7 @@ describe('Pinning GC', function () {
 
   after(() => {
     // @ts-ignore
-    config.blockchain.eventsEmitter.confirmations = 0
+    config.blockchain.eventsEmitter.confirmations = originalConfirmations
   })
 
   beforeEach(async () => {
@@ -42,6 +46,7 @@ describe('Pinning GC', function () {
     await Agreement.create({
       agreementReference: '222',
       dataReference: '222',
+      consumer: '0x123',
       size: 100,
       billingPeriod: 10,
       billingPrice: 10,
@@ -54,6 +59,7 @@ describe('Pinning GC', function () {
     await Agreement.create({
       agreementReference: '321',
       dataReference: '321',
+      consumer: '0x123',
       size: 100,
       billingPeriod: 10,
       billingPrice: 10,
@@ -65,6 +71,7 @@ describe('Pinning GC', function () {
     await Agreement.create({
       agreementReference: '123',
       dataReference: '123',
+      consumer: '0x123',
       size: 100,
       billingPeriod: 10,
       billingPrice: 10,
@@ -91,11 +98,40 @@ describe('Pinning GC', function () {
     manager.didNotReceive().unpin(Arg.all())
   })
 
+  it('should unmark Agreement when it received funds', async () => {
+    // Already marked agreement
+    await Agreement.create({
+      agreementReference: '222',
+      dataReference: '222',
+      consumer: '0x123',
+      size: 100,
+      billingPeriod: 10,
+      billingPrice: 10,
+      availableFunds: 2500, // Got marked, but then received more funds
+      lastPayout: Date.now() - (11 * 1000),
+      expiredAtBlockNumber: 9
+    })
+
+    const block = Substitute.for<BlockHeader>()
+    block.number.returns!(15) // So 5 confirmations is passed
+
+    const manager = Substitute.for<ProviderManager>()
+    await collectPinsClosure(manager)(block)
+
+    const markedAgreements = await Agreement.findAll()
+    expect(markedAgreements.length).to.eql(1)
+    expect(markedAgreements[0].dataReference).to.eql('222')
+    expect(markedAgreements[0].expiredAtBlockNumber).to.be.null()
+    expect(markedAgreements[0].isActive).to.be.true()
+    manager.didNotReceive().unpin(Arg.all())
+  })
+
   it('should unpin marked Agreements', async () => {
     await Agreement.bulkCreate([
       { // Unpinned
         agreementReference: '111',
         dataReference: '111',
+        consumer: '0x123',
         size: 100,
         billingPeriod: 10,
         billingPrice: 10,
@@ -106,6 +142,7 @@ describe('Pinning GC', function () {
       { // Unpinned
         agreementReference: '222',
         dataReference: '222',
+        consumer: '0x123',
         size: 100,
         billingPeriod: 10,
         billingPrice: 10,
@@ -116,6 +153,7 @@ describe('Pinning GC', function () {
       { // Not unpinned
         agreementReference: '333',
         dataReference: '333',
+        consumer: '0x123',
         size: 100,
         billingPeriod: 10,
         billingPrice: 10,

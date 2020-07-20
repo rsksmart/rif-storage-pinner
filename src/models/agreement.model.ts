@@ -12,7 +12,7 @@ export default class Agreement extends Model {
   @Column({ type: DataType.STRING(), allowNull: false })
   dataReference!: string
 
-  @Column({ type: DataType.STRING(64) })
+  @Column({ type: DataType.STRING(64), allowNull: false })
   consumer!: string
 
   @Column({ allowNull: false })
@@ -33,11 +33,11 @@ export default class Agreement extends Model {
   @Column({ allowNull: false })
   availableFunds!: number
 
-  @Column
+  @Column({ allowNull: false })
   lastPayout!: Date
 
-  @Column
-  expiredAtBlockNumber!: number
+  @Column({ type: DataType.INTEGER() })
+  expiredAtBlockNumber!: number | null
 
   @Column(DataType.VIRTUAL)
   get numberOfPrepaidPeriods () {
