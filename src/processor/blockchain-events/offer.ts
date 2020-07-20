@@ -38,7 +38,7 @@ const handlers: HandlersObject<BlockchainOfferEvents, BlockchainEventProcessorOp
     if (flag === '01') { // PeerId definition
       store.peerId = decodeByteArray([`0x${firstMsg.substring(4)}`, ...restMsg])
 
-      logger.info(`PeerId ${store} defined`)
+      logger.info(`PeerId ${store.peerId} defined`)
     } else {
       logger.error(`Unknown message flag ${flag}!`)
     }
