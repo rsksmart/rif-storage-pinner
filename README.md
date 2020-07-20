@@ -38,11 +38,12 @@ $ rif-pinning --offerId 0x123456789 --provider 'ws://localhost:8546' --ipfs '/ip
 
 This will:
  - start the pinning service
- - listens only for events for the offer ID `0x123456789`
+ - listens only for events for the Offer ID `0x123456789`
  - use blockchain node for listening on events at `ws://localhost:8546` that is connected to testnet network
  - thanks to `--network testnet` will use predefined deployed smart-contracts on testnet
  - connects to your locally running IPFS node at `/ip4/127.0.0.1/tcp/5001`
 
+<!-- commands -->
 ```
 USAGE
   $ rif-pinning --offerId=OFFER_ID
@@ -51,6 +52,7 @@ OPTIONS
   -n, --network=testnet|mainnet        specifies to which network is the provider connected
   -o, --offerId=offerId                (required) ID of Offer to which should the service listen to
   -p, --provider=provider              URL to blockchain node provider
+  -p, --config=config-path             path to custom config
 
   --ipfs=ipfs                          specifies a connection URL to IPFS node. Default is go-ipfs
                                        listening configuration.
@@ -61,8 +63,23 @@ OPTIONS
 
   --log-path=log-path                  log to file, default is STDOUT
 
-  --remove-cache                       removes the local database
+  --remove-cache                       removes the local database prior running the service
 ```
+<!-- commandsstop -->
+
+### Environmental variables
+
+Pinning service supports following environmental variables:
+
+ - `RIFS_OFFER` (`string`) - Specifies Offer Id which the Pinning service should listen on. Same like `--offerId` flag.
+ - `RIFS_NETWORK` (`testnet|mainnet`) - Same like `--network` flag.
+ - `RIFS_PROVIDER` (`string`) - Same like `--provider` flag.
+ - `RIFS_CONFIG` (`string`) - Same like `--config` flag.
+ - `RIFS_CONTRACT_ADDR` (`string`) - Specifies address of smart contract to listen the events from. Mainly for development as this is otherwise configured using `--network` flag.
+ - `RIFS_IPFS` (`string`) - Same like `--ipfs` flag.
+ - `LOG_LEVEL` (`string`) - Same like `--log` flag.
+ - `LOG_FILTER` (`string`) - Same like `--log-filter` flag.
+ - `LOG_PATH` (`string`) - Same like `--log-path` flag.
 
 ## Contribute
 
@@ -79,7 +96,7 @@ There are some ways you can make this module better:
  * Ganache
  * Node & NPM
 
-Please on how to setup the development environment see [Development guide](./DEVELOPMENT.md)
+Please on how to set up the development environment see [Development guide](./DEVELOPMENT.md)
 
 #### Tips
 
