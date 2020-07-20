@@ -34,7 +34,7 @@
     "compile:watch": "tasegir compile -- --watch",
     "docs": "typedoc --mode modules --excludeNotExported --readme none --excludePrivate  --tsconfig ./node_modules/tasegir/src/config/tsconfig.json --exclude 'src/providers/*,test/**/*' --out docs src",
     "exec": "tasegir run",
-    "init": "./.repos/init.sh",
+    "init": "./init.sh",
     "ipfs:consumer": "cross-env IPFS_PATH='./.repos/consumer' ipfs",
     "ipfs:provider": "cross-env IPFS_PATH='./.repos/provider' ipfs",
     "lint": "tasegir lint",
