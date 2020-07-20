@@ -62,6 +62,9 @@ export class CacheEventsProcessor extends EventProcessor {
 
     async run (): Promise<void> {
       if (!this.initialized) await this.initialize()
+
+      // Run precache
+      await this.precache()
       // Subscribe for evenets
       Object
         .values(this.services)
@@ -86,7 +89,7 @@ export class CacheEventsProcessor extends EventProcessor {
       const agreements = await this.services.agreement.find({ query: { offerId: this.offerId }, paginate: false })
       for (const agreement of agreements as Array<Agreement>) {
         // Pin/UnPin agreements
-        if (agreement.isActive) {
+        if (agreement.isActive && agreement.hasSufficientFunds) {
           await this.manager.pin(agreement.dataReference, agreement.size + 1).catch(err => precacheLogger.debug(err))
         } else {
           await this.manager.unpin(agreement.dataReference).catch(err => precacheLogger.debug(err))

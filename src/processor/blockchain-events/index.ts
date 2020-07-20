@@ -1,5 +1,6 @@
 import type { Eth } from 'web3-eth'
 import { AbiItem } from 'web3-utils'
+import { getObject } from 'sequelize-store'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
@@ -79,6 +80,11 @@ export class BlockchainEventsProcessor extends EventProcessor {
   async run (): Promise<void> {
     if (!this.initialized) await this.initialize()
 
+    // If not set then it is first time running ==> precache
+    if (!getObject().lastFetchedBlockNumber && !this.options?.forcePrecache) {
+      await this.precache()
+    }
+
     this.eventsEmitter?.on('error', (e: Error) => {
       logger.error(`There was unknown error in the blockchain's Events Emitter! ${e}`)
     })
@@ -121,7 +127,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     })
 
     // Now lets pin every Agreement that has funds
-    precacheLogger.verbose('Pinning valid Agreements')
+    precacheLogger.info('Pinning valid Agreements')
     for (const agreement of await Agreement.findAll()) {
       if (agreement.hasSufficientFunds) {
         await this.manager.pin(agreement.dataReference, agreement.size)

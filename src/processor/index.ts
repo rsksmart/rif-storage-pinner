@@ -24,7 +24,6 @@ export abstract class EventProcessor implements EventProcessorI {
     }
 
     abstract filterEvents (offerId: string, callback: Processor<any>): Processor<any>
-    abstract async precache (): Promise<void>
     abstract async initialize (): Promise<void>
     abstract async run (): Promise<void>
     async abstract stop (): Promise<void>
