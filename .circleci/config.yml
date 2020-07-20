@@ -107,6 +107,8 @@ jobs:
       - image: circleci/node:<< parameters.version >>
       - image: trufflesuite/ganache-cli
         command: ganache-cli -i 8545 -e 100000000000 -l 4700038
+    environment:
+      ALLOW_CONFIG_MUTATIONS: true
     steps:
       - checkout
       - when:
@@ -130,8 +132,11 @@ jobs:
       - spawn-ipfs-nodes
       - install-sqlite
       - run:
-          name: "Node tests"
-          command: npx tasegir test --target node --reporter lcovonly -- --bail
+          name: "Unit tests"
+          command: npx tasegir test --target node --files ./test/unit/*.spec.ts --reporter lcovonly -- --bail
+      - run:
+          name: "Integration tests"
+          command: npx tasegir test --target node --files ./test/integration/*.spec.ts --reporter lcovonly -- --bail
 
 
   # Run test on top of PSK node
@@ -170,9 +175,11 @@ jobs:
       - install-sqlite
       - run-rsk
       - run:
-          name: "Node tests"
-          command: npx tasegir test --target node --reporter lcovonly -- --bail
-
+          name: "Unit tests"
+          command: npx tasegir test --target node --files ./test/unit/*.spec.ts --reporter lcovonly -- --bail
+      - run:
+          name: "Integration tests"
+          command: npx tasegir test --target node --files ./test/integration/*.spec.ts --reporter lcovonly -- --bail
 
 workflows:
   test:
