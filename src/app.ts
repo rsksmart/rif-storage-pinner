@@ -13,9 +13,7 @@ import { initStore } from './store'
 import { sequelizeFactory } from './sequelize'
 
 const getStrategy = (): Strategy => {
-  // TODO get strategy from config
-  // if (config.has('strategy'))
-  return Strategy.Blockchain
+  return config.has('strategy') ? config.get('strategy') : Strategy.Blockchain
 }
 
 export default class PinningService {

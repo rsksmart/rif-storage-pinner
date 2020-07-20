@@ -1,5 +1,6 @@
 {
   db: 'db.sqlite',
+  strategy: 'blockchain',
   ipfs: {
     clientOptions: {
       // The default value for go-ipfs

@@ -1,3 +1,4 @@
+import config from 'config'
 import io from 'socket.io-client'
 import feathers from '@feathersjs/feathers'
 import socketio from '@feathersjs/socketio-client'
@@ -21,6 +22,7 @@ import Agreement from '../../models/agreement.model'
 
 const logger: Logger = loggingFactory('processor:cache')
 
+// TODO GC using Cache service
 export class CacheEventsProcessor extends EventProcessor {
     private readonly handlers = [offer, agreement] as EventsHandler<CacheEvent, BaseEventProcessorOptions>[]
     private readonly processor: Processor<CacheEvent>
@@ -46,11 +48,11 @@ export class CacheEventsProcessor extends EventProcessor {
     async initialize (): Promise<void> {
       if (this.initialized) throw new Error('Already Initialized')
 
-      // TODO add cache to config
+      // Connect to cache service
       const client = feathers()
-      const socket = io('http://localhost:3030')
+      const socket = io(config.get('cache.provider'))
       client.configure(socketio(socket))
-      logger.info('in connection to cache')
+
       this.services = {
         offer: client.service('/storage/v0/offers'),
         agreement: client.service('/storage/v0/agreements')
@@ -65,7 +67,8 @@ export class CacheEventsProcessor extends EventProcessor {
 
       // Run precache
       await this.precache()
-      // Subscribe for evenets
+
+      // Subscribe for events
       Object
         .values(this.services)
         .forEach(service => {
