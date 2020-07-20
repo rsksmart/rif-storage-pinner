@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-path=$(dirname "$0")
+path="$(dirname "$0")/.repos"
+
+mkdir -p $path
 
 export IPFS_PATH="$path/consumer"
 ipfs init

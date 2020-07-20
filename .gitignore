@@ -32,7 +32,6 @@ config/local.json5
 node_modules
 
 # IPFS repos for development
-.repos/*
-!.repos/init.sh
+.repos
 
 db_test.sqlite
