@@ -35,7 +35,7 @@ describe('Pinning service', function () {
 
   before(async () => {
     // @ts-ignore
-    config.strategy = Strategy.Cache
+    config.strategy = Strategy.Blockchain
     app = await TestingApp.getApp()
   })
   after(async () => await app.stop())
