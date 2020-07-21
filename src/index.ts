@@ -21,13 +21,17 @@ export default async (offerId: string, options?: AppOptions): Promise<{ stop: ()
 
   if (!offerId) throw new Error('Offer id is required')
 
+  // dataDir is set when entry point is CLI, for testing we have also the CWD option.
+  const dbPath = path.join(options?.dataDir ?? process.cwd(), config.get<string>('db'))
+  logger.verbose(`Using database path ${dbPath}`)
+
   if (options?.removeCache) {
     await fs
-      .unlink(path.join(process.cwd(), config.get<string>('db')))
+      .unlink(dbPath)
       .catch(e => logger.info(e.message))
   }
 
-  const sequelize = await sequelizeFactory()
+  const sequelize = await sequelizeFactory(dbPath)
   await initStore(sequelize)
   const store = getObject()
 
