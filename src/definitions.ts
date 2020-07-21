@@ -87,6 +87,15 @@ export interface Config {
     newBlockEmitter?: NewBlockEmitterOptions
   }
 
+  cache?: {
+    // Offer service path
+    offer?: string
+    // Agreement service path
+    agreement?: string
+    // Cache service url
+    provider?: string
+  }
+
   ipfs?: {
     clientOptions?: IpfsOptions
     sizeFetchTimeout?: number | string

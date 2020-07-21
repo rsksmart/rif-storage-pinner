@@ -1,30 +1,14 @@
 import chai from 'chai'
 import dirtyChai from 'dirty-chai'
-import { CID, IpfsClient } from 'ipfs-http-client'
+import config from 'config'
 
-import { TestingApp, asyncIterableToArray, sleep, encodeHash, errorSpy } from '../utils'
+import { TestingApp, sleep, encodeHash, errorSpy, File, uploadRandomData, isPinned } from '../utils'
 import { loggingFactory } from '../../src/logger'
+import { Strategy } from '../../src/definitions'
 
 chai.use(dirtyChai)
-const logger = loggingFactory('test:pinning')
+const logger = loggingFactory('test:pinning:blockchain')
 const expect = chai.expect
-
-interface File {
-  fileHash: string
-  size: number
-  cid: CID
-  cidString: string
-}
-
-const isPinned = async (ipfs: IpfsClient, cid: CID): Promise<boolean> => {
-  try {
-    const [file] = await asyncIterableToArray(ipfs.pin.ls(cid))
-    return file.cid.toString() === cid.toString()
-  } catch (e) {
-    if (e.message === `path '${cid}' is not pinned`) return false
-    throw e
-  }
-}
 
 async function createAgreement (app: TestingApp, file: File, billingPeriod: number, money: number, size?: number): Promise<string> {
   const encodedFileHash = encodeHash(file.fileHash)
@@ -45,31 +29,19 @@ async function createAgreement (app: TestingApp, file: File, billingPeriod: numb
   return receipt.events.NewAgreement.returnValues.agreementReference
 }
 
-const uploadRandomData = async (ipfs: IpfsClient): Promise<File> => {
-  const [file] = await asyncIterableToArray(ipfs.add([
-    {
-      path: `${Math.random().toString(36).substring(7)}.txt`,
-      content: `Nice to be on IPFS ${Math.random().toString(36).substring(7)}`
-    }
-  ]))
-  return {
-    ...file,
-    fileHash: `/ipfs/${file.cid.toString()}`,
-    cidString: file.cid.toString()
-  }
-}
-
 describe('Pinning service', function () {
   this.timeout(100000)
   let app: TestingApp
 
   before(async () => {
+    // @ts-ignore
+    config.strategy = Strategy.Cache
     app = await TestingApp.getApp()
   })
   after(async () => await app.stop())
 
   it('should pin hash on NewAgreement', async () => {
-    const file = await uploadRandomData(app.ipfsConsumer!!)
+    const file = await uploadRandomData(app.ipfsConsumer!)
     // Check if not pinned
     expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 

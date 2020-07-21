@@ -34,19 +34,22 @@ export default class PinningService {
     if (!offerId) throw new Error('Offer id is required')
 
     this.strategy = options?.strategy ?? getStrategy()
-    this.logger = loggingFactory()
+    this.logger = loggingFactory('pinning-service')
     this.manager = new ProviderManager()
     this.offerId = offerId
     this.options = options
 
     switch (this.strategy) {
       case Strategy.Blockchain:
+        this.logger.info('Create BlockchainEventsProcessor')
         this.eventProcessor = new BlockchainEventsProcessor(offerId, this.manager, options)
         break
       case Strategy.Cache:
+        this.logger.info('Create CacheEventsProcessor')
         this.eventProcessor = new CacheEventsProcessor(offerId, this.manager, options)
         break
       default:
+        this.logger.info('Create default(BlockchainEventsProcessor)')
         this.eventProcessor = new BlockchainEventsProcessor(offerId, this.manager, options)
     }
   }
@@ -64,8 +67,11 @@ export default class PinningService {
     }
 
     await PinningService.initDb()
+    this.logger.info('DB initialized')
     await this.initProviderManger()
+    this.logger.info('IPFS provider initialized')
     await this.eventProcessor.initialize()
+    this.logger.info('Event processor initialized')
   }
 
   async start (): Promise<void> {

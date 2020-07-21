@@ -47,6 +47,7 @@ export class CacheEventsProcessor extends EventProcessor {
 
     async initialize (): Promise<void> {
       if (this.initialized) throw new Error('Already Initialized')
+      logger.info('Connecting websocket to ' + config.get('cache.provider'))
 
       // Connect to cache service
       const client = feathers()
@@ -75,6 +76,7 @@ export class CacheEventsProcessor extends EventProcessor {
           service.on('created', this.processor)
           service.on('updated', this.processor)
         })
+      logger.info('Subscribed for events')
     }
 
     async precache (): Promise<void> {
@@ -82,7 +84,7 @@ export class CacheEventsProcessor extends EventProcessor {
 
       if (!this.initialized) await this.initialize()
 
-      const [offer] = await this.services.offer.find({ query: { address: this.offerId }, paginate: false })
+      const offer = await this.services.offer.get(this.offerId)
 
       if (!offer) throw new Error('Offer not exist')
       const store = getObject()
@@ -95,7 +97,7 @@ export class CacheEventsProcessor extends EventProcessor {
 
         // Pin agreements
         if (agreement.isActive && agreement.hasSufficientFunds) {
-          await this.manager.pin(agreement.dataReference, agreement.size + 1).catch(err => precacheLogger.debug(err))
+          await this.manager.pin(agreement.dataReference, agreement.size).catch(err => precacheLogger.debug(err))
         }
         await Agreement.upsert(agreement.toJSON())
       }
