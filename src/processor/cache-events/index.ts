@@ -54,8 +54,8 @@ export class CacheEventsProcessor extends EventProcessor {
       client.configure(socketio(socket))
 
       this.services = {
-        offer: client.service('/storage/v0/offers'),
-        agreement: client.service('/storage/v0/agreements')
+        offer: client.service(config.get<string>('cache.offers')),
+        agreement: client.service(config.get<string>('cache.agreements'))
       }
 
       this.initialized = true

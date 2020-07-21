@@ -11,7 +11,7 @@ import type { HttpProvider } from 'web3-core'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 import initApp from '../src'
-import { Logger } from '../src/definitions'
+import { Logger, Strategy } from '../src/definitions'
 
 const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 
@@ -60,8 +60,9 @@ async function initIpfsClient (options: ClientOptions | string): Promise<IpfsCli
 }
 
 export class TestingApp {
-  static app: TestingApp
+  static app: TestingApp | undefined
 
+  private app: { stop: () => void } | undefined
   public contract: Contract | undefined = undefined
   public eth: Eth | undefined = undefined
   public ipfsConsumer: IpfsClient | undefined = undefined
@@ -78,26 +79,52 @@ export class TestingApp {
   }
 
   async init (): Promise<void> {
-    // Init Provider
-    await this.initProvider()
+    const strategy = config.get<string>('strategy')
 
-    // Deploy StorageManager for provider
-    await this.deployStorageManager()
-
-    // Create an Offer for provider account
-    await this.createOffer()
+    switch (strategy) {
+      case Strategy.Blockchain:
+        // Init Blockchain Provider
+        await this.initBlockchainProvider()
+        // Deploy StorageManager for provider
+        await this.deployStorageManager()
+        // Create an Offer for provider account
+        await this.createOffer()
+        break
+      case Strategy.Cache:
+        // Run fake cache service
+        await this.initCacheProvider()
+        break
+      default:
+        break
+    }
 
     // Remove current testing db
     await this.purgeDb()
 
     // Run Pinning service
-    await initApp(this.providerAddress, {
+    this.app = await initApp(this.providerAddress, {
       errorHandler: errorHandlerStub,
       contractAddress: this.contract?.options.address
     })
 
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
+  }
+
+  async stop (): Promise<void> {
+    if (this.app) {
+      await this.app.stop()
+      // this.fakeCacheServer?.close()
+
+      this.app = undefined
+      TestingApp.app = undefined
+      this.eth = undefined
+      this.ipfsConsumer = undefined
+      this.contract = undefined
+      this.ipfsProvider = undefined
+      this.consumerAddress = ''
+      this.providerAddress = ''
+    }
   }
 
   private async purgeDb (): Promise<void> {
@@ -112,11 +139,19 @@ export class TestingApp {
     }
   }
 
-  private async initProvider (): Promise<void> {
+  private async initBlockchainProvider (): Promise<void> {
     this.eth = new Eth(config.get<string>('blockchain.provider'))
     const [provider, consumer] = await this.eth.getAccounts()
     this.providerAddress = provider
     this.consumerAddress = consumer
+  }
+
+  private async initCacheProvider (): Promise<void> {
+    // this.eth = new Eth(config.get<string>('blockchain.provider'))
+    // const [provider, consumer] = await this.eth.getAccounts()
+    // this.providerAddress = provider
+    // this.consumerAddress = consumer
+    return await Promise.reject(Error('Not implemented'))
   }
 
   private async initIpfs (): Promise<void> {

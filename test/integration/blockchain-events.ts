@@ -66,6 +66,7 @@ describe('Pinning service', function () {
   before(async () => {
     app = await TestingApp.getApp()
   })
+  after(async () => await app.stop())
 
   it('should pin hash on NewAgreement', async () => {
     const file = await uploadRandomData(app.ipfsConsumer!!)
