@@ -93,11 +93,9 @@ export class CacheEventsProcessor extends EventProcessor {
       for (const agr of agreements) {
         const agreement = new Agreement(agr)
 
-        // Pin/UnPin agreements
+        // Pin agreements
         if (agreement.isActive && agreement.hasSufficientFunds) {
           await this.manager.pin(agreement.dataReference, agreement.size + 1).catch(err => precacheLogger.debug(err))
-        } else {
-          await this.manager.unpin(agreement.dataReference).catch(err => precacheLogger.debug(err))
         }
         await Agreement.upsert(agreement.toJSON())
       }
