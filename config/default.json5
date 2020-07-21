@@ -1,5 +1,9 @@
 {
   db: 'db.sqlite',
+  ipfs: {
+    // The default value for go-ipfs
+    connection: '/ip4/127.0.0.1/tcp/5001',
+  },
   blockchain: {
     // Events that will be listened to
     events: ['TotalCapacitySet', 'MessageEmitted', 'NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
