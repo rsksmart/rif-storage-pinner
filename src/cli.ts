@@ -94,6 +94,6 @@ export default class PinningServiceCommand extends Command {
     const flags = originalFlags as OutputFlags<typeof PinningServiceCommand.flags>
     this.configSetup(flags)
 
-    await initApp(flags.offerId, { removeCache: Boolean(flags['remove-cache']) })
+    await initApp(flags.offerId, { removeCache: Boolean(flags['remove-cache']), dataDir: this.config.dataDir })
   }
 }
