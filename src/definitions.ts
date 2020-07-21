@@ -97,6 +97,7 @@ export interface Handler {
 export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
 
 export interface AppOptions {
+  dataDir?: string
   removeCache?: boolean
   forcePrecache?: boolean
   errorHandler?: ErrorHandler
