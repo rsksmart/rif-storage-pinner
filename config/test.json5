@@ -1,6 +1,10 @@
 {
   db: 'db_test.sqlite',
-  ipfs: { connection:  '/ip4/127.0.0.1/tcp/5001' },
+  ipfs: {
+    clientOptions: {
+      url: 'http://localhost:5003'
+    }
+  },
   blockchain: {
     provider: 'ws://localhost:8545',
     // Specify behavior of EventsEmitter, that retrieves events from blockchain and pass them onwards for further processing.

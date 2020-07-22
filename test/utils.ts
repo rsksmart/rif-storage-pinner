@@ -120,7 +120,7 @@ export class TestingApp {
   }
 
   private async initIpfs (): Promise<void> {
-    this.ipfsProvider = await initIpfsClient(config.get<string>('ipfs.connection'))
+    this.ipfsProvider = await initIpfsClient(config.get<string>('ipfs.clientOptions'))
     this.ipfsConsumer = await initIpfsClient(consumerIpfsUrl)
   }
 
