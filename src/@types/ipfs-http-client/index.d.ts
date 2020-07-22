@@ -11,7 +11,7 @@ declare module 'ipfs-http-client' {
   export type CidAddress = CID | Buffer | string
 
   interface Options {
-    timeout?: number
+    timeout?: number | string
     headers?: object
     signal?: any
   }
@@ -137,12 +137,14 @@ declare module 'ipfs-http-client' {
   }
 
   export interface ClientOptions {
-    host: string
-    port: number
-    protocol: string
-    'api-path': string
-    'user-agent': string
-    headers: object
+    url?: string
+    host?: string
+    port?: number
+    protocol?: string
+    'api-path'?: string
+    'user-agent'?: string
+    headers?: object
+    timeout?: number | string
   }
 
   export default function ipfsClient (hostOrMultiaddr?: multiaddr | ClientOptions | string, port?: Port | string, userOptions?: ClientOptions): IpfsClient

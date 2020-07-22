@@ -39,3 +39,7 @@ export function decodeByteArray (fileReference: string[]): string {
     .trim()
     .replace(/\0/g, '') // Remove null-characters
 }
+
+export function duplicateObject<T> (obj: T): T {
+  return JSON.parse(JSON.stringify(obj))
+}

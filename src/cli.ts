@@ -77,7 +77,7 @@ and when there is new Agreement for specified Offer it will pin the content to y
     }
 
     if (flags.ipfs) {
-      configObject.ipfs = { connection: flags.ipfs }
+      configObject.ipfs = { clientOptions: { url: flags.ipfs } }
     }
 
     if (flags.config) {
