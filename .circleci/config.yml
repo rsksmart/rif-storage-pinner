@@ -49,7 +49,7 @@ commands:
           name: "Waiting for the IPFS daemons"
           no_output_timeout: 60s
           command: |
-            while (! ipfs id --api=/ip4/127.0.0.1/tcp/5001 2>/dev/null) || ! ipfs id --api=/ip4/127.0.0.1/tcp/5002 2>/dev/null; do
+            while (! ipfs id --api=/ip4/127.0.0.1/tcp/5003 2>/dev/null) || ! ipfs id --api=/ip4/127.0.0.1/tcp/5002 2>/dev/null; do
               sleep 1
             done
 

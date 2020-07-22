@@ -23,4 +23,4 @@
 
 Consumer IPFS API runs on `5002`, Swarms on `4002` and Gateway is on `8081`.
 
-Providers IPFS runs on default ports.
+Consumer IPFS API runs on `5003`, Swarms on `4003` and Gateway is on `8082`.

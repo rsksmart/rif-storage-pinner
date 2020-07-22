@@ -21,6 +21,8 @@ export default async (offerId: string, options?: AppOptions): Promise<{ stop: ()
 
   if (!offerId) throw new Error('Offer id is required')
 
+  logger.verbose('Current configuration: ', config)
+
   // dataDir is set when entry point is CLI, for testing we have also the CWD option.
   const dbPath = path.join(options?.dataDir ?? process.cwd(), config.get<string>('db'))
   logger.verbose(`Using database path ${dbPath}`)
