@@ -14,7 +14,7 @@ import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
 import { AppOptions } from './definitions'
 import { collectPinsClosure } from './gc'
-import { errorHandler } from './utils'
+import { duplicateObject, errorHandler } from './utils'
 
 export default async (offerId: string, options?: AppOptions): Promise<{ stop: () => void }> => {
   const logger = loggingFactory()
@@ -36,7 +36,7 @@ export default async (offerId: string, options?: AppOptions): Promise<{ stop: ()
   const store = getObject()
 
   const manager = new ProviderManager()
-  const ipfs = await IpfsProvider.bootstrap(config.get<string>('ipfs.connection'))
+  const ipfs = await IpfsProvider.bootstrap(duplicateObject(config.get<string>('ipfs.clientOptions')), config.get<number|string>('ipfs.sizeFetchTimeout'))
   manager.register(ipfs)
 
   const eth = ethFactory()

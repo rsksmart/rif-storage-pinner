@@ -3,6 +3,8 @@
  */
 import type { EventData } from 'web3-eth-contract'
 import type { Eth } from 'web3-eth'
+import type { ClientOptions as IpfsOptions } from 'ipfs-http-client'
+
 import type { ProviderManager } from './providers'
 
 export enum Providers {
@@ -10,8 +12,8 @@ export enum Providers {
 }
 
 export interface Provider {
-  pin(hash: string, expectedSize: number): Promise<void>
-  unpin(hash: string): Promise<void>
+  pin (hash: string, expectedSize: number): Promise<void>
+  unpin (hash: string): Promise<void>
 }
 
 export interface Logger {
@@ -75,8 +77,8 @@ export interface Config {
   }
 
   ipfs?: {
-    // URL to the IPFS running node
-    connection?: string
+    clientOptions?: IpfsOptions
+    sizeFetchTimeout?: number | string
   }
 
   log?: {

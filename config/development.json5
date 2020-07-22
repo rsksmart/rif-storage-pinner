@@ -4,5 +4,8 @@
     eventsEmitter: {
       confirmations: 1
     }
+  },
+  ipfs: {
+    sizeFetchTimeout: '30s'
   }
 }
