@@ -51,7 +51,7 @@ export class CacheEventsProcessor extends EventProcessor {
 
       // Connect to cache service
       const client = feathers()
-      const socket = io(config.get('cache.provider'))
+      const socket = io(config.get('cache.provider'), { transports: ['websocket'] })
       client.configure(socketio(socket))
 
       this.services = {

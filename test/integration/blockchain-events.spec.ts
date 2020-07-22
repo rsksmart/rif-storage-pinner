@@ -29,102 +29,108 @@ async function createAgreement (app: TestingApp, file: File, billingPeriod: numb
   return receipt.events.NewAgreement.returnValues.agreementReference
 }
 
-describe('Pinning service', function () {
+describe('Blockchain Strategy', function () {
   this.timeout(100000)
   let app: TestingApp
 
-  before(async () => {
+  before(() => {
     // @ts-ignore
     config.strategy = Strategy.Blockchain
-    app = await TestingApp.getApp()
-  })
-  after(async () => await app.stop())
-
-  it('should pin hash on NewAgreement', async () => {
-    const file = await uploadRandomData(app.ipfsConsumer!)
-    // Check if not pinned
-    expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
-
-    await createAgreement(app, file, 1, 10000)
-
-    // Wait until we receive Event
-    await sleep(1000)
-
-    expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
   })
 
-  it('should reject if size limit exceed', async () => {
-    const file = await uploadRandomData(app.ipfsConsumer!)
-    // Check if not pinned
-    expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+  describe('Events Handling', () => {
+    before(async () => {
+      app = await TestingApp.getApp()
+    })
 
-    await createAgreement(app, file, 1, 10000, file.size - 1)
+    after(async () => await app.stop())
 
-    // Wait until we receive Event
-    await sleep(1000)
+    it('should pin hash on NewAgreement', async () => {
+      const file = await uploadRandomData(app.ipfsConsumer!)
+      // Check if not pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-    // Should not be pinned
-    expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
-    expect(errorSpy.calledOnce).to.be.eql(true)
-    const [error] = errorSpy.lastCall.args
-    expect(error).to.be.instanceOf(Error)
-    expect(error.message).to.be.eql('The hash exceeds payed size!')
-  })
+      await createAgreement(app, file, 1, 10000)
 
-  it('should unpin when agreement is stopped', async () => {
-    const file = await uploadRandomData(app.ipfsConsumer!)
-    // Check if not pinned
-    expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+      // Wait until we receive Event
+      await sleep(1000)
 
-    const agreementReference = await createAgreement(app, file, 1, 500)
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
+    })
 
-    await sleep(1000)
+    it('should reject if size limit exceed', async () => {
+      const file = await uploadRandomData(app.ipfsConsumer!)
+      // Check if not pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-    // Should be pinned
-    expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
+      await createAgreement(app, file, 1, 10000, file.size - 1)
 
-    const payoutGas = await app.contract
-      ?.methods
-      .payoutFunds([agreementReference])
-      .estimateGas({ from: app.providerAddress })
+      // Wait until we receive Event
+      await sleep(1000)
 
-    await app.contract
-      ?.methods
-      .payoutFunds([agreementReference])
-      .send({ from: app.providerAddress, gas: payoutGas })
-    logger.debug('Payed out')
+      // Should not be pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+      expect(errorSpy.calledOnce).to.be.eql(true)
+      const [error] = errorSpy.lastCall.args
+      expect(error).to.be.instanceOf(Error)
+      expect(error.message).to.be.eql('The hash exceeds payed size!')
+    })
 
-    await app.advanceBlock()
+    it('should unpin when agreement is stopped', async () => {
+      const file = await uploadRandomData(app.ipfsConsumer!)
+      // Check if not pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-    // Wait until we receive Event
-    await sleep(1000)
+      const agreementReference = await createAgreement(app, file, 1, 500)
 
-    // Should not be be pinned
-    expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
-  })
+      await sleep(1000)
 
-  it('should unpin when agreement run out of funds', async () => {
-    const file = await uploadRandomData(app.ipfsConsumer!)
-    // Check if not pinned
-    expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+      // Should be pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
 
-    await createAgreement(app, file, 1, 500)
-    await sleep(500)
+      const payoutGas = await app.contract
+        ?.methods
+        .payoutFunds([agreementReference])
+        .estimateGas({ from: app.providerAddress })
 
-    // Should be pinned
-    expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
+      await app.contract
+        ?.methods
+        .payoutFunds([agreementReference])
+        .send({ from: app.providerAddress, gas: payoutGas })
+      logger.debug('Payed out')
 
-    // First lets the time fast forward so the Agreement runs out of funds
-    await sleep(3000)
+      await app.advanceBlock()
 
-    // Create new block to
-    await app.advanceBlock()
-    await sleep(200)
-    await app.advanceBlock()
+      // Wait until we receive Event
+      await sleep(1000)
 
-    await sleep(1500)
+      // Should not be be pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+    })
 
-    // Should not be be pinned
-    expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+    it('should unpin when agreement run out of funds', async () => {
+      const file = await uploadRandomData(app.ipfsConsumer!)
+      // Check if not pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+
+      await createAgreement(app, file, 1, 500)
+      await sleep(500)
+
+      // Should be pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
+
+      // First lets the time fast forward so the Agreement runs out of funds
+      await sleep(3000)
+
+      // Create new block to
+      await app.advanceBlock()
+      await sleep(200)
+      await app.advanceBlock()
+
+      await sleep(1500)
+
+      // Should not be be pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+    })
   })
 })

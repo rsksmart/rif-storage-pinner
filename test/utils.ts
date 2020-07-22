@@ -15,7 +15,7 @@ import { Logger, Strategy } from '../src/definitions'
 import { FakeCacheService } from './fake-cache-service'
 import { loggingFactory } from '../src/logger'
 
-const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
+export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 
 export const providerAddress = '0xB22230f21C57f5982c2e7C91162799fABD5733bE'
 export const errorSpy = sinon.spy()
@@ -47,7 +47,7 @@ export async function asyncIterableToArray (asyncIterable: any): Promise<Array<a
   return result
 }
 
-async function initIpfsClient (options: ClientOptions | string): Promise<IpfsClient> {
+export async function initIpfsClient (options: ClientOptions | string): Promise<IpfsClient> {
   const ipfs = await ipfsClient(options)
 
   try {
