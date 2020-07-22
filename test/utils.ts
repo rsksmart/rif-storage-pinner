@@ -148,6 +148,7 @@ export class TestingApp {
 
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
+    this.logger.info('IPFS clients created')
   }
 
   async stop (): Promise<void> {
