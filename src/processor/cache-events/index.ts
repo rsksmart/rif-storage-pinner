@@ -40,7 +40,7 @@ export class CacheEventsProcessor extends EventProcessor {
     }
 
     filterEvents (offerId: string, callback: Processor<CacheEvent>): Processor<CacheEvent> {
-      return async (event: CacheEvent) => {
+      return async (event: CacheEvent): Promise<void> => {
         if (event.payload.address === offerId || event.payload.offerId === offerId) await callback(event)
       }
     }
@@ -80,8 +80,6 @@ export class CacheEventsProcessor extends EventProcessor {
     }
 
     async precache (): Promise<void> {
-      const precacheLogger = loggingFactory('blockchain:event-processor:precache')
-
       if (!this.initialized) await this.initialize()
 
       const offer = await this.services.offer.get(this.offerId)
@@ -97,7 +95,7 @@ export class CacheEventsProcessor extends EventProcessor {
 
         // Pin agreements
         if (agreement.isActive && agreement.hasSufficientFunds) {
-          await this.manager.pin(agreement.dataReference, agreement.size).catch(err => precacheLogger.debug(err))
+          await this.manager.pin(agreement.dataReference, agreement.size)
         }
         await Agreement.upsert(agreement.toJSON())
       }

@@ -39,8 +39,8 @@ export const mockAgreement = (agreement: Record<string, any> = {}) => Object.ass
   size: 32,
   consumer: '0x1235',
   isActive: true,
-  billingPeriod: 99999,
-  billingPrice: 1,
+  billingPeriod: 1,
+  billingPrice: 999,
   availableFunds: 500,
   lastPayout: new Date(),
   expiredAtBlockNumber: 999999

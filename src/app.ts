@@ -12,10 +12,6 @@ import { IpfsProvider } from './providers/ipfs'
 import { initStore } from './store'
 import { sequelizeFactory } from './sequelize'
 
-const getStrategy = (): Strategy => {
-  return config.has('strategy') ? config.get('strategy') : Strategy.Blockchain
-}
-
 export default class PinningService {
   private readonly strategy: Strategy
   private readonly manager: ProviderManager
@@ -33,7 +29,7 @@ export default class PinningService {
   constructor (offerId: string, options?: AppOptions) {
     if (!offerId) throw new Error('Offer id is required')
 
-    this.strategy = options?.strategy ?? getStrategy()
+    this.strategy = options?.strategy ?? config.get('strategy')
     this.logger = loggingFactory('pinning-service')
     this.manager = new ProviderManager()
     this.offerId = offerId

@@ -7,7 +7,7 @@ import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/c
 import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
-import { filterBlockchainEvents, getProcessor, isEventWithProvider } from '../../utils'
+import { getProcessor, isEventWithProvider } from '../../utils'
 import { BaseEventsEmitter } from '../../blockchain/events'
 import { ethFactory, getEventsEmitter, getNewBlockEmitter } from '../../blockchain/utils'
 import { loggingFactory } from '../../logger'
@@ -60,6 +60,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
         return callback(event)
       }
 
+      logger.debug(`Events not related to offer ${offerId}`)
       return Promise.resolve()
     }
   }
@@ -102,7 +103,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     const precacheLogger = loggingFactory('processor:blockchain:precache')
     const _eventsEmitter = this.eventsEmitter
     const processorOptions = { processorDeps: { eth: this.eth }, errorHandler: this.options?.errorHandler, logger: precacheLogger }
-    const processor = filterBlockchainEvents(this.offerId, getProcessor(this.handlers, processorOptions))
+    const processor = this.filterEvents(this.offerId, getProcessor(this.handlers, processorOptions))
 
     // Wait to build up the database with latest data
     precacheLogger.verbose('Populating database')

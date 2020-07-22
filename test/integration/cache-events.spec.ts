@@ -37,10 +37,11 @@ function createAgreement (app: TestingApp, file: File, agreementObj: Record<stri
     size: file.size,
     dataReference: file.fileHash,
     availableFunds: 9999999999999,
-    agreementReference: '0x999',
+    agreementReference: `0x${Math.random().toString(36).substring(7)}`,
     billingPrice: 100,
     ...agreementObj
   })
+
   const agreementService = app.fakeCacheServer?.agreementService
   agreementService.emit('created', { event: 'NewAgreement', payload: agreement })
   return agreement
@@ -67,8 +68,8 @@ describe('Cache Strategy', function () {
       const offer = mockOffer()
       const agreements = [
         mockAgreement(),
-        mockAgreement({ agreementReference: '0x9991', offerId: 'test', billingPeriod: 2 }),
-        mockAgreement({ availableFunds: 9999999999999, agreementReference: '0x999', billingPrice: 100 })
+        mockAgreement({ agreementReference: '0x9991', offerId: 'test', billingPeriod: 1 }),
+        mockAgreement({ agreementReference: '0x999', billingPrice: 100 })
       ]
       stubOffer.get.onFirstCall().resolves(offer)
       stubAgreement.find.onFirstCall().resolves(agreements)
@@ -121,10 +122,16 @@ describe('Cache Strategy', function () {
       // Should be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
 
+      const agreementFromDb = await Agreement.findByPk(agreement.agreementReference)
+      expect(agreementFromDb?.isActive).to.be.true()
+
       const agreementService = app.fakeCacheServer?.agreementService
       agreementService.emit('created', { event: 'AgreementStopped', payload: agreement })
 
       await sleep(1000)
+
+      const stopedAgreement = await Agreement.findByPk(agreement.agreementReference)
+      expect(stopedAgreement?.isActive).to.be.false()
 
       // Should not be be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
