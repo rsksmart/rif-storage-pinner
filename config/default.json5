@@ -1,8 +1,13 @@
 {
   db: 'db.sqlite',
   ipfs: {
-    // The default value for go-ipfs
-    connection: '/ip4/127.0.0.1/tcp/5001',
+    clientOptions: {
+      // The default value for go-ipfs
+      url: 'http://localhost:5001',
+    },
+
+    // What is timeout for fetching size of given hash
+    sizeFetchTimeout: '4m'
   },
   blockchain: {
     // Events that will be listened to
