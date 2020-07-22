@@ -12,7 +12,7 @@ commands:
       - run:
           name: 'Install and Run RSK Node'
           command: |
-            docker build -t regtest -f Dockerfile .
+            docker build -t regtest -f rskj.dockerfile .
             docker run -d --name regtest-node-01  -p 4444:8545 -p 30305:30305 regtest
 
   install-ipfs:
