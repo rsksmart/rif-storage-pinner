@@ -11,9 +11,11 @@ import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
 import { initStore } from './store'
 import { sequelizeFactory } from './sequelize'
+import { duplicateObject } from './utils'
 
 export default class PinningService {
   private readonly strategy: Strategy
+  private readonly dbPath: string
   private readonly manager: ProviderManager
   private eventProcessor: EventProcessor
   private logger: Logger
@@ -21,7 +23,7 @@ export default class PinningService {
   public options: AppOptions | undefined
   public offerId: string
 
-  static async initDb (): Promise<void> {
+  static async initDb (dbPath: string): Promise<void> {
     const sequelize = await sequelizeFactory(config.get<string>('db'))
     await initStore(sequelize)
   }
@@ -29,6 +31,7 @@ export default class PinningService {
   constructor (offerId: string, options?: AppOptions) {
     if (!offerId) throw new Error('Offer id is required')
 
+    this.dbPath = path.join(options?.dataDir ?? process.cwd(), config.get<string>('db'))
     this.strategy = options?.strategy ?? config.get('strategy')
     this.logger = loggingFactory('pinning-service')
     this.manager = new ProviderManager()
@@ -51,18 +54,19 @@ export default class PinningService {
   }
 
   private async initProviderManger (): Promise<void> {
-    const ipfs = await IpfsProvider.bootstrap(config.get<string>('ipfs.connection'))
+    const ipfs = await IpfsProvider.bootstrap(duplicateObject(config.get<string>('ipfs.clientOptions')), config.get<number|string>('ipfs.sizeFetchTimeout'))
     this.manager.register(ipfs)
   }
 
   async init (): Promise<void> {
     if (this.options?.removeCache) {
+      // dataDir is set when entry point is CLI, for testing we have also the CWD option.
       await fs
-        .unlink(path.join(process.cwd(), config.get<string>('db')))
+        .unlink(this.dbPath)
         .catch(e => this.logger.info(e.message))
     }
 
-    await PinningService.initDb()
+    await PinningService.initDb(this.dbPath)
     this.logger.info('DB initialized')
     await this.initProviderManger()
     this.logger.info('IPFS provider initialized')
