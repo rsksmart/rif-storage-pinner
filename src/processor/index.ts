@@ -23,7 +23,6 @@ export abstract class EventProcessor implements EventProcessorI {
       return this.options?.errorHandler ?? errorHandler
     }
 
-    abstract filterEvents (offerId: string, callback: Processor<any>): Processor<any>
     abstract async initialize (): Promise<void>
     abstract async run (): Promise<void>
     async abstract stop (): Promise<void>

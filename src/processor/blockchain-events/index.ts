@@ -28,6 +28,24 @@ import type { ProviderManager } from '../../providers'
 
 const logger: Logger = loggingFactory('processor:blockchain')
 
+// TODO remove after cache service will be able to filter events for us
+function filterBlockchainEvents (offerId: string, callback: Processor<BlockchainEvent>): Processor<BlockchainEvent> {
+  return async (event: BlockchainEvent): Promise<void> => {
+    logger.debug(`Got ${event.event} for provider ${(event as BlockchainEventsWithProvider).returnValues.provider}`)
+
+    if (isEventWithProvider(event) && event.returnValues.provider === offerId) {
+      return callback(event)
+    }
+
+    if (event.event.startsWith('Agreement') && await Agreement.findByPk((event as BlockchainAgreementEvents).returnValues.agreementReference)) {
+      return callback(event)
+    }
+
+    logger.debug(`Events not related to offer ${offerId}`)
+    return Promise.resolve()
+  }
+}
+
 export class BlockchainEventsProcessor extends EventProcessor {
   private readonly handlers = [offer, agreement] as EventsHandler<BlockchainEvent, BlockchainEventProcessorOptions>[]
   private readonly processor: Processor<BlockchainEvent>
@@ -45,24 +63,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
       errorHandler: this.errorHandler,
       errorLogger: logger
     }
-    this.processor = this.filterEvents(this.offerId, getProcessor(this.handlers, processorOptions))
-  }
-
-  filterEvents (offerId: string, callback: Processor<BlockchainEvent>): Processor<BlockchainEvent> {
-    return async (event: BlockchainEvent): Promise<void> => {
-      logger.debug(`Got ${event.event} for provider ${(event as BlockchainEventsWithProvider).returnValues.provider}`)
-
-      if (isEventWithProvider(event) && event.returnValues.provider === offerId) {
-        return callback(event)
-      }
-
-      if (event.event.startsWith('Agreement') && await Agreement.findByPk((event as BlockchainAgreementEvents).returnValues.agreementReference)) {
-        return callback(event)
-      }
-
-      logger.debug(`Events not related to offer ${offerId}`)
-      return Promise.resolve()
-    }
+    this.processor = filterBlockchainEvents(this.offerId, getProcessor(this.handlers, processorOptions))
   }
 
   async initialize (): Promise<void> {
@@ -103,7 +104,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     const precacheLogger = loggingFactory('processor:blockchain:precache')
     const _eventsEmitter = this.eventsEmitter
     const processorOptions = { processorDeps: { eth: this.eth }, errorHandler: this.options?.errorHandler, logger: precacheLogger }
-    const processor = this.filterEvents(this.offerId, getProcessor(this.handlers, processorOptions))
+    const processor = filterBlockchainEvents(this.offerId, getProcessor(this.handlers, processorOptions))
 
     // Wait to build up the database with latest data
     precacheLogger.verbose('Populating database')

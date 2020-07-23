@@ -22,6 +22,13 @@ import Agreement from '../../models/agreement.model'
 
 const logger: Logger = loggingFactory('processor:cache')
 
+// TODO remove after cache service will be able to filter events for us
+function filterCacheEvents (offerId: string, callback: Processor<CacheEvent>): Processor<CacheEvent> {
+    return async (event: CacheEvent): Promise<void> => {
+        if (event.payload.address === offerId || event.payload.offerId === offerId) await callback(event)
+    }
+}
+
 // TODO GC using Cache service
 export class CacheEventsProcessor extends EventProcessor {
     private readonly handlers = [offer, agreement] as EventsHandler<CacheEvent, BaseEventProcessorOptions>[]
@@ -36,13 +43,7 @@ export class CacheEventsProcessor extends EventProcessor {
         errorHandler: this.errorHandler,
         errorLogger: logger
       }
-      this.processor = this.filterEvents(this.offerId, getProcessor<CacheEvent, BaseEventProcessorOptions>(this.handlers, processorOptions))
-    }
-
-    filterEvents (offerId: string, callback: Processor<CacheEvent>): Processor<CacheEvent> {
-      return async (event: CacheEvent): Promise<void> => {
-        if (event.payload.address === offerId || event.payload.offerId === offerId) await callback(event)
-      }
+      this.processor = filterCacheEvents(this.offerId, getProcessor<CacheEvent, BaseEventProcessorOptions>(this.handlers, processorOptions))
     }
 
     async initialize (): Promise<void> {
@@ -84,7 +85,7 @@ export class CacheEventsProcessor extends EventProcessor {
 
       const offer = await this.services.offer.get(this.offerId)
 
-      if (!offer) throw new Error('Offer not exist')
+      if (!offer) logger.warn(`Offer ${this.offerId} not exist. Pinning will start after offer will be created`)
       const store = getObject()
       store.peerId = offer?.peerId
       store.totalCapacity = offer?.totalCapacity

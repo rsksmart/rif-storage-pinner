@@ -1,12 +1,62 @@
-import PinningService from './app'
-import { AppOptions } from './definitions'
+import config from 'config'
+import { promises as fs } from 'fs'
+import path from 'path'
+
+import { AppOptions, Strategy } from './definitions'
+import { loggingFactory } from './logger'
+import { BlockchainEventsProcessor } from './processor/blockchain-events'
+import { CacheEventsProcessor } from './processor/cache-events'
+import { ProviderManager } from './providers'
+import { IpfsProvider } from './providers/ipfs'
+import { sequelizeFactory } from './sequelize'
+import { initStore } from './store'
+import { duplicateObject } from './utils'
+
+const logger = loggingFactory('pinning-service')
+
+function getEventProcessor (offerId: string, manager: ProviderManager, options?: AppOptions): BlockchainEventsProcessor | CacheEventsProcessor {
+  const strategy = options?.strategy ?? config.get('strategy')
+
+  switch (strategy) {
+    case Strategy.Blockchain:
+      logger.info('Create BlockchainEventsProcessor')
+      return new BlockchainEventsProcessor(offerId, manager, options)
+    case Strategy.Cache:
+      logger.info('Create CacheEventsProcessor')
+      return  new CacheEventsProcessor(offerId, manager, options)
+    default:
+      logger.info('Create default(BlockchainEventsProcessor)')
+      return  new BlockchainEventsProcessor(offerId, manager, options)
+  }
+}
 
 export default async (offerId: string, options?: AppOptions): Promise<{ stop: () => void }> => {
-  const pinningApp = new PinningService(offerId, options)
-  // Init database connection, ipfs-node connection and perform precache if needed
-  await pinningApp.init()
-  // Subscribe and start processing events
-  await pinningApp.start()
+  // dataDir is set when entry point is CLI, for testing we have also the CWD option.
+  const dbPath = path.join(options?.dataDir ?? process.cwd(), config.get<string>('db'))
+  logger.verbose(`Using database path ${dbPath}`)
 
-  return { stop: (): Promise<void> => pinningApp.stop() }
+
+  // Initialize DB
+  if (options?.removeCache) {
+    // dataDir is set when entry point is CLI, for testing we have also the CWD option.
+    await fs
+        .unlink(dbPath)
+        .catch(e => logger.info(e.message))
+  }
+  const sequelize = await sequelizeFactory(dbPath)
+  await initStore(sequelize)
+  logger.info('DB initialized')
+
+  // Initialize Provider Manager
+  const providerManager = new ProviderManager()
+  const ipfs = await IpfsProvider.bootstrap(duplicateObject(config.get<string>('ipfs.clientOptions')), config.get<number|string>('ipfs.sizeFetchTimeout'))
+  providerManager.register(ipfs)
+  logger.info('IPFS provider initialized')
+
+  // Start listening for events
+  const eventProcessor = getEventProcessor(offerId, providerManager, options)
+  await eventProcessor.initialize()
+  logger.info('Event processor initialized')
+
+  return { stop: (): Promise<void> => eventProcessor.stop() }
 }
