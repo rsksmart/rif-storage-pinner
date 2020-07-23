@@ -8,12 +8,11 @@ import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
 import { getProcessor, isEventWithProvider } from '../../utils'
-import type { BaseEventsEmitter } from '../../blockchain/events'
 import { ethFactory, getEventsEmitter, getNewBlockEmitter } from '../../blockchain/utils'
 import { loggingFactory } from '../../logger'
 import Agreement from '../../models/agreement.model'
-import { BlockchainAgreementEvents, BlockchainEventsWithProvider } from '../../definitions'
 import { collectPinsClosure } from '../../gc'
+import type { BaseEventsEmitter } from '../../blockchain/events'
 import type { AutoStartStopEventEmitter } from '../../blockchain/new-block-emitters'
 
 import type {
@@ -22,7 +21,9 @@ import type {
   BlockchainEventProcessorOptions,
   Logger,
   EventsHandler,
-  Processor
+  Processor,
+  BlockchainAgreementEvents,
+  BlockchainEventsWithProvider
 } from '../../definitions'
 import type { ProviderManager } from '../../providers'
 
@@ -42,7 +43,6 @@ function filterBlockchainEvents (offerId: string, callback: Processor<Blockchain
     }
 
     logger.debug(`Events not related to offer ${offerId}`)
-    return Promise.resolve()
   }
 }
 
@@ -66,6 +66,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     this.processor = filterBlockchainEvents(this.offerId, getProcessor(this.handlers, processorOptions))
   }
 
+  // eslint-disable-next-line require-await
   async initialize (): Promise<void> {
     if (this.initialized) throw new Error('Already Initialized')
 
@@ -76,7 +77,6 @@ export class BlockchainEventsProcessor extends EventProcessor {
       { newBlockEmitter: this.newBlockEmitter, contractAddress: this.options?.contractAddress }
     )
     this.initialized = true
-    return await Promise.resolve()
   }
 
   async run (): Promise<void> {
@@ -137,10 +137,10 @@ export class BlockchainEventsProcessor extends EventProcessor {
     }
   }
 
+  // eslint-disable-next-line require-await
   async stop (): Promise<void> {
     if (!this.eventsEmitter && !this.eventsEmitter) throw new Error('No process running')
     this.eventsEmitter?.stop()
     this.newBlockEmitter?.stop()
-    return await Promise.resolve()
   }
 }

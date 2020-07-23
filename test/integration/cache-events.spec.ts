@@ -64,7 +64,6 @@ describe('Cache Strategy', function () {
 
   describe('Events handling', () => {
     before(async () => {
-      errorSpy.resetHistory()
       const offer = mockOffer()
       const agreements = [
         mockAgreement(),
@@ -80,6 +79,8 @@ describe('Cache Strategy', function () {
     after(async () => {
       await app.stop()
     })
+
+    beforeEach(() => errorSpy.resetHistory())
 
     it('should pin hash on NewAgreement', async () => {
       const file = await uploadRandomData(app.ipfsConsumer!)
@@ -173,12 +174,6 @@ describe('Cache Strategy', function () {
       expect(agreementsFromDb.length).to.be.eql(agreements.length)
 
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
-    })
-
-    it('should throw when offer not found', async () => {
-      stubOffer.get.withArgs(providerAddress).resolves()
-
-      await expect(TestingApp.getApp()).to.eventually.be.rejectedWith(Error, 'Offer not exist')
     })
   })
 })

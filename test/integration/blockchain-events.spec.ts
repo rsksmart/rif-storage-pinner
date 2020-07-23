@@ -45,6 +45,8 @@ describe('Blockchain Strategy', function () {
 
     after(async () => await app.stop())
 
+    beforeEach(() => errorSpy.resetHistory())
+
     it('should pin hash on NewAgreement', async () => {
       const file = await uploadRandomData(app.ipfsConsumer!)
       // Check if not pinned

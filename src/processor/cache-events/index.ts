@@ -7,15 +7,16 @@ import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
 import { getProcessor } from '../../utils'
-import {
+import type {
   AppOptions,
   BaseEventProcessorOptions,
   CacheEvent,
-  Logger
+  Logger,
+  EventsHandler,
+  Processor
 } from '../../definitions'
 import { loggingFactory } from '../../logger'
 
-import type { EventsHandler, Processor } from '../../definitions'
 import type { ProviderManager } from '../../providers'
 import { getObject } from 'sequelize-store'
 import Agreement from '../../models/agreement.model'
@@ -24,9 +25,9 @@ const logger: Logger = loggingFactory('processor:cache')
 
 // TODO remove after cache service will be able to filter events for us
 function filterCacheEvents (offerId: string, callback: Processor<CacheEvent>): Processor<CacheEvent> {
-    return async (event: CacheEvent): Promise<void> => {
-        if (event.payload.address === offerId || event.payload.offerId === offerId) await callback(event)
-    }
+  return async (event: CacheEvent): Promise<void> => {
+    if (event.payload.address === offerId || event.payload.offerId === offerId) await callback(event)
+  }
 }
 
 // TODO GC using Cache service
@@ -46,6 +47,7 @@ export class CacheEventsProcessor extends EventProcessor {
       this.processor = filterCacheEvents(this.offerId, getProcessor<CacheEvent, BaseEventProcessorOptions>(this.handlers, processorOptions))
     }
 
+    // eslint-disable-next-line require-await
     async initialize (): Promise<void> {
       if (this.initialized) throw new Error('Already Initialized')
       logger.info('Connecting websocket to ' + config.get('cache.provider'))
@@ -61,7 +63,6 @@ export class CacheEventsProcessor extends EventProcessor {
       }
 
       this.initialized = true
-      return await Promise.resolve()
     }
 
     async run (): Promise<void> {
@@ -85,7 +86,11 @@ export class CacheEventsProcessor extends EventProcessor {
 
       const offer = await this.services.offer.get(this.offerId)
 
-      if (!offer) logger.warn(`Offer ${this.offerId} not exist. Pinning will start after offer will be created`)
+      if (!offer) {
+        logger.warn(`Offer ${this.offerId} not exist. Pinning will start after offer will be created`)
+        return
+      }
+
       const store = getObject()
       store.peerId = offer?.peerId
       store.totalCapacity = offer?.totalCapacity
@@ -102,6 +107,7 @@ export class CacheEventsProcessor extends EventProcessor {
       }
     }
 
+    // eslint-disable-next-line require-await
     async stop (): Promise<void> {
       // Unsubscribe from events
       Object
@@ -110,7 +116,5 @@ export class CacheEventsProcessor extends EventProcessor {
           service.removeListener('created', this.processor)
           service.removeListener('updated', this.processor)
         })
-
-      return await Promise.resolve()
     }
 }

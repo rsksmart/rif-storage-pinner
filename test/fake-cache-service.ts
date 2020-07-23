@@ -15,22 +15,22 @@ interface StubService {
 }
 
 const serviceFunctions = ['get', 'find', 'create', 'remove', 'update', 'patch']
-
 const createStubService = () => serviceFunctions.reduce((acc, key) => ({ ...acc, [key]: sinon.stub() }), {})
-export const stubResetFunctions = (obj: Record<string, any>) =>
-  Object.keys(obj).forEach(key => {
-    obj[key].resetBehavior()
-    obj[key].resetHistory()
-  })
+
+export function stubResetFunctions (obj: Record<string, sinon.SinonStub>): void {
+  Object.keys(obj).forEach(key => obj[key].reset())
+}
 
 export const stubOffer: StubService = createStubService()
 export const stubAgreement: StubService = createStubService()
 
-export const mockOffer = (agreement: Record<string, any> = {}) => Object.assign({
-  peerId: 'testPeerId',
-  totalCapacity: 999999,
-  address: providerAddress
-}, agreement)
+export function mockOffer (agreement: Record<string, any> = {}): Record<string, any> {
+  return Object.assign({
+    peerId: 'testPeerId',
+    totalCapacity: 999999,
+    address: providerAddress
+  }, agreement)
+}
 
 export const mockAgreement = (agreement: Record<string, any> = {}) => Object.assign({
   agreementReference: '0x1233',

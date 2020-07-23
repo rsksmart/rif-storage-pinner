@@ -23,10 +23,10 @@ function getEventProcessor (offerId: string, manager: ProviderManager, options?:
       return new BlockchainEventsProcessor(offerId, manager, options)
     case Strategy.Cache:
       logger.info('Create CacheEventsProcessor')
-      return  new CacheEventsProcessor(offerId, manager, options)
+      return new CacheEventsProcessor(offerId, manager, options)
     default:
       logger.info('Create default(BlockchainEventsProcessor)')
-      return  new BlockchainEventsProcessor(offerId, manager, options)
+      return new BlockchainEventsProcessor(offerId, manager, options)
   }
 }
 
@@ -35,13 +35,12 @@ export default async (offerId: string, options?: AppOptions): Promise<{ stop: ()
   const dbPath = path.join(options?.dataDir ?? process.cwd(), config.get<string>('db'))
   logger.verbose(`Using database path ${dbPath}`)
 
-
   // Initialize DB
   if (options?.removeCache) {
     // dataDir is set when entry point is CLI, for testing we have also the CWD option.
     await fs
-        .unlink(dbPath)
-        .catch(e => logger.info(e.message))
+      .unlink(dbPath)
+      .catch(e => logger.info(e.message))
   }
   const sequelize = await sequelizeFactory(dbPath)
   await initStore(sequelize)
@@ -56,6 +55,7 @@ export default async (offerId: string, options?: AppOptions): Promise<{ stop: ()
   // Start listening for events
   const eventProcessor = getEventProcessor(offerId, providerManager, options)
   await eventProcessor.initialize()
+  await eventProcessor.run()
   logger.info('Event processor initialized')
 
   return { stop: (): Promise<void> => eventProcessor.stop() }
