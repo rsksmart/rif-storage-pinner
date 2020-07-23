@@ -14,7 +14,7 @@ import { loggingFactory } from '../../logger'
 import Agreement from '../../models/agreement.model'
 import { BlockchainAgreementEvents, BlockchainEventsWithProvider } from '../../definitions'
 import { collectPinsClosure } from '../../gc'
-import { AutoStartStopEventEmitter } from '../../blockchain/new-block-emitters'
+import type { AutoStartStopEventEmitter } from '../../blockchain/new-block-emitters'
 
 import type {
   AppOptions,
