@@ -6,7 +6,6 @@ import socketio from '@feathersjs/socketio-client'
 import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
-import { getProcessor } from '../../utils'
 import type {
   AppOptions,
   BaseEventProcessorOptions,
@@ -39,12 +38,8 @@ export class CacheEventsProcessor extends EventProcessor {
     constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
       super(offerId, manager, options)
 
-      const processorOptions = {
-        processorDeps: { manager: this.manager },
-        errorHandler: this.errorHandler,
-        errorLogger: logger
-      }
-      this.processor = filterCacheEvents(this.offerId, getProcessor<CacheEvent, BaseEventProcessorOptions>(this.handlers, processorOptions))
+      this.processorOptions = { ...this.processorOptions, errorLogger: logger }
+      this.processor = filterCacheEvents(this.offerId, this.getProcessor<CacheEvent, BaseEventProcessorOptions>(this.handlers))
     }
 
     // eslint-disable-next-line require-await

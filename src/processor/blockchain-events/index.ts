@@ -7,7 +7,7 @@ import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/c
 import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
-import { getProcessor, isEventWithProvider } from '../../utils'
+import { isEventWithProvider } from '../../utils'
 import { ethFactory, getEventsEmitter, getNewBlockEmitter } from '../../blockchain/utils'
 import { loggingFactory } from '../../logger'
 import Agreement from '../../models/agreement.model'
@@ -58,12 +58,8 @@ export class BlockchainEventsProcessor extends EventProcessor {
     super(offerId, manager, options)
 
     this.eth = ethFactory()
-    const processorOptions = {
-      processorDeps: { manager: this.manager, eth: this.eth },
-      errorHandler: this.errorHandler,
-      errorLogger: logger
-    }
-    this.processor = filterBlockchainEvents(this.offerId, getProcessor(this.handlers, processorOptions))
+    this.processorOptions = { ...this.processorOptions, eth: this.eth, errorLogger: logger }
+    this.processor = filterBlockchainEvents(this.offerId, this.getProcessor<BlockchainEvent, BlockchainEventProcessorOptions>(this.handlers))
   }
 
   // eslint-disable-next-line require-await
@@ -103,8 +99,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
 
     const precacheLogger = loggingFactory('processor:blockchain:precache')
     const _eventsEmitter = this.eventsEmitter
-    const processorOptions = { processorDeps: { eth: this.eth }, errorHandler: this.options?.errorHandler, logger: precacheLogger }
-    const processor = filterBlockchainEvents(this.offerId, getProcessor(this.handlers, processorOptions))
+    const _processor = this.processor
 
     // Wait to build up the database with latest data
     precacheLogger.verbose('Populating database')
@@ -118,7 +113,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
         // Needs to be sequentially processed
         try {
           for (const event of dataQueue) {
-            await processor(event)
+            await _processor(event)
           }
           resolve()
         } catch (e) {

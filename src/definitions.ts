@@ -144,7 +144,7 @@ export type BlockchainEventProcessorOptions = { eth: Eth } & BaseEventProcessorO
 
 export type EventProcessorOptions = BaseEventProcessorOptions | BlockchainEventProcessorOptions
 
-export type GetProcessorOptions = { errorHandler?: ErrorHandler, errorLogger?: Logger, processorDeps: EventProcessorOptions }
+export type GetProcessorOptions = { errorHandler?: ErrorHandler, errorLogger?: Logger }
 
 /**
  * Events interfaces.

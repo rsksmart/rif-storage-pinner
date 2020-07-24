@@ -4,10 +4,8 @@ import type {
   BlockchainEvent,
   BlockchainEventsWithProvider,
   EventProcessorOptions,
-  GetProcessorOptions,
   EventsHandler,
   Logger,
-  Processor,
   StorageEvents,
   HandlersObject
 } from './definitions'
@@ -23,17 +21,6 @@ export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Log
 
 export function isEventWithProvider (event: BlockchainEvent): event is BlockchainEventsWithProvider {
   return Boolean((event as BlockchainEventsWithProvider).returnValues.provider)
-}
-
-export function getProcessor<T extends StorageEvents, O extends EventProcessorOptions> (handlers: EventsHandler<T, O>[], options?: GetProcessorOptions): Processor<T> {
-  const errHandler = options?.errorHandler ?? errorHandler
-  const processor = async (event: T): Promise<void> => {
-    const promises = handlers
-      .filter(handler => handler.events.includes(event.event))
-      .map(handler => handler.process(event, options?.processorDeps as O))
-    await Promise.all(promises)
-  }
-  return errHandler(processor, options?.errorLogger ?? loggingFactory('processor'))
 }
 
 export function isValidEvent (value: string, handlers: object): value is keyof typeof handlers {
