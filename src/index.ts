@@ -40,7 +40,7 @@ export default async (offerId: string, options?: AppOptions): Promise<{ stop: ()
     // dataDir is set when entry point is CLI, for testing we have also the CWD option.
     await fs
       .unlink(dbPath)
-      .catch(e => logger.info(e.message))
+      .catch(e => logger.error(e.message))
   }
   const sequelize = await sequelizeFactory(dbPath)
   await initStore(sequelize)
