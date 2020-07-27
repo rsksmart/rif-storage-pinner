@@ -1,7 +1,7 @@
 /**
  * Basic logger interface used around the application.
  */
-import {
+import type {
   AgreementFundsDeposited,
   AgreementFundsPayout,
   AgreementFundsWithdrawn,
