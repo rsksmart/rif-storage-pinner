@@ -30,9 +30,9 @@ function getEventProcessor (offerId: string, manager: ProviderManager, options?:
   }
 }
 
-export default async (offerId: string, options?: AppOptions): Promise<{ stop: () => void }> => {
+export default async (offerId: string, options: AppOptions): Promise<{ stop: () => void }> => {
   // dataDir is set when entry point is CLI, for testing we have also the CWD option.
-  const dbPath = path.join(options?.dataDir ?? process.cwd(), config.get<string>('db'))
+  const dbPath = path.join(options?.dataDir, config.get<string>('db'))
   logger.verbose(`Using database path ${dbPath}`)
 
   // Initialize DB

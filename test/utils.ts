@@ -141,6 +141,7 @@ export class TestingApp {
 
     // Run Pinning service
     this.app = await initApp(this.providerAddress, {
+      dataDir: process.cwd(),
       errorHandler: errorHandlerStub,
       contractAddress: this.contract?.options.address
     })
