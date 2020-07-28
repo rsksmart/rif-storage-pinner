@@ -4,7 +4,7 @@
   ipfs: {
     clientOptions: {
       // The default value for go-ipfs
-      url: 'http://localhost:5001',
+      url: 'http://localhost:5003',
     },
 
     // What is timeout for fetching size of given hash
