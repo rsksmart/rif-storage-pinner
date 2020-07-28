@@ -36,6 +36,7 @@ function createAgreement (app: TestingApp, file: File, agreementObj: Record<stri
     availableFunds: 9999999999999,
     agreementReference: `0x${Math.random().toString(36).substring(7)}`,
     billingPrice: 100,
+    expiredAtBlockNumber: 99999,
     ...agreementObj
   })
 
@@ -44,8 +45,14 @@ function createAgreement (app: TestingApp, file: File, agreementObj: Record<stri
   return agreement
 }
 
+function emitBlock (app: TestingApp, block: Record<string, any> = {}) {
+  const agreementService = app.fakeCacheServer?.newBlockService
+  agreementService.emit('newBlock', block)
+  return block
+}
+
 describe('Marketplace Strategy', function () {
-  this.timeout(5000)
+  this.timeout(20000)
   let app: TestingApp
 
   before(() => {
@@ -75,6 +82,8 @@ describe('Marketplace Strategy', function () {
 
     after(async () => {
       await app.stop()
+      stubResetFunctions(stubAgreement)
+      stubResetFunctions(stubOffer)
     })
 
     beforeEach(() => errorSpy.resetHistory())
@@ -130,6 +139,36 @@ describe('Marketplace Strategy', function () {
 
       const stopedAgreement = await Agreement.findByPk(agreement.agreementReference)
       expect(stopedAgreement?.isActive).to.be.false()
+
+      // Should not be be pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+    })
+
+    it('should unpin when agreement run out of funds', async () => {
+      const file = await uploadRandomData(app.ipfsConsumer!)
+      // Check if not pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+
+      await createAgreement(app, file, {
+        billingPeriod: 10,
+        billingPrice: 10,
+        size: 100,
+        availableFunds: 1500, // Enough only for one period
+        lastPayout: Date.now() - (11 * 1000),
+        expiredAtBlockNumber: 9
+      })
+      await sleep(500)
+
+      // Should be pinned
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
+
+      // First lets the time fast forward so the Agreement runs out of funds
+      await sleep(3000)
+
+      // Create new block to
+      emitBlock(app, { number: 10 })
+
+      await sleep(1500)
 
       // Should not be be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()

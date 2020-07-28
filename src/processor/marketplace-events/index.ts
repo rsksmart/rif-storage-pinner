@@ -21,7 +21,7 @@ import type {
 import type { ProviderManager } from '../../providers'
 
 const logger: Logger = loggingFactory('processor:cache')
-const NEW_BLOCK_EVENT = 'newBLock'
+const NEW_BLOCK_EVENT = 'newBlock'
 
 // TODO remove after cache service will be able to filter events for us
 function filterCacheEvents (offerId: string, callback: Processor<MarketplaceEvent>): Processor<MarketplaceEvent> {
