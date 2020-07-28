@@ -1,16 +1,14 @@
 {
   blockchain: {
     provider: 'ws://localhost:8545',
-    ipfs: {
-      clientOptions: {
-        url: 'http://localhost:5003'
-      }
-    },
     eventsEmitter: {
       confirmations: 1
     }
   },
   ipfs: {
-    sizeFetchTimeout: '30s'
+    sizeFetchTimeout: '30s',
+    clientOptions: {
+      url: 'http://localhost:5003'
+    }
   }
 }
