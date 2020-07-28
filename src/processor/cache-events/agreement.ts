@@ -14,10 +14,10 @@ const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
   async NewAgreement (event: CacheEvent, options: BaseEventProcessorOptions): Promise<void> {
     const newAgreement = event.payload
 
-    if (options.manager) await options.manager.pin(newAgreement.dataReference, parseInt(newAgreement.size))
-
     await Agreement.upsert(newAgreement) // Agreement might already exist
     logger.info(`Created new Agreement with ID ${newAgreement.agreementReference} for offer ${newAgreement.offerId}`)
+
+    if (options.manager) await options.manager.pin(newAgreement.dataReference, parseInt(newAgreement.size))
   },
 
   async AgreementStopped (event: CacheEvent, options: BaseEventProcessorOptions): Promise<void> {
@@ -28,10 +28,10 @@ const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
       throw new EventError(`Agreement with ID ${agreementReference} was not found!`, 'AgreementStopped')
     }
 
-    if (options.manager) await options.manager.unpin(agreement.dataReference)
-
     agreement.isActive = false
     await agreement.save()
+
+    if (options.manager) await options.manager.unpin(agreement.dataReference)
 
     logger.info(`Agreement ${agreementReference} was stopped.`)
   },

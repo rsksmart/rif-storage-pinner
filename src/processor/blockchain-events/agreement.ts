@@ -49,10 +49,10 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
       lastPayout: await getBlockDate(options.eth, blockNumber)
     }
 
-    if (options.manager) await options.manager.pin(dataReference, parseInt(data.size))
-
     await Agreement.upsert(data) // Agreement might already exist
     logger.info(`Created new Agreement with ID ${agreementReference} for offer ${offerId}`)
+
+    if (options.manager) await options.manager.pin(dataReference, parseInt(data.size))
   },
 
   async AgreementStopped (event: BlockchainAgreementEvents, options: BlockchainEventProcessorOptions): Promise<void> {
@@ -63,10 +63,10 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
       throw new EventError(`Agreement with ID ${id} was not found!`, 'AgreementStopped')
     }
 
-    if (options.manager) await options.manager.unpin(agreement.dataReference)
-
     agreement.isActive = false
     await agreement.save()
+
+    if (options.manager) await options.manager.unpin(agreement.dataReference)
 
     logger.info(`Agreement ${id} was stopped.`)
   },
