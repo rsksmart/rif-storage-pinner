@@ -2,10 +2,13 @@ import config from 'config'
 import io from 'socket.io-client'
 import feathers from '@feathersjs/feathers'
 import socketio from '@feathersjs/socketio-client'
+import { getObject } from 'sequelize-store'
 
 import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
+import Agreement from '../../models/agreement.model'
+import { loggingFactory } from '../../logger'
 import type {
   AppOptions,
   BaseEventProcessorOptions,
@@ -14,11 +17,7 @@ import type {
   EventsHandler,
   Processor
 } from '../../definitions'
-import { loggingFactory } from '../../logger'
-
 import type { ProviderManager } from '../../providers'
-import { getObject } from 'sequelize-store'
-import Agreement from '../../models/agreement.model'
 
 const logger: Logger = loggingFactory('processor:cache')
 
