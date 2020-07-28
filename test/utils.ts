@@ -1,9 +1,9 @@
 import config from 'config'
 import sinon from 'sinon'
-import ipfsClient, { ClientOptions, IpfsClient } from 'ipfs-http-client'
+import ipfsClient, { CID, ClientOptions, IpfsClient } from 'ipfs-http-client'
 import Eth from 'web3-eth'
 import { Contract } from 'web3-eth-contract'
-import { AbiItem, asciiToHex, padRight } from 'web3-utils'
+import { AbiItem, asciiToHex } from 'web3-utils'
 import { promisify } from 'util'
 import path from 'path'
 import { promises as fs } from 'fs'
@@ -11,10 +11,13 @@ import type { HttpProvider } from 'web3-core'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 import initApp from '../src'
-import { Logger } from '../src/definitions'
+import { Logger, Strategy } from '../src/definitions'
+import { FakeCacheService } from './fake-cache-service'
+import { loggingFactory } from '../src/logger'
 
-const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
+export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 
+export const providerAddress = '0xB22230f21C57f5982c2e7C91162799fABD5733bE'
 export const errorSpy = sinon.spy()
 
 function errorHandlerStub (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> {
@@ -44,7 +47,7 @@ export async function asyncIterableToArray (asyncIterable: any): Promise<Array<a
   return result
 }
 
-async function initIpfsClient (options: ClientOptions | string): Promise<IpfsClient> {
+export async function initIpfsClient (options: ClientOptions | string): Promise<IpfsClient> {
   const ipfs = await ipfsClient(options)
 
   try {
@@ -59,9 +62,43 @@ async function initIpfsClient (options: ClientOptions | string): Promise<IpfsCli
   return ipfs
 }
 
-export class TestingApp {
-  static app: TestingApp
+export async function isPinned (ipfs: IpfsClient, cid: CID): Promise<boolean> {
+  try {
+    const [file] = await asyncIterableToArray(ipfs.pin.ls(cid))
+    return file.cid.toString() === cid.toString()
+  } catch (e) {
+    if (e.message === `path '${cid}' is not pinned`) return false
+    throw e
+  }
+}
 
+export interface File {
+  fileHash: string
+  size: number
+  cid: CID
+  cidString: string
+}
+
+export async function uploadRandomData (ipfs: IpfsClient): Promise<File> {
+  const [file] = await asyncIterableToArray(ipfs.add([
+    {
+      path: `${Math.random().toString(36).substring(7)}.txt`,
+      content: `Nice to be on IPFS ${Math.random().toString(36).substring(7)}`
+    }
+  ]))
+  return {
+    ...file,
+    fileHash: `/ipfs/${file.cid.toString()}`,
+    cidString: file.cid.toString()
+  }
+}
+
+export class TestingApp {
+  static app: TestingApp | undefined
+
+  private logger = loggingFactory('test:test-app')
+  private app: { stop: () => void } | undefined
+  public fakeCacheServer: FakeCacheService | undefined = undefined
   public contract: Contract | undefined = undefined
   public eth: Eth | undefined = undefined
   public ipfsConsumer: IpfsClient | undefined = undefined
@@ -78,26 +115,57 @@ export class TestingApp {
   }
 
   async init (): Promise<void> {
-    // Init Provider
-    await this.initProvider()
+    const strategy = config.get<string>('strategy')
 
-    // Deploy StorageManager for provider
-    await this.deployStorageManager()
-
-    // Create an Offer for provider account
-    await this.createOffer()
+    switch (strategy) {
+      case Strategy.Blockchain:
+        // Init Blockchain Provider
+        await this.initBlockchainProvider()
+        // Deploy StorageManager for provider
+        await this.deployStorageManager()
+        // Create an Offer for provider account
+        await this.createOffer()
+        break
+      case Strategy.Cache:
+        // Run fake cache service
+        await this.initCacheProvider()
+        break
+      default:
+        break
+    }
+    this.logger.info('Strategy deps initialized')
 
     // Remove current testing db
     await this.purgeDb()
+    this.logger.info('Database removed')
 
-    // Run Pinning job
-    await initApp(this.providerAddress, {
+    // Run Pinning service
+    this.app = await initApp(this.providerAddress, {
+      dataDir: process.cwd(),
       errorHandler: errorHandlerStub,
       contractAddress: this.contract?.options.address
     })
+    this.logger.info('Pinning service started')
 
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
+    this.logger.info('IPFS clients created')
+  }
+
+  async stop (): Promise<void> {
+    if (this.app) {
+      await this.app.stop()
+      this.fakeCacheServer?.stop()
+
+      this.app = undefined
+      TestingApp.app = undefined
+      this.eth = undefined
+      this.ipfsConsumer = undefined
+      this.contract = undefined
+      this.ipfsProvider = undefined
+      this.consumerAddress = ''
+      this.providerAddress = ''
+    }
   }
 
   private async purgeDb (): Promise<void> {
@@ -112,11 +180,17 @@ export class TestingApp {
     }
   }
 
-  private async initProvider (): Promise<void> {
+  private async initBlockchainProvider (): Promise<void> {
     this.eth = new Eth(config.get<string>('blockchain.provider'))
     const [provider, consumer] = await this.eth.getAccounts()
     this.providerAddress = provider
     this.consumerAddress = consumer
+  }
+
+  async initCacheProvider (): Promise<void> {
+    this.fakeCacheServer = new FakeCacheService()
+    this.providerAddress = providerAddress
+    await this.fakeCacheServer.run()
   }
 
   private async initIpfs (): Promise<void> {
@@ -129,10 +203,14 @@ export class TestingApp {
       throw new Error('Provider should be initialized and has at least 2 accounts and StorageManage contract should be deployed')
     }
 
-    const msg = [padRight(asciiToHex('some string'), 64), padRight(asciiToHex('some other string'), 64)]
+    const testPeerId = 'FakePeerId'
+    const testPeerIdHex = asciiToHex(testPeerId, 32).replace('0x', '')
+    const nodeIdFlag = '01'
+    const msg = [`0x${nodeIdFlag}${testPeerIdHex}`]
+
     const offerCall = this.contract
       .methods
-      .setOffer(1000, [1, 100], [10, 80], msg)
+      .setOffer(1000000, [1, 100], [10, 80], msg)
     await offerCall.send({ from: this.providerAddress, gas: await offerCall.estimateGas() })
   }
 

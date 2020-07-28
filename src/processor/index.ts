@@ -1,59 +1,57 @@
-import type { EventData } from 'web3-eth-contract'
-import type { Eth } from 'web3-eth'
-import type { EventEmitter } from 'events'
-
-import { errorHandler, filterEvents } from '../utils'
-import offer from './offer'
-import request from './agreement'
-import type { ErrorHandler, Handler } from '../definitions'
-import type { ProviderManager } from '../providers'
+import {
+  AppOptions,
+  ErrorHandler,
+  EventProcessorOptions,
+  EventsHandler,
+  GetProcessorOptions,
+  Logger,
+  Processor,
+  StorageEvents
+} from '../definitions'
 import { loggingFactory } from '../logger'
-import Agreement from '../models/agreement.model'
+import { ProviderManager } from '../providers'
+import { errorHandler } from '../utils'
 
-const precacheLogger = loggingFactory('blockchain:precache')
-const HANDLERS: Handler[] = [offer, request]
-
-export default function processor (eth: Eth, manager?: ProviderManager) {
-  return async (event: EventData): Promise<void> => {
-    const promises = HANDLERS
-      .filter(handler => handler.events.includes(event.event))
-      .map(handler => handler.process(event, eth, manager))
-    await Promise.all(promises)
-  }
+interface EventProcessorI {
+    readonly offerId: string
+    initialized: boolean
 }
 
-export function getProcessor (offerId: string, eth: Eth, manager?: ProviderManager, options?: { errorHandler: ErrorHandler | undefined }): (event: EventData) => Promise<void> {
-  return filterEvents(offerId, (options?.errorHandler || errorHandler)(processor(eth, manager), loggingFactory('processor')))
-}
+export abstract class EventProcessor implements EventProcessorI {
+    readonly offerId: string
+    readonly manager: ProviderManager
+    readonly options?: AppOptions
+    protected processorOptions: GetProcessorOptions & EventProcessorOptions
+    initialized = false
 
-export async function precache (eventsEmitter: EventEmitter, manager: ProviderManager, processor: (event: EventData) => Promise<void>): Promise<void> {
-  // Wait to build up the database with latest data
-  precacheLogger.verbose('Populating database')
-  await new Promise<void>((resolve, reject) => {
-    const dataQueue: EventData[] = []
-    const dataQueuePusher = (event: EventData): void => { dataQueue.push(event) }
-
-    eventsEmitter.on('initFinished', async () => {
-      eventsEmitter.off('newEvent', dataQueuePusher)
-
-      // Needs to be sequentially processed
-      try {
-        for (const event of dataQueue) {
-          await processor(event)
-        }
-        resolve()
-      } catch (e) {
-        reject(e)
-      }
-    })
-    eventsEmitter.on('newEvent', dataQueuePusher)
-  })
-
-  // Now lets pin every Agreement that has funds
-  precacheLogger.verbose('Pinning valid Agreements')
-  for (const agreement of await Agreement.findAll()) {
-    if (agreement.hasSufficientFunds) {
-      await manager.pin(agreement.dataReference, agreement.size)
+    protected constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
+      this.offerId = offerId
+      this.manager = manager
+      this.options = options
+      this.processorOptions = { manager: this.manager }
     }
-  }
+
+    get errorHandler (): ErrorHandler {
+      return this.options?.errorHandler ?? errorHandler
+    }
+
+    get errorLogger (): Logger {
+      return this.processorOptions?.errorLogger ?? loggingFactory('processor')
+    }
+
+    getProcessor<T extends StorageEvents, O extends EventProcessorOptions> (handlers: EventsHandler<T, O>[]): Processor<T> {
+      const errHandler = this.errorHandler
+      const deps = this.processorOptions
+      const processor = async (event: T): Promise<void> => {
+        const promises = handlers
+          .filter(handler => handler.events.includes(event.event))
+          .map(handler => handler.process(event, deps as O))
+        await Promise.all(promises)
+      }
+      return errHandler(processor, this.errorLogger)
+    }
+
+    abstract async initialize (): Promise<void>
+    abstract async run (): Promise<void>
+    async abstract stop (): Promise<void>
 }

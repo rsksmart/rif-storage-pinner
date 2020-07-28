@@ -1,7 +1,14 @@
-import { Logger } from './definitions'
-import { EventData } from 'web3-eth-contract'
 import { hexToAscii } from 'web3-utils'
-import Agreement from './models/agreement.model'
+
+import type {
+  BlockchainEvent,
+  BlockchainEventsWithProvider,
+  EventProcessorOptions,
+  EventsHandler,
+  Logger,
+  StorageEvents,
+  HandlersObject
+} from './definitions'
 import { loggingFactory } from './logger'
 
 const logger = loggingFactory('utils')
@@ -12,19 +19,24 @@ export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Log
   }
 }
 
-export function filterEvents (offerId: string, callback: (event: EventData) => Promise<void>) {
-  return async (event: EventData): Promise<void> => {
-    logger.debug(`Got ${event.event} for provider ${event.returnValues.provider}`)
+export function isEventWithProvider (event: BlockchainEvent): event is BlockchainEventsWithProvider {
+  return Boolean((event as BlockchainEventsWithProvider).returnValues.provider)
+}
 
-    if (event.returnValues.provider && event.returnValues.provider === offerId) {
-      return callback(event)
+export function isValidEvent (value: string, handlers: object): value is keyof typeof handlers {
+  return value in handlers
+}
+
+export function buildHandler<T extends StorageEvents, O extends EventProcessorOptions> (handlers: HandlersObject<T, O>, events: string[]): EventsHandler<T, O> {
+  return {
+    events,
+    process: (event: T, options: O): Promise<void> => {
+      if (!isValidEvent(event.event, handlers)) {
+        return Promise.reject(new Error(`Unknown event ${event.event}`))
+      }
+
+      return handlers[event.event](event, options ?? {} as O)
     }
-
-    if (event.event.startsWith('Agreement') && await Agreement.findByPk(event.returnValues.agreementReference)) {
-      return callback(event)
-    }
-
-    return Promise.resolve()
   }
 }
 

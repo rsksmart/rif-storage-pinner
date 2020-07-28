@@ -1,5 +1,6 @@
 {
   db: 'db.sqlite',
+  strategy: 'blockchain',
   ipfs: {
     clientOptions: {
       // The default value for go-ipfs
@@ -36,6 +37,10 @@
       // If to use polling strategy, if false then listening is used.
       polling: true
     }
+  },
+  cache: {
+    offers: '/storage/v0/offers',
+    agreements: '/storage/v0/agreements'
   },
 
   log: {

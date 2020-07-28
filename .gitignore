@@ -35,3 +35,6 @@ node_modules
 .repos
 
 db_test.sqlite
+
+.eslintrc.js
+.tsconfig.json

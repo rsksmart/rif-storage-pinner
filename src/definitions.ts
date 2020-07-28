@@ -1,7 +1,15 @@
 /**
  * Basic logger interface used around the application.
  */
-import type { EventData } from 'web3-eth-contract'
+import type {
+  AgreementFundsDeposited,
+  AgreementFundsPayout,
+  AgreementFundsWithdrawn,
+  AgreementStopped,
+  NewAgreement,
+  TotalCapacitySet,
+  MessageEmitted
+} from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
 import type { Eth } from 'web3-eth'
 import type { ClientOptions as IpfsOptions } from 'ipfs-http-client'
 
@@ -16,6 +24,9 @@ export interface Provider {
   unpin (hash: string): Promise<void>
 }
 
+/**
+ * Basic logger interface used around the application.
+ */
 export interface Logger {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   critical (message: string | Error | object, ...meta: any[]): never
@@ -76,6 +87,15 @@ export interface Config {
     newBlockEmitter?: NewBlockEmitterOptions
   }
 
+  cache?: {
+    // Offer service path
+    offer?: string
+    // Agreement service path
+    agreement?: string
+    // Cache service url
+    provider?: string
+  }
+
   ipfs?: {
     clientOptions?: IpfsOptions
     sizeFetchTimeout?: number | string
@@ -88,20 +108,58 @@ export interface Config {
   }
 }
 
-/**
- * Interface for more complex handling of events.
- */
-export interface Handler {
-  events: string[]
-  process: (event: EventData, eth: Eth, manager?: ProviderManager) => Promise<void>
-}
-
 export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
 
 export interface AppOptions {
-  dataDir?: string
+  dataDir: string
   removeCache?: boolean
   forcePrecache?: boolean
   errorHandler?: ErrorHandler
   contractAddress?: string
+  strategy?: Strategy
 }
+
+export enum Strategy { Blockchain = 'blockchain', Cache = 'cache' }
+
+/**
+ * Interface for more complex handling of events.
+ */
+export interface EventsHandler<T extends StorageEvents, O extends EventProcessorOptions> {
+  events: string[]
+  process: (event: T, options: O) => Promise<void>
+}
+/**
+ * Interface for object with event handler functions
+ */
+export type HandlersObject<T extends StorageEvents, O extends EventProcessorOptions> = { [key: string]: (event: T, options: O) => Promise<void> }
+
+/**
+ * Interfaces for Processor.
+ */
+export type Processor<T> = (event: T) => Promise<void>
+
+export type BaseEventProcessorOptions = { manager?: ProviderManager }
+
+export type BlockchainEventProcessorOptions = { eth: Eth } & BaseEventProcessorOptions
+
+export type EventProcessorOptions = BaseEventProcessorOptions | BlockchainEventProcessorOptions
+
+export type GetProcessorOptions = { errorHandler?: ErrorHandler, errorLogger?: Logger }
+
+/**
+ * Events interfaces.
+ */
+export interface CacheEvent {
+  event: string
+  payload: Record<string, any>
+}
+
+export type BlockchainAgreementEvents = NewAgreement | AgreementStopped | AgreementFundsDeposited | AgreementFundsWithdrawn | AgreementFundsPayout
+
+export type BlockchainOfferEvents = TotalCapacitySet | MessageEmitted
+
+export type BlockchainEventsWithProvider = BlockchainOfferEvents | NewAgreement
+
+export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEvents
+
+export type StorageEvents = BlockchainEvent | CacheEvent

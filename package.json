@@ -45,10 +45,13 @@
     "test:integration": "cross-env ALLOW_CONFIG_MUTATIONS=true tasegir test --target node --files ./test/integration/*.spec.ts",
     "test:unit": "cross-env ALLOW_CONFIG_MUTATIONS=true tasegir test --target node --files ./test/unit/*.spec.ts",
     "test": "npm run test:unit && npm run test:integration",
+    "tasegir:link": "ln -s ./node_modules/tasegir/src/config/tsconfig.json ./tsconfig.json && ln -s ./node_modules/tasegir/src/config/eslintrc.js ./.eslintrc.js",
     "types-check": "tasegir types-check",
     "version": "oclif-dev readme && git add README.md"
   },
   "dependencies": {
+    "@feathersjs/feathers": "^4.5.5",
+    "@feathersjs/socketio-client": "^4.5.6",
     "@oclif/command": "^1.6.1",
     "@oclif/config": "^1.15.1",
     "@oclif/errors": "^1.3.1",
@@ -66,6 +69,7 @@
     "sequelize": "^6.3.3",
     "sequelize-store": "^0.3.1",
     "sequelize-typescript": "^2.0.0-beta.0",
+    "socket.io-client": "^2.3.0",
     "sql-formatter": "^2.3.3",
     "sqlite3": "^4.2.0",
     "web3-core": "^1.2.9",
@@ -77,6 +81,8 @@
     "winston-transport": "^4.3.0"
   },
   "devDependencies": {
+    "@feathersjs/express": "^4.5.6",
+    "@feathersjs/socketio": "^4.5.6",
     "@fluffy-spoon/substitute": "^1.143.0",
     "@oclif/dev-cli": "^1.22.2",
     "@types/bluebird": "^3.5.32",
