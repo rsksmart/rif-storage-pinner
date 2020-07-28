@@ -29,7 +29,6 @@ import type { ProviderManager } from '../../providers'
 
 const logger: Logger = loggingFactory('processor:blockchain')
 
-// TODO remove after cache service will be able to filter events for us
 function filterBlockchainEvents (offerId: string, callback: Processor<BlockchainEvent>): Processor<BlockchainEvent> {
   return async (event: BlockchainEvent): Promise<void> => {
     logger.debug(`Got ${event.event} for provider ${(event as BlockchainEventsWithProvider).returnValues.provider}`)
