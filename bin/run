@@ -12,5 +12,9 @@ if (!process.env.NODE_CONFIG_DIR) {
   process.env.NODE_CONFIG_DIR = path.join(__dirname, '..', 'config')
 }
 
+if (!process.env.NODE_ENV && !dev) {
+  process.env.NODE_ENV = 'production'
+}
+
 require(`../${dev ? 'src' : 'lib'}/cli`).default.run()
   .catch(require('@oclif/errors/handle'))
