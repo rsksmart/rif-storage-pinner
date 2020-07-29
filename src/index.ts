@@ -5,7 +5,7 @@ import path from 'path'
 import { AppOptions, Strategy } from './definitions'
 import { loggingFactory } from './logger'
 import { BlockchainEventsProcessor } from './processor/blockchain-events'
-import { CacheEventsProcessor } from './processor/cache-events'
+import { MarketplaceEventsProcessor } from './processor/marketplace-events'
 import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
 import { sequelizeFactory } from './sequelize'
@@ -14,16 +14,16 @@ import { duplicateObject } from './utils'
 
 const logger = loggingFactory('pinning-service')
 
-function getEventProcessor (offerId: string, manager: ProviderManager, options?: AppOptions): BlockchainEventsProcessor | CacheEventsProcessor {
+function getEventProcessor (offerId: string, manager: ProviderManager, options?: AppOptions): BlockchainEventsProcessor | MarketplaceEventsProcessor {
   const strategy = options?.strategy ?? config.get('strategy')
 
   switch (strategy) {
     case Strategy.Blockchain:
       logger.info('Create BlockchainEventsProcessor')
       return new BlockchainEventsProcessor(offerId, manager, options)
-    case Strategy.Cache:
-      logger.info('Create CacheEventsProcessor')
-      return new CacheEventsProcessor(offerId, manager, options)
+    case Strategy.Marketplace:
+      logger.info('Create MarketplaceEventsProcessor')
+      return new MarketplaceEventsProcessor(offerId, manager, options)
     default:
       logger.info('Create default(BlockchainEventsProcessor)')
       return new BlockchainEventsProcessor(offerId, manager, options)

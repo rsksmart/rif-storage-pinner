@@ -1,13 +1,13 @@
 import { getObject } from 'sequelize-store'
 
-import type { CacheEvent, BaseEventProcessorOptions, HandlersObject } from '../../definitions'
+import type { MarketplaceEvent, BaseEventProcessorOptions, HandlersObject } from '../../definitions'
 import { loggingFactory } from '../../logger'
 import { buildHandler } from '../../utils'
 
-const logger = loggingFactory('processor:cache:offer')
+const logger = loggingFactory('processor:marketplace:offer')
 
-const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
-  TotalCapacitySet (event: CacheEvent): Promise<void> {
+const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
+  TotalCapacitySet (event: MarketplaceEvent): Promise<void> {
     const store = getObject()
     const { payload: { totalCapacity: capacity } } = event
 
@@ -15,7 +15,7 @@ const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
     logger.info(`Updating capacity ${capacity}`)
     return Promise.resolve()
   },
-  MessageEmitted (event: CacheEvent): Promise<void> {
+  MessageEmitted (event: MarketplaceEvent): Promise<void> {
     const store = getObject()
 
     if (event.payload.peerId) {
@@ -26,7 +26,7 @@ const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
   }
 }
 
-export default buildHandler<CacheEvent, BaseEventProcessorOptions>(
+export default buildHandler<MarketplaceEvent, BaseEventProcessorOptions>(
   handlers,
   ['TotalCapacitySet', 'MessageEmitted']
 )

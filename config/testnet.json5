@@ -2,7 +2,7 @@
   blockchain: {
     //contractAddress : ''
   },
-  cache: {
+  marketplace: {
     provider: 'https://marketplace-cache.testnet.rifos.org/'
   }
 }

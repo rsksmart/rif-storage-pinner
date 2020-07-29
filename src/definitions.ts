@@ -87,11 +87,13 @@ export interface Config {
     newBlockEmitter?: NewBlockEmitterOptions
   }
 
-  cache?: {
+  marketplace?: {
     // Offer service path
     offer?: string
+
     // Agreement service path
     agreement?: string
+
     // Cache service url
     provider?: string
   }
@@ -119,7 +121,7 @@ export interface AppOptions {
   strategy?: Strategy
 }
 
-export enum Strategy { Blockchain = 'blockchain', Cache = 'cache' }
+export enum Strategy { Blockchain = 'blockchain', Marketplace = 'marketplace' }
 
 /**
  * Interface for more complex handling of events.
@@ -149,7 +151,7 @@ export type GetProcessorOptions = { errorHandler?: ErrorHandler, errorLogger?: L
 /**
  * Events interfaces.
  */
-export interface CacheEvent {
+export interface MarketplaceEvent {
   event: string
   payload: Record<string, any>
 }
@@ -162,4 +164,4 @@ export type BlockchainEventsWithProvider = BlockchainOfferEvents | NewAgreement
 
 export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEvents
 
-export type StorageEvents = BlockchainEvent | CacheEvent
+export type StorageEvents = BlockchainEvent | MarketplaceEvent

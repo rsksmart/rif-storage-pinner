@@ -12,7 +12,7 @@ import type { HttpProvider } from 'web3-core'
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 import initApp from '../src'
 import { Logger, Strategy } from '../src/definitions'
-import { FakeCacheService } from './fake-cache-service'
+import { FakeMarketplaceService } from './fake-marketplace-service'
 import { loggingFactory } from '../src/logger'
 
 export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
@@ -98,7 +98,7 @@ export class TestingApp {
 
   private logger = loggingFactory('test:test-app')
   private app: { stop: () => void } | undefined
-  public fakeCacheServer: FakeCacheService | undefined = undefined
+  public fakeCacheServer: FakeMarketplaceService | undefined = undefined
   public contract: Contract | undefined = undefined
   public eth: Eth | undefined = undefined
   public ipfsConsumer: IpfsClient | undefined = undefined
@@ -126,8 +126,8 @@ export class TestingApp {
         // Create an Offer for provider account
         await this.createOffer()
         break
-      case Strategy.Cache:
-        // Run fake cache service
+      case Strategy.Marketplace:
+        // Run fake marketplace service
         await this.initCacheProvider()
         break
       default:
@@ -188,7 +188,7 @@ export class TestingApp {
   }
 
   async initCacheProvider (): Promise<void> {
-    this.fakeCacheServer = new FakeCacheService()
+    this.fakeCacheServer = new FakeMarketplaceService()
     this.providerAddress = providerAddress
     await this.fakeCacheServer.run()
   }

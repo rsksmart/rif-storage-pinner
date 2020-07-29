@@ -6,7 +6,6 @@ import { getObject } from 'sequelize-store'
 
 import {
   TestingApp,
-  providerAddress,
   consumerIpfsUrl,
   initIpfsClient,
   uploadRandomData,
@@ -15,7 +14,6 @@ import {
   sleep,
   errorSpy
 } from '../utils'
-import { loggingFactory } from '../../src/logger'
 import { Strategy } from '../../src/definitions'
 import {
   mockAgreement,
@@ -23,13 +21,12 @@ import {
   stubResetFunctions,
   stubOffer,
   stubAgreement
-} from '../fake-cache-service'
+} from '../fake-marketplace-service'
 import Agreement from '../../src/models/agreement.model'
 
 chai.use(chaiAsPromised)
 chai.use(dirtyChai)
 
-const logger = loggingFactory('test:pinning:cache')
 const expect = chai.expect
 
 function createAgreement (app: TestingApp, file: File, agreementObj: Record<string, any> = {}) {
@@ -47,14 +44,14 @@ function createAgreement (app: TestingApp, file: File, agreementObj: Record<stri
   return agreement
 }
 
-describe('Cache Strategy', function () {
+describe('Marketplace Strategy', function () {
   this.timeout(5000)
   let app: TestingApp
 
   before(() => {
     // @ts-ignore
-    config.strategy = Strategy.Cache
-    config.util.extendDeep(config, { cache: { provider: 'http://localhost:3030' } })
+    config.strategy = Strategy.Marketplace
+    config.util.extendDeep(config, { marketplace: { provider: 'http://localhost:3030' } })
   })
 
   after(() => {

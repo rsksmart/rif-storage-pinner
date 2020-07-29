@@ -55,17 +55,17 @@ function storageChannels (app: any): void {
     app.channel('storage_agreements').join(connection)
     app.channel('storage_offers').join(connection)
   })
-  app.service(config.get<string>('cache.offers')).publish(() => app.channel('storage_offers'))
-  app.service(config.get<string>('cache.agreements')).publish(() => app.channel('storage_agreements'))
+  app.service(config.get<string>('marketplace.offers')).publish(() => app.channel('storage_offers'))
+  app.service(config.get<string>('marketplace.agreements')).publish(() => app.channel('storage_agreements'))
 }
 
-export class FakeCacheService {
+export class FakeMarketplaceService {
   private readonly port: number
 
   public app: any
   public cacheServer: Server | undefined
-  public offerPath = config.get<string>('cache.offers')
-  public agreementPath = config.get<string>('cache.agreements')
+  public offerPath = config.get<string>('marketplace.offers')
+  public agreementPath = config.get<string>('marketplace.agreements')
 
   constructor (port?: number) {
     this.port = port ?? 3030
