@@ -1,7 +1,7 @@
 import { loggingFactory } from '../../logger'
 import type {
   BaseEventProcessorOptions,
-  CacheEvent,
+  MarketplaceEvent,
   HandlersObject
 } from '../../definitions'
 import { buildHandler } from '../../utils'
@@ -10,8 +10,8 @@ import { EventError } from '../../errors'
 
 const logger = loggingFactory('processor:cache:agreement')
 
-const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
-  async NewAgreement (event: CacheEvent, options: BaseEventProcessorOptions): Promise<void> {
+const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
+  async NewAgreement (event: MarketplaceEvent, options: BaseEventProcessorOptions): Promise<void> {
     const newAgreement = event.payload
 
     await Agreement.upsert(newAgreement) // Agreement might already exist
@@ -20,7 +20,7 @@ const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
     if (options.manager) await options.manager.pin(newAgreement.dataReference, parseInt(newAgreement.size))
   },
 
-  async AgreementStopped (event: CacheEvent, options: BaseEventProcessorOptions): Promise<void> {
+  async AgreementStopped (event: MarketplaceEvent, options: BaseEventProcessorOptions): Promise<void> {
     const { agreementReference } = event.payload
     const agreement = await Agreement.findByPk(agreementReference)
 
@@ -36,7 +36,7 @@ const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
     logger.info(`Agreement ${agreementReference} was stopped.`)
   },
 
-  async AgreementFundsDeposited (event: CacheEvent): Promise<void> {
+  async AgreementFundsDeposited (event: MarketplaceEvent): Promise<void> {
     const { agreementReference: id, availableFunds } = event.payload
     const agreement = await Agreement.findByPk(id)
 
@@ -50,7 +50,7 @@ const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
     logger.info(`Agreement ${id} was topped up with ${availableFunds}.`)
   },
 
-  async AgreementFundsWithdrawn (event: CacheEvent): Promise<void> {
+  async AgreementFundsWithdrawn (event: MarketplaceEvent): Promise<void> {
     const { agreementReference: id, availableFunds } = event.payload
     const agreement = await Agreement.findByPk(id)
 
@@ -64,7 +64,7 @@ const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
     logger.info(`${availableFunds} was withdrawn from funds of Agreement ${id}.`)
   },
 
-  async AgreementFundsPayout (event: CacheEvent): Promise<void> {
+  async AgreementFundsPayout (event: MarketplaceEvent): Promise<void> {
     const { agreementReference: id, availableFunds, lastPayout } = event.payload
     const agreement = await Agreement.findByPk(id)
 
@@ -80,7 +80,7 @@ const handlers: HandlersObject<CacheEvent, BaseEventProcessorOptions> = {
   }
 }
 
-export default buildHandler<CacheEvent, BaseEventProcessorOptions>(
+export default buildHandler<MarketplaceEvent, BaseEventProcessorOptions>(
   handlers,
   ['NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped']
 )

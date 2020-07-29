@@ -12,7 +12,7 @@ import { loggingFactory } from '../../logger'
 import type {
   AppOptions,
   BaseEventProcessorOptions,
-  CacheEvent,
+  MarketplaceEvent,
   Logger,
   EventsHandler,
   Processor
@@ -22,38 +22,38 @@ import type { ProviderManager } from '../../providers'
 const logger: Logger = loggingFactory('processor:cache')
 
 // TODO remove after cache service will be able to filter events for us
-function filterCacheEvents (offerId: string, callback: Processor<CacheEvent>): Processor<CacheEvent> {
-  return async (event: CacheEvent): Promise<void> => {
+function filterCacheEvents (offerId: string, callback: Processor<MarketplaceEvent>): Processor<MarketplaceEvent> {
+  return async (event: MarketplaceEvent): Promise<void> => {
     if (event.payload.address === offerId || event.payload.offerId === offerId) await callback(event)
   }
 }
 
 // TODO GC using Cache service
-export class CacheEventsProcessor extends EventProcessor {
-    private readonly handlers = [offer, agreement] as EventsHandler<CacheEvent, BaseEventProcessorOptions>[]
-    private readonly processor: Processor<CacheEvent>
+export class MarketplaceEventsProcessor extends EventProcessor {
+    private readonly handlers = [offer, agreement] as EventsHandler<MarketplaceEvent, BaseEventProcessorOptions>[]
+    private readonly processor: Processor<MarketplaceEvent>
     private services: Record<string, feathers.Service<any>> = {}
 
     constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
       super(offerId, manager, options)
 
       this.processorOptions = { ...this.processorOptions, errorLogger: logger }
-      this.processor = filterCacheEvents(this.offerId, this.getProcessor<CacheEvent, BaseEventProcessorOptions>(this.handlers))
+      this.processor = filterCacheEvents(this.offerId, this.getProcessor<MarketplaceEvent, BaseEventProcessorOptions>(this.handlers))
     }
 
     // eslint-disable-next-line require-await
     async initialize (): Promise<void> {
       if (this.initialized) throw new Error('Already Initialized')
-      logger.info('Connecting websocket to ' + config.get('cache.provider'))
+      logger.info('Connecting websocket to ' + config.get('marketplace.provider'))
 
       // Connect to cache service
       const client = feathers()
-      const socket = io(config.get('cache.provider'), { transports: ['websocket'] })
+      const socket = io(config.get('marketplace.provider'), { transports: ['websocket'] })
       client.configure(socketio(socket))
 
       this.services = {
-        offer: client.service(config.get<string>('cache.offers')),
-        agreement: client.service(config.get<string>('cache.agreements'))
+        offer: client.service(config.get<string>('marketplace.offers')),
+        agreement: client.service(config.get<string>('marketplace.agreements'))
       }
 
       this.initialized = true
