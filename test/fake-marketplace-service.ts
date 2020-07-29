@@ -58,7 +58,7 @@ function storageChannels (app: any): void {
   })
   app.service(config.get<string>('marketplace.offers')).publish(() => app.channel('storage_offers'))
   app.service(config.get<string>('marketplace.agreements')).publish(() => app.channel('storage_agreements'))
-  app.service(config.get<string>('cache.newBlock')).publish(() => app.channel('blockchain'))
+  app.service(config.get<string>('marketplace.newBlock')).publish(() => app.channel('blockchain'))
 }
 
 export class FakeMarketplaceService {
@@ -68,7 +68,7 @@ export class FakeMarketplaceService {
   public cacheServer: Server | undefined
   public offerPath = config.get<string>('marketplace.offers')
   public agreementPath = config.get<string>('marketplace.agreements')
-  public newBlockPath = config.get<string>('cache.newBlock')
+  public newBlockPath = config.get<string>('marketplace.newBlock')
 
   constructor (port?: number) {
     this.port = port ?? 3030

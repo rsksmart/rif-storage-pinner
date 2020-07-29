@@ -60,7 +60,7 @@ export class MarketplaceEventsProcessor extends EventProcessor {
         offer: client.service(config.get<string>('marketplace.offers')),
         agreement: client.service(config.get<string>('marketplace.agreements'))
       }
-      this.newBlockService = client.service(config.get<string>('cache.newBlock'))
+      this.newBlockService = client.service(config.get<string>('marketplace.newBlock'))
 
       this.initialized = true
       logger.info('Services initialized')
