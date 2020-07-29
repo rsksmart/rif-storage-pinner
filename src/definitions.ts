@@ -21,7 +21,7 @@ export enum Providers {
 
 export interface Provider {
   pin (hash: string, expectedSize: number): Promise<void>
-  unpin (hash: string): Promise<void>
+  unpin (hash: string): void
 }
 
 /**
@@ -103,11 +103,27 @@ export interface Config {
     sizeFetchTimeout?: number | string
   }
 
+  jobs?: JobManagerOptions
+
   log?: {
     level?: string
     filter?: string
     path?: string
   }
+}
+
+export enum JobState {
+  RUNNING = 'running',
+  BACKOFF = 'backoff',
+  CREATED = 'created',
+  ERRORED = 'errored',
+  FINISHED = 'finished'
+}
+
+export interface JobManagerOptions {
+  retries?: number
+  backoffTime?: number
+  exponentialBackoff?: boolean
 }
 
 export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
@@ -130,6 +146,7 @@ export interface EventsHandler<T extends StorageEvents, O extends EventProcessor
   events: string[]
   process: (event: T, options: O) => Promise<void>
 }
+
 /**
  * Interface for object with event handler functions
  */
@@ -156,7 +173,12 @@ export interface MarketplaceEvent {
   payload: Record<string, any>
 }
 
-export type BlockchainAgreementEvents = NewAgreement | AgreementStopped | AgreementFundsDeposited | AgreementFundsWithdrawn | AgreementFundsPayout
+export type BlockchainAgreementEvents =
+  NewAgreement
+  | AgreementStopped
+  | AgreementFundsDeposited
+  | AgreementFundsWithdrawn
+  | AgreementFundsPayout
 
 export type BlockchainOfferEvents = TotalCapacitySet | MessageEmitted
 

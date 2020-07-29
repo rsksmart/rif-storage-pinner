@@ -1,23 +1,67 @@
 import ipfsClient, { CID, ClientOptions, IpfsClient, Version } from 'ipfs-http-client'
 import * as semver from 'semver'
+import config from 'config'
 
 import type { Provider } from '../definitions'
 import { loggingFactory } from '../logger'
+import { Job, JobsManager } from '../jobs-manager'
+import { NonRecoverableError } from '../errors'
 
 const logger = loggingFactory('ipfs')
 
 const REQUIRED_IPFS_VERSION = '>=0.5.0'
 
-export class IpfsProvider implements Provider {
+class PinJob extends Job {
+  private readonly hash: string
   private readonly ipfs: IpfsClient
-  private readonly statTimeout?: number | string
+  private readonly expectedSize: number
 
-  constructor (ipfs: IpfsClient, statTimeout?: number | string) {
+  constructor (ipfs: IpfsClient, hash: string, expectedSize: number) {
+    super(hash, 'ipfs - pin')
+
+    this.expectedSize = expectedSize
     this.ipfs = ipfs
-    this.statTimeout = statTimeout
+    this.hash = hash
   }
 
-  static async bootstrap (options?: ClientOptions | string, statTimeout?: number | string): Promise<IpfsProvider> {
+  async _run (): Promise<void> {
+    const hash = this.hash.replace('/ipfs/', '')
+    const cid = new CID(hash)
+
+    logger.verbose(`(${hash}) Retrieving size of CID`)
+    try {
+      const stats = await this.ipfs.object.stat(cid, { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })
+
+      if (stats.CumulativeSize > this.expectedSize) {
+        logger.error(`${hash}The hash ${hash} has cumulative size of ${stats.CumulativeSize} bytes while it was expected to have ${this.expectedSize} bytes.`)
+        throw new NonRecoverableError('The hash exceeds payed size!')
+      }
+    } catch (e) {
+      if (e.name === 'TimeoutError') {
+        logger.error(`Fetching size of ${hash} timed out!`)
+        throw new Error(`Fetching size of ${hash} timed out!`)
+      } else {
+        throw e
+      }
+    }
+
+    logger.info(`Pinning hash: ${hash} start`)
+    // TODO: For this call there is applied the default 20 minutes timeout. This should be estimated using the size.
+    //  https://github.com/ipfs/js-ipfs/blob/master/packages/ipfs-http-client/src/lib/core.js#L113
+    await this.ipfs.pin.add(cid) // The data can be big and we don't want to automatically timeout here.
+  }
+}
+
+export class IpfsProvider implements Provider {
+  private readonly ipfs: IpfsClient
+  private jobsManager: JobsManager
+
+  constructor (jobsManager: JobsManager, ipfs: IpfsClient) {
+    this.ipfs = ipfs
+    this.jobsManager = jobsManager
+  }
+
+  static async bootstrap (jobsManager: JobsManager, options?: ClientOptions | string): Promise<IpfsProvider> {
     if (!options) {
       // Default location of local node, lets try that one
       options = '/ip4/127.0.0.1/tcp/5001'
@@ -40,43 +84,18 @@ export class IpfsProvider implements Provider {
       throw new Error(`Supplied IPFS node is version ${versionObject.version} while this utility requires version ${REQUIRED_IPFS_VERSION}`)
     }
 
-    return new this(ipfs, statTimeout)
+    return new this(jobsManager, ipfs)
   }
 
   /**
    *
-   * TODO: Verify that the file has given size! ipfs.object.stat FTW
    * TODO: Error handling
    * @param hash
    * @param expectedSize
    */
-  async pin (hash: string, expectedSize: number): Promise<void> {
-    hash = hash.replace('/ipfs/', '')
-    const cid = new CID(hash)
-
-    logger.verbose(`Retrieving size of CID ${hash}`)
-    try {
-      const stats = await this.ipfs.object.stat(cid, { timeout: this.statTimeout })
-
-      if (stats.CumulativeSize > expectedSize) {
-        logger.error(`The hash ${hash} has cumulative size of ${stats.CumulativeSize} bytes while it was expected to have ${expectedSize} bytes.`)
-        throw new Error('The hash exceeds payed size!')
-      }
-    } catch (e) {
-      if (e.name === 'TimeoutError') {
-        logger.error(`Fetching size of ${hash} timed out!`)
-        return // Since we can't validate the size we won't pin it! Most probably the file is not in the network.
-      } else {
-        throw e
-      }
-    }
-
-    const start = process.hrtime()
-    logger.info(`Pinning hash: ${hash} start`)
-    // TODO: For this call there is applied the default 20 minutes timeout. This should be estimated using the size.
-    //  https://github.com/ipfs/js-ipfs/blob/master/packages/ipfs-http-client/src/lib/core.js#L113
-    await this.ipfs.pin.add(cid) // The data can be big and we don't want to automatically timeout here.
-    logger.info(`Pinning hash: ${hash} ended in ${process.hrtime(start)[0]}s`)
+  pin (hash: string, expectedSize: number): Promise<void> {
+    const job = new PinJob(this.ipfs, hash, expectedSize)
+    return this.jobsManager.run(job)
   }
 
   async unpin (hash: string): Promise<void> {

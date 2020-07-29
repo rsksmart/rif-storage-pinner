@@ -1,6 +1,8 @@
 {
   db: 'db.sqlite',
+
   strategy: 'blockchain',
+
   ipfs: {
     clientOptions: {
       // The default value for go-ipfs
@@ -10,6 +12,7 @@
     // What is timeout for fetching size of given hash
     sizeFetchTimeout: '4m'
   },
+
   blockchain: {
     // Events that will be listened to
     events: ['TotalCapacitySet', 'MessageEmitted', 'NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
@@ -41,6 +44,11 @@
   marketplace: {
     offers: '/storage/v0/offers',
     agreements: '/storage/v0/agreements'
+  },
+
+  jobs: {
+    // Number of how many retries before job is pronounced for errored one
+    retries: 3
   },
 
   log: {
