@@ -2,9 +2,10 @@ import chai from 'chai'
 import dirtyChai from 'dirty-chai'
 import config from 'config'
 
-import { TestingApp, sleep, encodeHash, errorSpy, File, uploadRandomData, isPinned } from '../utils'
+import { TestingApp, encodeHash, errorSpy, File, uploadRandomData, isPinned } from '../utils'
 import { loggingFactory } from '../../src/logger'
 import { Strategy } from '../../src/definitions'
+import { sleep } from '../../src/utils'
 
 chai.use(dirtyChai)
 const logger = loggingFactory('test:pinning:blockchain')

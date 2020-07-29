@@ -1,4 +1,5 @@
 import { hexToAscii } from 'web3-utils'
+import type { EventEmitter } from 'events'
 
 import type {
   BlockchainEvent,
@@ -9,6 +10,7 @@ import type {
   StorageEvents,
   HandlersObject
 } from './definitions'
+
 import { loggingFactory } from './logger'
 
 const logger = loggingFactory('utils')
@@ -52,6 +54,33 @@ export function decodeByteArray (fileReference: string[]): string {
     .replace(/\0/g, '') // Remove null-characters
 }
 
+/**
+ * Duplicate object using JSON method. Functions are stripped.
+ * @param obj
+ */
 export function duplicateObject<T> (obj: T): T {
   return JSON.parse(JSON.stringify(obj))
+}
+
+/**
+ * Create a Promise that is resolved when the specified event is emitted.
+ * It is rejected if 'error' event is triggered.
+ *
+ * Be aware about the different mechanisms of EventEmitter and Promises!
+ * Promise can be only ONCE fulfilled/rejected while EventEmitter can emit as many events
+ * as it likes! Hence this utility resolves only upon first specified event or error.
+ *
+ * @param emitted
+ * @param event
+ */
+export function runAndAwaitFirstEvent<T = void> (emitted: EventEmitter, event: string, fn: () => void): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    emitted.on(event, resolve)
+    emitted.on('error', reject)
+    fn()
+  })
+}
+
+export function sleep<T> (ms: number, ...args: T[]): Promise<T> {
+  return new Promise(resolve => setTimeout(() => resolve(...args), ms))
 }

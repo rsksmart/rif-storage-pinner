@@ -11,7 +11,6 @@ import {
   uploadRandomData,
   File,
   isPinned,
-  sleep,
   errorSpy
 } from '../utils'
 import { Strategy } from '../../src/definitions'
@@ -23,6 +22,7 @@ import {
   stubAgreement
 } from '../fake-marketplace-service'
 import Agreement from '../../src/models/agreement.model'
+import { sleep } from '../../src/utils'
 
 chai.use(chaiAsPromised)
 chai.use(dirtyChai)

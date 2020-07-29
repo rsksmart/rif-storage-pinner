@@ -2,7 +2,6 @@ import config from 'config'
 import { promises as fs } from 'fs'
 import path from 'path'
 
-import { AppOptions, Strategy } from './definitions'
 import { loggingFactory } from './logger'
 import { BlockchainEventsProcessor } from './processor/blockchain-events'
 import { MarketplaceEventsProcessor } from './processor/marketplace-events'
@@ -11,6 +10,9 @@ import { IpfsProvider } from './providers/ipfs'
 import { sequelizeFactory } from './sequelize'
 import { initStore } from './store'
 import { duplicateObject } from './utils'
+import { JobsManager } from './jobs-manager'
+import { Strategy } from './definitions'
+import type { AppOptions, JobManagerOptions } from './definitions'
 
 const logger = loggingFactory('pinning-service')
 
@@ -46,9 +48,12 @@ export default async (offerId: string, options: AppOptions): Promise<{ stop: () 
   await initStore(sequelize)
   logger.info('DB initialized')
 
+  const jobsOptions = config.get<JobManagerOptions>('jobs')
+  const jobsManager = new JobsManager(jobsOptions)
+
   // Initialize Provider Manager
   const providerManager = new ProviderManager()
-  const ipfs = await IpfsProvider.bootstrap(duplicateObject(config.get<string>('ipfs.clientOptions')), config.get<number|string>('ipfs.sizeFetchTimeout'))
+  const ipfs = await IpfsProvider.bootstrap(jobsManager, duplicateObject(config.get<string>('ipfs.clientOptions')))
   providerManager.register(ipfs)
   logger.info('IPFS provider initialized')
 

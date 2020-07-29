@@ -29,8 +29,6 @@ function errorHandlerStub (fn: (...args: any[]) => Promise<void>, logger: Logger
   }
 }
 
-export const sleep = (timeout: number): Promise<void> => new Promise(resolve => setTimeout(resolve, timeout))
-
 export function encodeHash (hash: string): string[] {
   if (hash.length <= 32) {
     return [asciiToHex(hash)]
