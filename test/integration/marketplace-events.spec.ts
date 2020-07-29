@@ -69,11 +69,7 @@ describe('Marketplace Strategy', function () {
   describe('Events handling', () => {
     before(async () => {
       const offer = mockOffer()
-      const agreements = [
-        mockAgreement(),
-        mockAgreement({ agreementReference: '0x9991', offerId: 'test', billingPeriod: 1 }),
-        mockAgreement({ agreementReference: '0x999', billingPrice: 100 })
-      ]
+      const agreements: Record<string, any>[] = []
       stubOffer.get.onFirstCall().resolves(offer)
       stubAgreement.find.onFirstCall().resolves(agreements)
 
@@ -155,7 +151,7 @@ describe('Marketplace Strategy', function () {
         size: 100,
         availableFunds: 1500, // Enough only for one period
         lastPayout: Date.now() - (11 * 1000),
-        expiredAtBlockNumber: 9
+        expiredAtBlockNumber: null
       })
       await sleep(500)
 
@@ -167,6 +163,8 @@ describe('Marketplace Strategy', function () {
 
       // Create new block to
       emitBlock(app, { number: 10 })
+      await sleep(3000)
+      emitBlock(app, { number: 11 })
 
       await sleep(1500)
 
