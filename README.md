@@ -51,8 +51,7 @@ USAGE
 OPTIONS
   -n, --network=testnet|mainnet        specifies to which network is the provider connected
   -o, --offerId=offerId                (required) ID of Offer to which should the service listen to
-  -p, --provider=provider              URL to blockchain node provider
-  -p, --config=config-path             path to custom config
+  -p, --provider=provider              URL to blockchain node or Marketplace server
 
   --ipfs=ipfs                          specifies a connection URL to IPFS node. Default is go-ipfs
                                        listening configuration.
@@ -64,6 +63,29 @@ OPTIONS
   --log-path=log-path                  log to file, default is STDOUT
 
   --remove-cache                       removes the local database prior running the service
+
+  --strategy=marketplace|blockchain    what type of provider will be used for listening on events.
+                                       Default is "marketplace". For blockchain you have to have
+                                       access to a node that has allowed eth_getLogs call.
+
+DESCRIPTION
+  Pinning Service that is part of RIF Storage.
+
+  This service is needed to provide your storage space as part of RIF Marketplace. It listens on
+  events and when there is new Agreement for specified Offer it will pin the content to your
+  configured IPFS node.
+
+  By default it uses RIF Marketplace servers to listen on events, which are based on events from
+  blockchain. You can eliminate this middle-man component and listen to events directly from
+  blockchain. For that use --strategy=blockchain, but you have to also provide an blockchain node
+  that has enabled eth_getLogs call using the --provider flag.
+
+EXAMPLES
+  $ rif-pinning --offerId 0x123456789 --strategy=blockchain --provider 'ws://localhost:8546' --ipfs
+  '/ip4/127.0.0.1/tcp/5001' --network testnet
+
+  $ rif-pinning --offerId 0x123456789 --strategy=marketplace --ipfs '/ip4/127.0.0.1/tcp/5001'
+  --network testnet
 ```
 <!-- commandsstop -->
 

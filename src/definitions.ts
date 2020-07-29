@@ -70,6 +70,9 @@ export interface EventsEmitterOptions {
 }
 
 export interface Config {
+  // What strategy for event listening should be used
+  strategy?: Strategy
+
   blockchain?: {
     // Address to where web3js should connect to. Should be WS endpoint.
     provider?: string
