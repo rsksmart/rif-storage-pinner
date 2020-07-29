@@ -3,8 +3,8 @@ import type { Input, OutputFlags } from '@oclif/parser'
 import config from 'config'
 import path from 'path'
 
-import initApp from './'
-import { Config, Strategy } from './definitions'
+import initApp from '../../../index'
+import { Config, Strategy } from '../../../definitions'
 
 export default class PinningServiceCommand extends Command {
   static description = `

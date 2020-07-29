@@ -7,11 +7,18 @@ function isValidAddress (address: string): boolean {
   return true
 }
 
-export class InitCommand extends Command {
-  static description = 'Initialize Pinner service dependencies'
+function prompt (message: string): boolean {
+  return true
+}
+
+export default class InitCommand extends Command {
+  static get description () {
+    return 'Initialize Pinner service dependencies'
+  }
+
   static examples = [
-    '$ rif-pinning <offerId>',
-    '$ rif-pinning <offerId> --path ./folder'
+    '$ rif-pinning init <offerId>',
+    '$ rif-pinning init <offerId> --path ./folder'
   ]
 
   private async initProvider (path?: string): Promise<void> {
@@ -22,7 +29,7 @@ export class InitCommand extends Command {
     return await Promise.resolve()
   }
 
-  private async initDB (path?: string, options?: { dbName: string, force: boolean }): void {
+  private async initDB (path?: string, options?: { dbName: string, force: boolean }): Promise<void> {
     if (this.isDataBaseExist(path, options?.dbName) && !prompt(`Are you sure you want to overwrite current DB ${options?.dbName}?`)) {
       throw new Error('Not allowed')
     }
