@@ -15,7 +15,7 @@ interface StubService {
 }
 
 const serviceFunctions = ['get', 'find', 'create', 'remove', 'update', 'patch']
-const createStubService = () => serviceFunctions.reduce((acc, key) => ({ ...acc, [key]: sinon.stub() }), {})
+const createStubService = (service: Record<string, any> = {}) => serviceFunctions.reduce((acc, key) => ({ ...acc, [key]: sinon.stub() }), service)
 
 export function stubResetFunctions (obj: Record<string, sinon.SinonStub>): void {
   Object.keys(obj).forEach(key => obj[key].reset())
@@ -23,13 +23,14 @@ export function stubResetFunctions (obj: Record<string, sinon.SinonStub>): void 
 
 export const stubOffer: StubService = createStubService()
 export const stubAgreement: StubService = createStubService()
+export const stubNewBlock: StubService = createStubService({ events: ['newBlock'] })
 
-export function mockOffer (agreement: Record<string, any> = {}): Record<string, any> {
+export function mockOffer (offer: Record<string, any> = {}): Record<string, any> {
   return Object.assign({
     peerId: 'testPeerId',
     totalCapacity: 999999,
     address: providerAddress
-  }, agreement)
+  }, offer)
 }
 
 export const mockAgreement = (agreement: Record<string, any> = {}) => Object.assign({
@@ -42,8 +43,7 @@ export const mockAgreement = (agreement: Record<string, any> = {}) => Object.ass
   billingPeriod: 1,
   billingPrice: 999,
   availableFunds: 500,
-  lastPayout: new Date(),
-  expiredAtBlockNumber: 999999
+  lastPayout: Date.now()
 }, agreement)
 
 function storageChannels (app: any): void {
@@ -54,9 +54,11 @@ function storageChannels (app: any): void {
   app.on('connection', (connection: any) => {
     app.channel('storage_agreements').join(connection)
     app.channel('storage_offers').join(connection)
+    app.channel('blockchain').join(connection)
   })
   app.service(config.get<string>('marketplace.offers')).publish(() => app.channel('storage_offers'))
   app.service(config.get<string>('marketplace.agreements')).publish(() => app.channel('storage_agreements'))
+  app.service(config.get<string>('marketplace.newBlock')).publish(() => app.channel('blockchain'))
 }
 
 export class FakeMarketplaceService {
@@ -66,6 +68,7 @@ export class FakeMarketplaceService {
   public cacheServer: Server | undefined
   public offerPath = config.get<string>('marketplace.offers')
   public agreementPath = config.get<string>('marketplace.agreements')
+  public newBlockPath = config.get<string>('marketplace.newBlock')
 
   constructor (port?: number) {
     this.port = port ?? 3030
@@ -77,6 +80,10 @@ export class FakeMarketplaceService {
 
   get agreementService () {
     return this.app.service(this.agreementPath)
+  }
+
+  get newBlockService () {
+    return this.app.service(this.newBlockPath)
   }
 
   run (): Promise<void> {
@@ -94,6 +101,10 @@ export class FakeMarketplaceService {
     // Initialize Agreement service
     app.use(this.agreementPath, stubAgreement)
     app.service(this.agreementPath)
+
+    // Init new block service
+    app.use(this.newBlockPath, stubNewBlock)
+    app.service(this.newBlockPath)
 
     app.configure(storageChannels)
 

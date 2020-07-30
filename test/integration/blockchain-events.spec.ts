@@ -37,6 +37,7 @@ describe('Blockchain Strategy', function () {
     // @ts-ignore
     config.strategy = Strategy.Blockchain
   })
+  after(async () => await app.stop())
 
   describe('Events Handling', () => {
     before(async () => {
