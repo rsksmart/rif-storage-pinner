@@ -3,12 +3,12 @@ import path from 'path'
 
 import Command, { flags } from '@oclif/command'
 import { OutputFlags } from '@oclif/parser'
-import cli, { IPromptOptions } from 'cli-ux'
+import cli, { IPromptOptions, ActionBase } from 'cli-ux'
 
 import { Config } from '../definitions'
 import { IOptionFlag } from '@oclif/command/lib/flags'
 
-export const promptFlagIfNeeded = (flag: IOptionFlag<any>) => ({ ...flag, prompt: true, required: false }) as IOptionFlag<any>
+export const promptFlagIfNeeded = (flag: IOptionFlag<any>): IOptionFlag<any> => ({ ...flag, prompt: true, required: false }) as IOptionFlag<any>
 
 export default abstract class BaseCommand extends Command {
   static flags = {
@@ -45,7 +45,7 @@ export default abstract class BaseCommand extends Command {
     return cli.prompt(message, options)
   }
 
-  protected get spinner () {
+  protected get spinner (): ActionBase {
     return cli.action
   }
 
@@ -68,7 +68,7 @@ export default abstract class BaseCommand extends Command {
     config.util.extendDeep(config, configObject)
   }
 
-  protected resolveDbPath (db: string) {
+  protected resolveDbPath (db: string): string {
     if (!db) return path.resolve(this.config.dataDir, config.get<string>('db'))
 
     const parsed = path.parse(db)
@@ -86,12 +86,12 @@ export default abstract class BaseCommand extends Command {
     }
   }
 
-  protected async promptForRequiredFlags (flagsSchema: Record<any, any>, flags: Record<string, any>) {
+  protected async promptForRequiredFlags (flagsSchema: Record<any, any> = {}, parsed: Record<string, any>): Promise<Record<string, any>> {
     for (const [flagName, flagOption] of Object.entries(flagsSchema)) {
-      if (flagOption.prompt && !flags[flagName]) {
-        flags[flagName] = await this.prompt(`Please enter ${flagName}`)
+      if (flagOption.prompt && !parsed.flags[flagName]) {
+        parsed.flags[flagName] = await this.prompt(`Please enter ${flagName}`)
       }
     }
-    return flags
+    return parsed
   }
 }

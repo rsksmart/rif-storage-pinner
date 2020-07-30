@@ -18,7 +18,7 @@ export default class InitCommand extends BaseCommand {
     }))
   }
 
-  static get description () {
+  static get description (): string {
     return 'Initialize Pinner service dependencies'
   }
 
@@ -45,8 +45,9 @@ export default class InitCommand extends BaseCommand {
   }
 
   async run (): Promise<void> {
-    const { flags: originalFlags } = this.parse(InitCommand)
-    const flags = await this.promptForRequiredFlags(InitCommand.flags, originalFlags) as OutputFlags<typeof InitCommand.flags>
+    const { flags: originalFlags } = await this.promptForRequiredFlags(InitCommand.flags, this.parse(InitCommand))
+    const flags = originalFlags as OutputFlags<typeof InitCommand.flags>
+
     this.configSetup(flags)
     const dbPath = this.resolveDbPath(flags.db)
 
