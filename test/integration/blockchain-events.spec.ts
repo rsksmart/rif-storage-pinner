@@ -29,6 +29,23 @@ async function createAgreement (app: TestingApp, file: File, billingPeriod: numb
   return receipt.events.NewAgreement.returnValues.agreementReference
 }
 
+async function depositFunds (app: TestingApp, hash: string, money: number): Promise<void> {
+  const dataReference = encodeHash(hash)
+
+  const agreementGas = await app.contract
+    ?.methods
+    .depositFunds(dataReference, app.providerAddress)
+    .estimateGas({ from: app.consumerAddress, value: money })
+
+  await app.contract
+    ?.methods
+    .depositFunds(dataReference, app.providerAddress)
+    .send({ from: app.consumerAddress, gas: agreementGas, value: money })
+  logger.info('Funds deposited')
+
+  await app.advanceBlock()
+}
+
 describe('Blockchain Strategy', function () {
   this.timeout(100000)
   let app: TestingApp
@@ -37,7 +54,37 @@ describe('Blockchain Strategy', function () {
     // @ts-ignore
     config.strategy = Strategy.Blockchain
   })
-  after(async () => await app.stop())
+
+  describe('Precache', () => {
+    beforeEach(() => errorSpy.resetHistory())
+
+    it('should pin files that have only enough funds', async () => {
+      try {
+        app = new TestingApp()
+        await app.init()
+
+        const file = await uploadRandomData(app.ipfsConsumer!)
+        // Check if not pinned
+        expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+
+        // Creates Agreement with funds only for one period
+        await createAgreement(app, file, 1, file.size * 10)
+        await sleep(1100) // We will wait until they run out
+
+        // Start service with precache
+        await app.start({ forcePrecache: true })
+
+        // Wait until we receive Event
+        await sleep(3000)
+
+        // Should be pinned
+        expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+        expect(errorSpy.called).to.be.false()
+      } finally {
+        await app.stop()
+      }
+    })
+  })
 
   describe('Events Handling', () => {
     before(async () => {

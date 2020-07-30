@@ -78,7 +78,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     if (!this.initialized) await this.initialize()
 
     // If not set then it is first time running ==> precache
-    if (!getObject().lastFetchedBlockNumber && !this.options?.forcePrecache) {
+    if (!getObject().lastFetchedBlockNumber || this.options?.forcePrecache) {
       await this.precache()
     }
 

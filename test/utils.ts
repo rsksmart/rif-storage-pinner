@@ -11,7 +11,7 @@ import type { HttpProvider } from 'web3-core'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 import initApp from '../src'
-import { Logger, Strategy } from '../src/definitions'
+import { AppOptions, Logger, Strategy } from '../src/definitions'
 import { FakeMarketplaceService } from './fake-marketplace-service'
 import { loggingFactory } from '../src/logger'
 
@@ -110,6 +110,7 @@ export class TestingApp {
     if (!TestingApp.app) {
       TestingApp.app = new TestingApp()
       await TestingApp.app.init()
+      await TestingApp.app.start()
     }
     return TestingApp.app
   }
@@ -139,17 +140,19 @@ export class TestingApp {
     await this.purgeDb()
     this.logger.info('Database removed')
 
-    // Run Pinning service
-    this.app = await initApp(this.providerAddress, {
-      dataDir: process.cwd(),
-      errorHandler: errorHandlerStub,
-      contractAddress: this.contract?.options.address
-    })
-    this.logger.info('Pinning service started')
-
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
     this.logger.info('IPFS clients created')
+  }
+
+  async start (options?: Partial<AppOptions>): Promise<void> {
+    // Run Pinning service
+    options = Object.assign({
+      dataDir: process.cwd(),
+      errorHandler: errorHandlerStub
+    }, options, { contractAddress: this.contract?.options.address })
+    this.app = await initApp(this.providerAddress, options as AppOptions)
+    this.logger.info('Pinning service started')
   }
 
   async stop (): Promise<void> {
