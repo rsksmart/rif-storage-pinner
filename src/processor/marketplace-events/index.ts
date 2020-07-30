@@ -13,12 +13,14 @@ import { loggingFactory } from '../../logger'
 import type {
   AppOptions,
   BaseEventProcessorOptions,
+  EventProcessorOptions,
   MarketplaceEvent,
   Logger,
   EventsHandler,
   Processor
 } from '../../definitions'
 import type { ProviderManager } from '../../providers'
+import { errorHandler as originalErrorHandler } from '../../utils'
 
 const logger: Logger = loggingFactory('processor:cache')
 const NEW_BLOCK_EVENT = 'newBlock'
@@ -30,20 +32,27 @@ function filterCacheEvents (offerId: string, callback: Processor<MarketplaceEven
   }
 }
 
-// TODO GC using Cache service
 export class MarketplaceEventsProcessor extends EventProcessor {
     private readonly handlers = [offer, agreement] as EventsHandler<MarketplaceEvent, BaseEventProcessorOptions>[]
     private readonly gcHandler: (...args: any) => Promise<void>
     private readonly processor: Processor<MarketplaceEvent>
+    private readonly manager: ProviderManager
     private services: Record<string, feathers.Service<any>> = {}
     private newBlockService: feathers.Service<any> | undefined
 
     constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
-      super(offerId, manager, options)
+      super(offerId, options)
 
-      this.processorOptions = { ...this.processorOptions, errorLogger: logger }
-      this.processor = filterCacheEvents(this.offerId, this.getProcessor<MarketplaceEvent, BaseEventProcessorOptions>(this.handlers))
-      this.gcHandler = this.errorHandler(collectPinsClosure(this.manager), loggingFactory('gc'))
+      const errorHandler = options?.errorHandler ?? originalErrorHandler
+      const deps: EventProcessorOptions = {
+        manager
+      }
+      this.processor = filterCacheEvents(this.offerId,
+        errorHandler(this.getProcessor<MarketplaceEvent, EventProcessorOptions>(this.handlers, deps), logger)
+      )
+
+      this.manager = manager
+      this.gcHandler = errorHandler(collectPinsClosure(this.manager), loggingFactory('gc'))
     }
 
     // eslint-disable-next-line require-await

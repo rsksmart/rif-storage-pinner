@@ -77,7 +77,7 @@ describe('Blockchain Strategy', function () {
         // Wait until we receive Event
         await sleep(3000)
 
-        // Should be pinned
+        // Should NOT be pinned
         expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
         expect(errorSpy.called).to.be.false()
       } finally {
