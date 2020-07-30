@@ -147,7 +147,7 @@ export default abstract class BaseCommand extends Command {
     }
   }
 
-  protected async promptForRequiredFlags (flagsSchema: Record<any, any> = {}, parsed: Record<string, any>): Promise<Record<string, any>> {
+  protected async promptForFlags (flagsSchema: Record<any, any> = {}, parsed: Record<string, any>): Promise<Record<string, any>> {
     for (const [flagName, flagOption] of Object.entries(flagsSchema)) {
       if (flagOption.prompt && !parsed.flags[flagName]) {
         parsed.flags[flagName] = await this.prompt(`Please enter ${flagName}`)

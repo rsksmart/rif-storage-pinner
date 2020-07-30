@@ -86,7 +86,7 @@ By default it uses RIF Marketplace servers to listen on events, which are based 
   }
 
   async run (): Promise<void> {
-    const { flags: originalFlags } = await this.promptForRequiredFlags(PinningServiceCommand.flags, this.parse(PinningServiceCommand))
+    const { flags: originalFlags } = await this.promptForFlags(PinningServiceCommand.flags, this.parse(PinningServiceCommand))
     const flags = originalFlags as OutputFlags<typeof PinningServiceCommand.flags>
     this.configSetup(flags)
 

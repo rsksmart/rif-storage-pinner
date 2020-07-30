@@ -12,7 +12,12 @@ export default class InitCommand extends BaseCommand {
       char: 'o',
       description: 'ID of Offer to which should the service listen to',
       env: 'RIFS_OFFER'
-    }))
+    })),
+    force: flags.boolean({
+      default: false,
+      char: 'f',
+      description: 'Overwrite DB is exist'
+    })
   }
 
   static get description (): string {
@@ -27,31 +32,32 @@ export default class InitCommand extends BaseCommand {
   ]
 
   async run (): Promise<void> {
-    const { flags: originalFlags } = await this.promptForRequiredFlags(InitCommand.flags, this.parse(InitCommand))
+    const { flags: originalFlags } = await this.promptForFlags(InitCommand.flags, this.parse(InitCommand))
     const flags = originalFlags as OutputFlags<typeof InitCommand.flags>
 
-    this.spinner.start('Initializing required files...')
     this.baseConfigSetup(flags)
     const dbPath = this.resolveDbPath(flags.db)
 
     if (!isAddress(flags.offerId)) throw new Error('Invalid Offer Address')
 
-    if (fs.existsSync(dbPath)) {
+    if (fs.existsSync(dbPath) && !flags.force) {
       throw new Error('Already initialized. Please run "cleanup" for removing current pinner service files')
     }
 
     try {
       // Init DB
+      this.spinner.start('Init DB')
       await this.initDB(dbPath)
+      this.spinner.stop()
 
       // Store offerId
+      this.spinner.start('Set Offer ID')
       this.offerId = flags.offerId
+      this.spinner.stop()
     } catch (e) {
       fs.unlinkSync(dbPath)
       throw e
-    } finally {
-      this.spinner.stop()
-      this.exit()
     }
+    this.exit()
   }
 }
