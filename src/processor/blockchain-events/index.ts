@@ -7,7 +7,7 @@ import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/c
 import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
-import { isEventWithProvider } from '../../utils'
+import { errorHandler as originalErrorHandler, isEventWithProvider } from '../../utils'
 import { ethFactory, getEventsEmitter, getNewBlockEmitter } from '../../blockchain/utils'
 import { loggingFactory } from '../../logger'
 import Agreement from '../../models/agreement.model'
@@ -26,6 +26,7 @@ import type {
   BlockchainEventsWithProvider
 } from '../../definitions'
 import type { ProviderManager } from '../../providers'
+import { EventProcessorOptions, MarketplaceEvent } from '../../definitions'
 
 const logger: Logger = loggingFactory('processor:blockchain')
 
@@ -49,16 +50,25 @@ export class BlockchainEventsProcessor extends EventProcessor {
   private readonly handlers = [offer, agreement] as EventsHandler<BlockchainEvent, BlockchainEventProcessorOptions>[]
   private readonly processor: Processor<BlockchainEvent>
 
+  private readonly errorHandler: (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
+  private readonly manager: ProviderManager
   private readonly eth: Eth
   private eventsEmitter: BaseEventsEmitter | undefined
   private newBlockEmitter: AutoStartStopEventEmitter | undefined
 
   constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
-    super(offerId, manager, options)
+    super(offerId, options)
 
+    this.manager = manager
+    this.errorHandler = options?.errorHandler ?? originalErrorHandler
     this.eth = ethFactory()
-    this.processorOptions = { ...this.processorOptions, eth: this.eth, errorLogger: logger }
-    this.processor = filterBlockchainEvents(this.offerId, this.getProcessor<BlockchainEvent, BlockchainEventProcessorOptions>(this.handlers))
+    const deps: BlockchainEventProcessorOptions = {
+      manager: manager,
+      eth: this.eth
+    }
+    this.processor = filterBlockchainEvents(this.offerId,
+      this.errorHandler(this.getProcessor<BlockchainEvent, BlockchainEventProcessorOptions>(this.handlers, deps), logger)
+    )
   }
 
   // eslint-disable-next-line require-await
@@ -98,7 +108,9 @@ export class BlockchainEventsProcessor extends EventProcessor {
 
     const precacheLogger = loggingFactory('processor:blockchain:precache')
     const _eventsEmitter = this.eventsEmitter
-    const _processor = this.processor
+    const _processor = filterBlockchainEvents(this.offerId,
+      this.errorHandler(this.getProcessor<BlockchainEvent, BlockchainEventProcessorOptions>(this.handlers, { eth: this.eth }), logger)
+    )
 
     // Wait to build up the database with latest data
     precacheLogger.verbose('Populating database')
