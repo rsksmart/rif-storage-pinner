@@ -1,42 +1,42 @@
+import fs from 'fs'
 import { getObject } from 'sequelize-store'
+import { flags } from '@oclif/command'
+import { OutputFlags } from '@oclif/parser'
+import { isAddress } from 'web3-utils'
 
-import Command from '../utils'
+import BaseCommand, { promptFlagIfNeeded } from '../utils'
 import { sequelizeFactory } from '../../sequelize'
+import { initStore } from '../../store'
 
-function isValidAddress (address: string): boolean {
-  return true
-}
+export default class InitCommand extends BaseCommand {
+  static flags = {
+    ...BaseCommand.flags,
+    offerId: promptFlagIfNeeded(flags.string({
+      char: 'o',
+      description: 'ID of Offer to which should the service listen to',
+      env: 'RIFS_OFFER'
+    }))
+  }
 
-function prompt (message: string): boolean {
-  return true
-}
-
-export default class InitCommand extends Command {
   static get description () {
     return 'Initialize Pinner service dependencies'
   }
 
   static examples = [
-    '$ rif-pinning init <offerId>',
-    '$ rif-pinning init <offerId> --path ./folder'
+    '$ rif-pinning init',
+    '$ rif-pinning init --offerId 0x123 --db ./relativeOrAbsolutePath/db.sqlite',
+    '$ rif-pinning init --db fileName.sqlite',
+    '$ rif-pinning init --db ./folder'
   ]
 
-  private async initProvider (path?: string): Promise<void> {
-    if (this.isProviderFilesExist(path) && !prompt('Are you sure you want to overwrite current provider files?')) {
-      throw new Error('Not allowed')
-    }
-    // run init.sh script
-    return await Promise.resolve()
-  }
-
-  private async initDB (path?: string, options?: { dbName: string, force: boolean }): Promise<void> {
-    if (this.isDataBaseExist(path, options?.dbName) && !prompt(`Are you sure you want to overwrite current DB ${options?.dbName}?`)) {
-      throw new Error('Not allowed')
+  private async initDB (path: string): Promise<void> {
+    if (fs.existsSync(path)) {
+      throw new Error('Already initialized. Please run "cleanup" for removing current pinner service files')
     }
     // Init database connection
-    const sequelize = await sequelizeFactory()
-    this.log('Syncing database')
-    await sequelize.sync({ force: options?.force })
+    const sequelize = await sequelizeFactory(path)
+    await sequelize.sync()
+    await initStore(sequelize)
   }
 
   private storeOfferId (offerId: string): void {
@@ -44,20 +44,20 @@ export default class InitCommand extends Command {
     store.offerId = offerId
   }
 
-  async run () {
-    const command = this.parse(InitCommand)
+  async run (): Promise<void> {
+    const { flags: originalFlags } = this.parse(InitCommand)
+    const flags = await this.promptForRequiredFlags(InitCommand.flags, originalFlags) as OutputFlags<typeof InitCommand.flags>
+    this.configSetup(flags)
+    const dbPath = this.resolveDbPath(flags.db)
 
-    if (!isValidAddress(command.args.offerId)) throw new Error('Invalid Offer Address')
-
-    // Init provider
-    await this.initProvider()
+    if (!isAddress(flags.offerId)) throw new Error('Invalid Offer Address')
 
     // Init DB
-    await this.initDB()
+    await this.initDB(dbPath)
 
     // Store offerId
-    this.storeOfferId(command.args.offerId)
-    this.log('Done')
+    this.storeOfferId(flags.offerId)
+
     this.exit()
   }
 }

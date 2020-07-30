@@ -1,5 +1,6 @@
 {
   strategy: 'RIFS_STRATEGY',
+  db: 'RIFS_DB',
   blockchain: {
     provider: 'RIFS_PROVIDER',
     contractAddress: 'RIFS_CONTRACT_ADDR'

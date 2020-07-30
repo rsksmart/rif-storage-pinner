@@ -1,19 +1,23 @@
-import { Command, flags } from '@oclif/command'
+import { flags } from '@oclif/command'
 import type { Input, OutputFlags } from '@oclif/parser'
 import config from 'config'
 import path from 'path'
 
-import initApp from '../../../index'
-import { Config, Strategy } from '../../../definitions'
+import BaseCommand from '../utils'
+import initApp from '../../index'
+import { Config, Strategy } from '../../definitions'
 
-export default class PinningServiceCommand extends Command {
-  static description = `
+export default class PinningServiceCommand extends BaseCommand {
+  static get description (): string {
+    return `
 Pinning Service that is part of RIF Storage.
 
 This service is needed to provide your storage space as part of RIF Marketplace. It listens on events and when there is new Agreement for specified Offer it will pin the content to your configured IPFS node.
 
 By default it uses RIF Marketplace servers to listen on events, which are based on events from blockchain. You can eliminate this middle-man component and listen to events directly from blockchain. For that use --strategy=blockchain, but you have to also provide an blockchain node that has enabled eth_getLogs call using the --provider flag.
 `
+  }
+
   static examples = [
     '$ rif-pinning --offerId 0x123456789 --strategy=blockchain --provider \'ws://localhost:8546\' --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet',
     '',
@@ -21,12 +25,7 @@ By default it uses RIF Marketplace servers to listen on events, which are based 
   ]
 
   static flags = {
-    offerId: flags.string({
-      char: 'o',
-      description: 'ID of Offer to which should the service listen to',
-      env: 'RIFS_OFFER',
-      required: true
-    }),
+    ...BaseCommand.flags,
     network: flags.string({
       char: 'n',
       description: 'specifies to which network is the provider connected',
@@ -45,34 +44,14 @@ By default it uses RIF Marketplace servers to listen on events, which are based 
     'remove-cache': flags.boolean({
       description: 'removes the local database prior running the service'
     }),
-    config: flags.string({
-      description: 'path to JSON config file to load',
-      hidden: true,
-      env: 'RIFS_CONFIG'
-    }),
     ipfs: flags.string({
       description: 'specifies a connection URL to IPFS node. Default is go-ipfs listening configuration.',
       env: 'RIFS_IPFS'
-    }),
-    log: flags.string({
-      description: 'what level of information to log',
-      options: ['error', 'warn', 'info', 'verbose', 'debug'],
-      default: 'error',
-      env: 'LOG_LEVEL'
-    }),
-    'log-filter': flags.string(
-      {
-        description: 'what components should be logged (+-, chars allowed)'
-      }
-    ),
-    'log-path': flags.string(
-      {
-        description: 'log to file, default is STDOUT'
-      }
-    )
+    })
   }
 
-  private configSetup (flags: OutputFlags<typeof PinningServiceCommand.flags>): void {
+  protected configSetup (flags: OutputFlags<typeof PinningServiceCommand.flags>): void {
+    super.configSetup(flags)
     const configObject: Config = {
       log: {
         level: flags.log,
@@ -124,6 +103,6 @@ By default it uses RIF Marketplace servers to listen on events, which are based 
     const flags = originalFlags as OutputFlags<typeof PinningServiceCommand.flags>
     this.configSetup(flags)
 
-    await initApp(flags.offerId, { removeCache: Boolean(flags['remove-cache']), dataDir: this.config.dataDir })
+    await initApp('flags.offerId', { removeCache: Boolean(flags['remove-cache']), dataDir: this.config.dataDir })
   }
 }

@@ -19,6 +19,3 @@ if (!process.env.NODE_ENV && !dev) {
 require('@oclif/command').run()
   .then(require('@oclif/command/flush'))
   .catch(require('@oclif/errors/handle'))
-
-// require(`../${dev ? 'src' : 'lib'}/cli/commands`).run()
-//   .catch(require('@oclif/errors/handle'))
