@@ -32,19 +32,19 @@ function getEventProcessor (offerId: string, manager: ProviderManager, options?:
 
 export default async (offerId: string, options: AppOptions): Promise<{ stop: () => void }> => {
   // dataDir is set when entry point is CLI, for testing we have also the CWD option.
-  const dbPath = path.join(options?.dataDir, config.get<string>('db'))
+  const dbPath = options.db ?? path.join(options?.dataDir, config.get<string>('db'))
   logger.verbose(`Using database path ${dbPath}`)
+  logger.verbose(`OfferID = ${offerId}`)
 
   // Initialize DB
   if (options?.removeCache) {
-    // dataDir is set when entry point is CLI, for testing we have also the CWD option.
+    logger.verbose('Remove DB')
     await fs
       .unlink(dbPath)
       .catch(e => logger.error(e.message))
   }
   const sequelize = await sequelizeFactory(dbPath)
   await initStore(sequelize)
-  logger.info('DB initialized')
 
   // Initialize Provider Manager
   const providerManager = new ProviderManager()

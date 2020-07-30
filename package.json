@@ -116,7 +116,7 @@
   ],
   "oclif": {
     "bin": "rif-pinning",
-    "commands": "./src/cli/commands",
+    "commands": "./src/cli",
     "plugins": [
       "@oclif/plugin-help"
     ]

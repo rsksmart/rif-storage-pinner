@@ -117,6 +117,7 @@ export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logge
 
 export interface AppOptions {
   dataDir: string
+  db?: string
   removeCache?: boolean
   forcePrecache?: boolean
   errorHandler?: ErrorHandler

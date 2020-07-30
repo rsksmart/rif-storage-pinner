@@ -1,11 +1,11 @@
 import { flags } from '@oclif/command'
-import type { Input, OutputFlags } from '@oclif/parser'
+import type { OutputFlags } from '@oclif/parser'
 import config from 'config'
 import path from 'path'
 
 import BaseCommand from '../utils'
-import initApp from '../../index'
-import { Config, Strategy } from '../../definitions'
+import initApp from '../index'
+import { Strategy } from '../definitions'
 
 export default class PinningServiceCommand extends BaseCommand {
   static get description (): string {
@@ -51,20 +51,7 @@ By default it uses RIF Marketplace servers to listen on events, which are based 
   }
 
   protected configSetup (flags: OutputFlags<typeof PinningServiceCommand.flags>): void {
-    super.configSetup(flags)
-    const configObject: Config = {
-      log: {
-        level: flags.log,
-        filter: flags['log-filter'] || null,
-        path: flags['log-path'] || null
-      }
-    }
-
-    let userConfig: Config = {}
-
-    if (flags.config) {
-      userConfig = config.util.parseFile(flags.config)
-    }
+    const { userConfig, configObject } = super.baseConfigSetup(flags)
 
     if (flags.strategy) {
       configObject.strategy = flags.strategy
@@ -89,7 +76,7 @@ By default it uses RIF Marketplace servers to listen on events, which are based 
     config.util.extendDeep(config, configObject)
 
     if (flags.network) {
-      const networkConfigPath = path.join(__dirname, '..', 'config', `${flags.network}.json5`)
+      const networkConfigPath = path.join(__dirname, '..', '..', 'config', `${flags.network}.json5`)
       config.util.extendDeep(config, config.util.parseFile(networkConfigPath))
     }
 
@@ -98,11 +85,16 @@ By default it uses RIF Marketplace servers to listen on events, which are based 
     }
   }
 
-  async run () {
-    const { flags: originalFlags } = this.parse(this.constructor as Input<typeof PinningServiceCommand.flags>)
+  async run (): Promise<void> {
+    const { flags: originalFlags } = await this.promptForRequiredFlags(PinningServiceCommand.flags, this.parse(PinningServiceCommand))
     const flags = originalFlags as OutputFlags<typeof PinningServiceCommand.flags>
     this.configSetup(flags)
 
-    await initApp('flags.offerId', { removeCache: Boolean(flags['remove-cache']), dataDir: this.config.dataDir })
+    const dbPath = this.resolveDbPath(flags.db)
+    await this.initDB(dbPath, false)
+    const offerId = this.offerId
+
+    // Run app
+    await initApp(offerId, { removeCache: Boolean(flags['remove-cache']), db: dbPath, dataDir: this.config.dataDir })
   }
 }

@@ -1,12 +1,9 @@
 import fs from 'fs'
-import { getObject } from 'sequelize-store'
 import { flags } from '@oclif/command'
 import { OutputFlags } from '@oclif/parser'
 import { isAddress } from 'web3-utils'
 
 import BaseCommand, { promptFlagIfNeeded } from '../utils'
-import { sequelizeFactory } from '../../sequelize'
-import { initStore } from '../../store'
 
 export default class InitCommand extends BaseCommand {
   static flags = {
@@ -29,36 +26,32 @@ export default class InitCommand extends BaseCommand {
     '$ rif-pinning init --db ./folder'
   ]
 
-  private async initDB (path: string): Promise<void> {
-    if (fs.existsSync(path)) {
-      throw new Error('Already initialized. Please run "cleanup" for removing current pinner service files')
-    }
-    // Init database connection
-    const sequelize = await sequelizeFactory(path)
-    await sequelize.sync()
-    await initStore(sequelize)
-  }
-
-  private storeOfferId (offerId: string): void {
-    const store = getObject()
-    store.offerId = offerId
-  }
-
   async run (): Promise<void> {
     const { flags: originalFlags } = await this.promptForRequiredFlags(InitCommand.flags, this.parse(InitCommand))
     const flags = originalFlags as OutputFlags<typeof InitCommand.flags>
 
-    this.configSetup(flags)
+    this.spinner.start('Initializing required files...')
+    this.baseConfigSetup(flags)
     const dbPath = this.resolveDbPath(flags.db)
 
     if (!isAddress(flags.offerId)) throw new Error('Invalid Offer Address')
 
-    // Init DB
-    await this.initDB(dbPath)
+    if (fs.existsSync(dbPath)) {
+      throw new Error('Already initialized. Please run "cleanup" for removing current pinner service files')
+    }
 
-    // Store offerId
-    this.storeOfferId(flags.offerId)
+    try {
+      // Init DB
+      await this.initDB(dbPath)
 
-    this.exit()
+      // Store offerId
+      this.offerId = flags.offerId
+    } catch (e) {
+      fs.unlinkSync(dbPath)
+      throw e
+    } finally {
+      this.spinner.stop()
+      this.exit()
+    }
   }
 }

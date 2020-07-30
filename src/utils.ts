@@ -1,4 +1,11 @@
 import { hexToAscii } from 'web3-utils'
+import config from 'config'
+import path from 'path'
+import cli, { ActionBase, IPromptOptions } from 'cli-ux'
+import { IOptionFlag } from '@oclif/command/lib/flags'
+import Command, { flags } from '@oclif/command'
+import { OutputFlags } from '@oclif/parser'
+import { getObject } from 'sequelize-store'
 
 import type {
   BlockchainEvent,
@@ -9,7 +16,11 @@ import type {
   StorageEvents,
   HandlersObject
 } from './definitions'
+import { Config } from './definitions'
 import { loggingFactory } from './logger'
+
+import { sequelizeFactory } from './sequelize'
+import { initStore } from './store'
 
 const logger = loggingFactory('utils')
 
@@ -54,4 +65,118 @@ export function decodeByteArray (fileReference: string[]): string {
 
 export function duplicateObject<T> (obj: T): T {
   return JSON.parse(JSON.stringify(obj))
+}
+
+export const promptFlagIfNeeded = (flag: IOptionFlag<any>): IOptionFlag<any> => ({ ...flag, prompt: true, required: false }) as IOptionFlag<any>
+
+export default abstract class BaseCommand extends Command {
+  private isDbInitialized = false
+  static flags = {
+    db: flags.string({
+      char: 'd',
+      description: 'Name or path to DB file',
+      env: 'RIFS_DB',
+      required: false
+    }),
+    config: flags.string({
+      description: 'path to JSON config file to load',
+      hidden: true,
+      env: 'RIFS_CONFIG'
+    }),
+    log: flags.string({
+      description: 'what level of information to log',
+      options: ['error', 'warn', 'info', 'verbose', 'debug'],
+      default: 'error',
+      env: 'LOG_LEVEL'
+    }),
+    'log-filter': flags.string(
+      {
+        description: 'what components should be logged (+-, chars allowed)'
+      }
+    ),
+    'log-path': flags.string(
+      {
+        description: 'log to file, default is STDOUT'
+      }
+    )
+  }
+
+  protected prompt (message: string, options: IPromptOptions = { required: true }): Promise<any> {
+    return cli.prompt(message, options)
+  }
+
+  protected get spinner (): ActionBase {
+    return cli.action
+  }
+
+  protected baseConfigSetup (flags: OutputFlags<typeof BaseCommand.flags>): Record<string, any> {
+    const configObject: Config = {
+      log: {
+        level: flags.log,
+        filter: flags['log-filter'] || null,
+        path: flags['log-path'] || null
+      }
+    }
+
+    let userConfig: Config = {}
+
+    if (flags.config) {
+      userConfig = config.util.parseFile(flags.config)
+    }
+
+    config.util.extendDeep(config, userConfig)
+    config.util.extendDeep(config, configObject)
+    return { userConfig, configObject }
+  }
+
+  protected resolveDbPath (db: string): string {
+    if (!db) return path.resolve(this.config.dataDir, config.get<string>('db'))
+
+    const parsed = path.parse(db)
+
+    // File name
+    if (!parsed.dir) {
+      return path.resolve(
+        this.config.dataDir,
+        parsed.ext
+          ? db
+          : `${parsed.base}.sqlite`
+      )
+    } else {
+      return path.resolve(`${db}${parsed.ext ? '' : '.sqlite'}`)
+    }
+  }
+
+  protected async promptForRequiredFlags (flagsSchema: Record<any, any> = {}, parsed: Record<string, any>): Promise<Record<string, any>> {
+    for (const [flagName, flagOption] of Object.entries(flagsSchema)) {
+      if (flagOption.prompt && !parsed.flags[flagName]) {
+        parsed.flags[flagName] = await this.prompt(`Please enter ${flagName}`)
+      }
+    }
+    return parsed
+  }
+
+  protected async initDB (path: string, sync?: boolean): Promise<void> {
+    const sequelize = await sequelizeFactory(path)
+
+    if (sync) {
+      await sequelize.sync()
+    }
+    await initStore(sequelize)
+    this.isDbInitialized = true
+  }
+
+  protected set offerId (offerId: string) {
+    const store = getObject()
+    store.offerId = offerId
+  }
+
+  protected get offerId (): string {
+    if (!this.isDbInitialized) throw new Error('DB is not initialized')
+    const store = getObject()
+
+    if (!store.offerId) throw new Error('Offer Id is not found in DB')
+
+    return getObject().offerId as string
+  }
 }
