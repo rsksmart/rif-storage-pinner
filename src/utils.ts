@@ -16,7 +16,7 @@ import type {
   StorageEvents,
   HandlersObject
 } from './definitions'
-import { Config } from './definitions'
+import type { Config } from './definitions'
 import { loggingFactory } from './logger'
 
 import { sequelizeFactory } from './sequelize'
