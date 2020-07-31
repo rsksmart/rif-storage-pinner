@@ -49,7 +49,6 @@ export default class CleanupCommand extends BaseCommand {
     for (const agreement of agreements) {
       await provider.unpin(agreement.dataReference)
         .catch(e => {
-          // TODO Remove when pinning job done
           logger.warn(e)
         })
     }
