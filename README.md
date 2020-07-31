@@ -94,6 +94,7 @@ EXAMPLES
 Pinning service supports following environmental variables:
 
  - `RIFS_OFFER` (`string`) - Specifies Offer Id which the Pinning service should listen on. Same like `--offerId` flag.
+ - `RIFS_DB` (`string`) - Specify the name or path to the data base file.
  - `RIFS_NETWORK` (`testnet|mainnet`) - Same like `--network` flag.
  - `RIFS_PROVIDER` (`string`) - Same like `--provider` flag.
  - `RIFS_CONFIG` (`string`) - Same like `--config` flag.
