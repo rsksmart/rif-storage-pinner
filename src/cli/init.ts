@@ -3,12 +3,12 @@ import { flags } from '@oclif/command'
 import { OutputFlags } from '@oclif/parser'
 import { isAddress } from 'web3-utils'
 
-import BaseCommand, { promptFlagIfNeeded } from '../utils'
+import BaseCommand, { promptForFlag } from '../utils'
 
 export default class InitCommand extends BaseCommand {
   static flags = {
     ...BaseCommand.flags,
-    offerId: promptFlagIfNeeded(flags.string({
+    offerId: promptForFlag(flags.string({
       char: 'o',
       description: 'ID of Offer to which should the service listen to',
       env: 'RIFS_OFFER'
@@ -16,13 +16,11 @@ export default class InitCommand extends BaseCommand {
     force: flags.boolean({
       default: false,
       char: 'f',
-      description: 'Overwrite DB is exist'
+      description: 'Overwrite DB if exist'
     })
   }
 
-  static get description (): string {
-    return 'Initialize Pinner service dependencies'
-  }
+  static description = 'Initialize Pinner service dependencies'
 
   static examples = [
     '$ rif-pinning init',
@@ -32,7 +30,7 @@ export default class InitCommand extends BaseCommand {
   ]
 
   async run (): Promise<void> {
-    const { flags: originalFlags } = await this.promptForFlags(InitCommand.flags, this.parse(InitCommand))
+    const { flags: originalFlags } = await this.parseWithPrompt(InitCommand)
     const flags = originalFlags as OutputFlags<typeof InitCommand.flags>
 
     this.baseConfigSetup(flags)
@@ -40,8 +38,12 @@ export default class InitCommand extends BaseCommand {
 
     if (!isAddress(flags.offerId)) throw new Error('Invalid Offer Address')
 
-    if (fs.existsSync(dbPath) && !flags.force) {
-      throw new Error('Already initialized. Please run "cleanup" for removing current pinner service files')
+    if (fs.existsSync(dbPath)) {
+      if (flags.force && !(await this.confirm('Are you sure you want to overwrite your current DB? (y/n)'))) {
+        this.exit()
+      } else {
+        throw new Error('Already initialized. Please run "cleanup" for removing current pinner service files')
+      }
     }
 
     try {

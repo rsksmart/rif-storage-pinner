@@ -20,9 +20,7 @@ export default class CleanupCommand extends BaseCommand {
     })
   }
 
-  static get description (): string {
-    return 'Cleanup pinner files'
-  }
+  static description = 'Cleanup pinner files'
 
   static examples = [
     '$ rif-pinning cleanup',
@@ -55,7 +53,7 @@ export default class CleanupCommand extends BaseCommand {
   }
 
   async run (): Promise<void> {
-    const { flags: originalFlags } = await this.promptForFlags(CleanupCommand.flags, this.parse(CleanupCommand))
+    const { flags: originalFlags } = await this.parseWithPrompt(CleanupCommand)
     const flags = originalFlags as OutputFlags<typeof CleanupCommand.flags>
     this.baseConfigSetup(flags)
     const dbPath = this.resolveDbPath(flags.db)

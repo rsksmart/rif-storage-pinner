@@ -67,8 +67,22 @@ export function duplicateObject<T> (obj: T): T {
   return JSON.parse(JSON.stringify(obj))
 }
 
-export const promptFlagIfNeeded = (flag: IOptionFlag<any>): IOptionFlag<any> => ({ ...flag, prompt: true, required: false }) as IOptionFlag<any>
+/**
+ * Prompt for flag if not provided wrapper
+ * @param {IOptionFlag<any>} flag Oclif flag object
+ * @return IOptionFlag<any> & { prompt: string | boolean }
+ */
+export function promptForFlag (flag: IOptionFlag<any>): IOptionFlag<any> {
+  return { ...flag, prompt: true, required: false } as IOptionFlag<any> & { prompt: boolean | string }
+}
 
+/**
+ * Base class for Pinner service commands
+ * It have predefined some basic flags and config processing
+ * Also have some helpers for initializing DB, storing Offer ID and some ui (spinner, prompt for flag)
+ * @abstract
+ * @class BaseCommand
+ */
 export default abstract class BaseCommand extends Command {
   private isDbInitialized = false
   static flags = {
@@ -103,6 +117,10 @@ export default abstract class BaseCommand extends Command {
 
   protected prompt (message: string, options: IPromptOptions = { required: true }): Promise<any> {
     return cli.prompt(message, options)
+  }
+
+  protected confirm (message: string): Promise<boolean> {
+    return cli.confirm(message)
   }
 
   protected get spinner (): ActionBase {
@@ -149,8 +167,12 @@ export default abstract class BaseCommand extends Command {
 
   protected async promptForFlags (flagsSchema: Record<any, any> = {}, parsed: Record<string, any>): Promise<Record<string, any>> {
     for (const [flagName, flagOption] of Object.entries(flagsSchema)) {
+      // TODO extend to support prompt for boolean, options
       if (flagOption.prompt && !parsed.flags[flagName]) {
-        parsed.flags[flagName] = await this.prompt(`Please enter ${flagName}`)
+        parsed.flags[flagName] = await this.prompt(typeof flagOption.prompt === 'string'
+          ? flagOption.prompt
+          : `Please enter ${flagName}`
+        )
       }
     }
     return parsed
@@ -178,5 +200,9 @@ export default abstract class BaseCommand extends Command {
     if (!store.offerId) throw new Error('Offer Id is not found in DB')
 
     return getObject().offerId as string
+  }
+
+  protected parseWithPrompt (command: any) {
+    return this.promptForFlags(command.flags, this.parse(command))
   }
 }
