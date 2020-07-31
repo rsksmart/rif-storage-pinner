@@ -1,5 +1,6 @@
 import { flags } from '@oclif/command'
 import type { OutputFlags } from '@oclif/parser'
+import fs from 'fs'
 import config from 'config'
 import path from 'path'
 
@@ -89,6 +90,11 @@ By default it uses RIF Marketplace servers to listen on events, which are based 
     this.configSetup(flags)
 
     const dbPath = this.resolveDbPath(flags.db)
+
+    if (!fs.existsSync(dbPath)) {
+      throw new Error('Service was not yet initialized, first run \'init\' command!')
+    }
+
     await this.initDB(dbPath, false)
     const offerId = this.offerId
 

@@ -178,7 +178,7 @@ export default abstract class BaseCommand extends Command {
     return parsed
   }
 
-  protected async initDB (path: string, sync?: boolean): Promise<void> {
+  protected async initDB (path: string, sync = true): Promise<void> {
     const sequelize = await sequelizeFactory(path)
 
     if (sync) {

@@ -39,7 +39,7 @@ export default class CleanupCommand extends BaseCommand {
   private async unpinAgreements (db: string) {
     const provider = await this.getIpfsProvider()
     const dbPath = this.resolveDbPath(db)
-    await this.initDB(dbPath)
+    await this.initDB(dbPath, false)
 
     // Unpin agreements
     const agreements = await Agreement.findAll()
@@ -59,7 +59,7 @@ export default class CleanupCommand extends BaseCommand {
     const dbPath = this.resolveDbPath(flags.db)
 
     if (!fs.existsSync(dbPath)) {
-      throw new Error('DB file do not exist')
+      throw new Error('Service was not yet initialized, first run \'init\' command!')
     }
 
     if (flags.unpin) {
