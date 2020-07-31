@@ -12,9 +12,9 @@ export default class PinningServiceCommand extends BaseCommand {
   static description = 'Run pinning service'
 
   static examples = [
-    '$ rif-pinning --strategy=blockchain --provider \'ws://localhost:8546\' --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet',
+    '$ rif-pinning daemon --strategy=blockchain --provider \'ws://localhost:8546\' --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet',
     '',
-    '$ rif-pinning --strategy=marketplace --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet'
+    '$ rif-pinning daemon --strategy=marketplace --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet'
   ]
 
   static flags = {
@@ -86,7 +86,7 @@ export default class PinningServiceCommand extends BaseCommand {
       throw new Error('Service was not yet initialized, first run \'init\' command!')
     }
 
-    await this.initDB(dbPath, false)
+    await this.initDB(dbPath)
     const offerId = this.offerId
 
     // Run app

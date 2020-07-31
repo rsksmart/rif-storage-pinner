@@ -10,15 +10,13 @@ import { getObject } from 'sequelize-store'
 import type {
   BlockchainEvent,
   BlockchainEventsWithProvider,
+  Config,
   EventProcessorOptions,
   EventsHandler,
   Logger,
   StorageEvents,
   HandlersObject
-// eslint-disable-next-line import/no-duplicates
 } from './definitions'
-// eslint-disable-next-line import/no-duplicates
-import type { Config } from './definitions'
 import { loggingFactory } from './logger'
 
 import { sequelizeFactory } from './sequelize'
@@ -179,7 +177,7 @@ export default abstract class BaseCommand extends Command {
     return parsed
   }
 
-  protected async initDB (path: string, sync = true): Promise<void> {
+  protected async initDB (path: string, sync = false): Promise<void> {
     const sequelize = await sequelizeFactory(path)
 
     if (sync) {

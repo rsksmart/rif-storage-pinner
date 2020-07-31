@@ -48,7 +48,7 @@ export default class InitCommand extends BaseCommand {
     try {
       // Init DB
       this.spinner.start('Init DB')
-      await this.initDB(dbPath)
+      await this.initDB(dbPath, true)
       this.spinner.stop()
 
       // Store offerId

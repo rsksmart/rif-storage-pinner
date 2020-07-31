@@ -9,7 +9,7 @@ import Agreement from '../models/agreement.model'
 import { loggingFactory } from '../logger'
 import { ProviderManager } from '../providers'
 
-const logger = loggingFactory('CLEANUP')
+const logger = loggingFactory('cli:cleanup')
 
 export default class CleanupCommand extends BaseCommand {
   static flags = {
@@ -33,16 +33,16 @@ export default class CleanupCommand extends BaseCommand {
     return fs.promises.unlink(path)
   }
 
-  private async getIpfsProvider (): Promise<ProviderManager> {
+  private async getProviderManager (): Promise<ProviderManager> {
     const manager = new ProviderManager()
     manager.register(await IpfsProvider.bootstrap(duplicateObject(config.get<string>('ipfs.clientOptions')), config.get<number|string>('ipfs.sizeFetchTimeout')))
     return manager
   }
 
   private async unpinAgreements (db: string) {
-    const provider = await this.getIpfsProvider()
+    const provider = await this.getProviderManager()
     const dbPath = this.resolveDbPath(db)
-    await this.initDB(dbPath, false)
+    await this.initDB(dbPath)
 
     // Unpin agreements
     const agreements = await Agreement.findAll()
