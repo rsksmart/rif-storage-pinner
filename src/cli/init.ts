@@ -10,8 +10,7 @@ export default class InitCommand extends BaseCommand {
     ...BaseCommand.flags,
     offerId: promptForFlag(flags.string({
       char: 'o',
-      description: 'ID of Offer to which should the service listen to',
-      env: 'RIFS_OFFER'
+      description: 'ID of Offer to which should the service listen to'
     })),
     force: flags.boolean({
       default: false,
