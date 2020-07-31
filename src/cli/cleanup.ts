@@ -7,6 +7,7 @@ import BaseCommand, { duplicateObject } from '../utils'
 import { IpfsProvider } from '../providers/ipfs'
 import Agreement from '../models/agreement.model'
 import { loggingFactory } from '../logger'
+import { ProviderManager } from '../providers'
 
 const logger = loggingFactory('CLEANUP')
 
@@ -32,8 +33,10 @@ export default class CleanupCommand extends BaseCommand {
     return fs.promises.unlink(path)
   }
 
-  private getIpfsProvider () {
-    return IpfsProvider.bootstrap(duplicateObject(config.get<string>('ipfs.clientOptions')), config.get<number|string>('ipfs.sizeFetchTimeout'))
+  private async getIpfsProvider (): Promise<ProviderManager> {
+    const manager = new ProviderManager()
+    manager.register(await IpfsProvider.bootstrap(duplicateObject(config.get<string>('ipfs.clientOptions')), config.get<number|string>('ipfs.sizeFetchTimeout')))
+    return manager
   }
 
   private async unpinAgreements (db: string) {
