@@ -18,9 +18,9 @@ By default it uses RIF Marketplace servers to listen on events, which are based 
 `
 
   static examples = [
-    '$ rif-pinning --offerId 0x123456789 --strategy=blockchain --provider \'ws://localhost:8546\' --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet',
+    '$ rif-pinning --strategy=blockchain --provider \'ws://localhost:8546\' --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet',
     '',
-    '$ rif-pinning --offerId 0x123456789 --strategy=marketplace --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet'
+    '$ rif-pinning --strategy=marketplace --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet'
   ]
 
   static flags = {
