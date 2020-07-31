@@ -40,9 +40,6 @@ By default it uses RIF Marketplace servers to listen on events, which are based 
       description: 'what type of provider will be used for listening on events. Default is "marketplace". For blockchain you have to have access to a node that has allowed eth_getLogs call.',
       options: ['marketplace', 'blockchain']
     }),
-    'remove-cache': flags.boolean({
-      description: 'removes the local database prior running the service'
-    }),
     ipfs: flags.string({
       description: 'specifies a connection URL to IPFS node. Default is go-ipfs listening configuration.',
       env: 'RIFS_IPFS'
@@ -99,6 +96,6 @@ By default it uses RIF Marketplace servers to listen on events, which are based 
     const offerId = this.offerId
 
     // Run app
-    await initApp(offerId, { removeCache: Boolean(flags['remove-cache']), db: dbPath, dataDir: this.config.dataDir })
+    await initApp(offerId, { db: dbPath, dataDir: this.config.dataDir })
   }
 }
