@@ -15,7 +15,9 @@ import type {
   Logger,
   StorageEvents,
   HandlersObject
+// eslint-disable-next-line import/no-duplicates
 } from './definitions'
+// eslint-disable-next-line import/no-duplicates
 import type { Config } from './definitions'
 import { loggingFactory } from './logger'
 
@@ -94,7 +96,6 @@ export default abstract class BaseCommand extends Command {
     }),
     config: flags.string({
       description: 'path to JSON config file to load',
-      hidden: true,
       env: 'RIFS_CONFIG'
     }),
     log: flags.string({
