@@ -86,7 +86,7 @@ export function promptForFlag (flag: IOptionFlag<any>): IOptionFlag<any> {
  * @class BaseCommand
  */
 export default abstract class BaseCommand extends Command {
-  private isDbInitialized = false
+  protected isDbInitialized = false
   static flags = {
     db: flags.string({
       char: 'd',
