@@ -1,6 +1,5 @@
 import { flags } from '@oclif/command'
 import type { OutputFlags } from '@oclif/parser'
-import fs from 'fs'
 import config from 'config'
 import path from 'path'
 
@@ -40,8 +39,9 @@ export default class PinningServiceCommand extends BaseCommand {
     })
   }
 
-  protected configSetup (flags: OutputFlags<typeof PinningServiceCommand.flags>): void {
-    const { userConfig, configObject } = super.baseConfigSetup(flags)
+  protected baseConfig (flags: OutputFlags<typeof PinningServiceCommand.flags>): void {
+    super.baseConfig(flags)
+    const { userConfig, configObject } = this.configuration
 
     if (flags.strategy) {
       configObject.strategy = flags.strategy
@@ -76,20 +76,10 @@ export default class PinningServiceCommand extends BaseCommand {
   }
 
   async run (): Promise<void> {
-    const { flags: originalFlags } = await this.parseWithPrompt(PinningServiceCommand)
-    const flags = originalFlags as OutputFlags<typeof PinningServiceCommand.flags>
-    this.configSetup(flags)
-
-    const dbPath = this.resolveDbPath(flags.db)
-
-    if (!fs.existsSync(dbPath)) {
-      throw new Error('Service was not yet initialized, first run \'init\' command!')
-    }
-
-    await this.initDB(dbPath)
+    await this.initCommand(PinningServiceCommand)
     const offerId = this.offerId
 
     // Run app
-    await initApp(offerId, { db: dbPath, dataDir: this.config.dataDir })
+    await initApp(offerId, { db: this.dbPath, dataDir: this.config.dataDir })
   }
 }

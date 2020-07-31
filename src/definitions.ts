@@ -168,3 +168,12 @@ export type BlockchainEventsWithProvider = BlockchainOfferEvents | NewAgreement
 export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEvents
 
 export type StorageEvents = BlockchainEvent | MarketplaceEvent
+
+/**
+ * CLI
+ */
+export interface InitCommandOption {
+  db?: { sync: boolean } | boolean
+  baseConfig?: boolean
+  serviceRequired?: boolean
+}

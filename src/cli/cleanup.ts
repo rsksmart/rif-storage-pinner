@@ -39,14 +39,11 @@ export default class CleanupCommand extends BaseCommand {
     return manager
   }
 
-  private async unpinAgreements (db: string) {
+  private async unpinAgreements () {
     const provider = await this.getProviderManager()
-    const dbPath = this.resolveDbPath(db)
-    await this.initDB(dbPath)
 
     // Unpin agreements
-    const agreements = await Agreement.findAll()
-    for (const agreement of agreements) {
+    for (const agreement of await Agreement.findAll()) {
       await provider.unpin(agreement.dataReference)
         .catch(e => {
           logger.warn(e)
@@ -55,23 +52,18 @@ export default class CleanupCommand extends BaseCommand {
   }
 
   async run (): Promise<void> {
-    const { flags: originalFlags } = await this.parseWithPrompt(CleanupCommand)
+    await this.initCommand(CleanupCommand)
+    const { flags: originalFlags } = this.parsedArgs
     const flags = originalFlags as OutputFlags<typeof CleanupCommand.flags>
-    this.baseConfigSetup(flags)
-    const dbPath = this.resolveDbPath(flags.db)
-
-    if (!fs.existsSync(dbPath)) {
-      throw new Error('Service was not yet initialized, first run \'init\' command!')
-    }
 
     if (flags.unpin) {
       this.spinner.start('Unpinning files...')
-      await this.unpinAgreements(flags.db)
+      await this.unpinAgreements()
       this.spinner.stop()
     }
 
     this.spinner.start('Clean up db...')
-    await this.purgeDb(dbPath)
+    await this.purgeDb(this.dbPath as string)
     this.spinner.stop()
 
     this.exit()

@@ -1,4 +1,5 @@
 import { hexToAscii } from 'web3-utils'
+import fs from 'fs'
 import config from 'config'
 import path from 'path'
 import cli, { ActionBase, IPromptOptions } from 'cli-ux'
@@ -15,7 +16,8 @@ import type {
   EventsHandler,
   Logger,
   StorageEvents,
-  HandlersObject
+  HandlersObject,
+  InitCommandOption
 } from './definitions'
 import { loggingFactory } from './logger'
 
@@ -84,6 +86,10 @@ export function promptForFlag (flag: IOptionFlag<any>): IOptionFlag<any> {
  * @class BaseCommand
  */
 export default abstract class BaseCommand extends Command {
+  private defaultInitOptions: InitCommandOption = { baseConfig: true, db: true, serviceRequired: true }
+  protected configuration: Record<string, any> = {}
+  protected parsedArgs: any
+  protected dbPath: string | undefined
   protected isDbInitialized = false
   static flags = {
     db: flags.string({
@@ -126,7 +132,7 @@ export default abstract class BaseCommand extends Command {
     return cli.action
   }
 
-  protected baseConfigSetup (flags: OutputFlags<typeof BaseCommand.flags>): Record<string, any> {
+  protected baseConfig (flags: OutputFlags<typeof BaseCommand.flags>): void {
     const configObject: Config = {
       log: {
         level: flags.log,
@@ -140,10 +146,10 @@ export default abstract class BaseCommand extends Command {
     if (flags.config) {
       userConfig = config.util.parseFile(flags.config)
     }
-
-    config.util.extendDeep(config, userConfig)
     config.util.extendDeep(config, configObject)
-    return { userConfig, configObject }
+    config.util.extendDeep(config, userConfig)
+
+    this.configuration = { userConfig, configObject }
   }
 
   protected resolveDbPath (db: string): string {
@@ -201,7 +207,24 @@ export default abstract class BaseCommand extends Command {
     return getObject().offerId as string
   }
 
-  protected parseWithPrompt (command: any) {
+  protected parseWithPrompt (command: any): Promise<Record<string, any>> {
     return this.promptForFlags(command.flags, this.parse(command))
+  }
+
+  protected async initCommand (command: any, options: InitCommandOption = {}): Promise<void> {
+    const { db, baseConfig, serviceRequired } = { ...this.defaultInitOptions, ...options }
+    this.parsedArgs = await this.parseWithPrompt(command)
+
+    if (baseConfig) this.baseConfig(this.parsedArgs.flags)
+    this.dbPath = this.resolveDbPath(this.parsedArgs.db)
+
+    if (serviceRequired && !fs.existsSync(this.dbPath as string)) {
+      throw new Error('Service was not yet initialized, first run \'init\' command!')
+    }
+
+    if (db) {
+      const sync = typeof db === 'object' ? db.sync : false
+      await this.initDB(this.dbPath, sync)
+    }
   }
 }

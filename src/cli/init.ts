@@ -11,12 +11,7 @@ export default class InitCommand extends BaseCommand {
     offerId: promptForFlag(flags.string({
       char: 'o',
       description: 'ID of Offer to which should the service listen to'
-    })),
-    force: flags.boolean({
-      default: false,
-      char: 'f',
-      description: 'Overwrite DB if exist'
-    })
+    }))
   }
 
   static description = 'Initialize Pinner service dependencies'
@@ -29,34 +24,29 @@ export default class InitCommand extends BaseCommand {
   ]
 
   async run (): Promise<void> {
-    const { flags: originalFlags } = await this.parseWithPrompt(InitCommand)
-    const flags = originalFlags as OutputFlags<typeof InitCommand.flags>
+    await this.initCommand(InitCommand, { serviceRequired: false, db: { sync: true } })
+    const offerId = this.parsedArgs.flags.offerId
 
-    this.baseConfigSetup(flags)
-    const dbPath = this.resolveDbPath(flags.db)
+    if (!isAddress(offerId)) throw new Error('Invalid Offer Address')
 
-    if (!isAddress(flags.offerId)) throw new Error('Invalid Offer Address')
-
-    if (fs.existsSync(dbPath)) {
-      if (flags.force && !(await this.confirm('Are you sure you want to overwrite your current DB? (y/n)'))) {
+    if (fs.existsSync(this.dbPath as string)) {
+      if (!(await this.confirm('Are you sure you want to overwrite your current DB? (y/n)'))) {
         this.exit()
-      } else {
-        throw new Error('Already initialized. Please run "cleanup" for removing current pinner service files')
       }
     }
 
     try {
       // Init DB
       this.spinner.start('Init DB')
-      await this.initDB(dbPath, true)
+      await this.initDB(this.dbPath as string, true)
       this.spinner.stop()
 
       // Store offerId
       this.spinner.start('Set Offer ID')
-      this.offerId = flags.offerId
+      this.offerId = offerId
       this.spinner.stop()
     } catch (e) {
-      fs.unlinkSync(dbPath)
+      fs.unlinkSync(this.dbPath as string)
       throw e
     }
     this.exit()
