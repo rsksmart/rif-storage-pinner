@@ -1,5 +1,6 @@
 {
   blockchain: {
     //contractAddress : ''
+    networkId: 30,
   }
 }
