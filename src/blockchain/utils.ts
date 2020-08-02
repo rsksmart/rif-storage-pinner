@@ -1,4 +1,4 @@
-import { AbiItem } from 'web3-utils'
+import { AbiItem, keccak256 } from 'web3-utils'
 import Eth from 'web3-eth'
 import config from 'config'
 
@@ -8,6 +8,11 @@ import { NewBlockEmitterOptions } from '../definitions'
 import { AutoStartStopEventEmitter, ListeningNewBlockEmitter, PollingNewBlockEmitter } from './new-block-emitters'
 
 const logger = loggingFactory('blockchain')
+
+function hashTopics (topics?: string[]): string[] {
+  if (!topics) return []
+  return topics.map(e => keccak256(e))
+}
 
 export function setDifference<T> (setA: Set<T>, setB: Set<T>): Set<T> {
   const _difference = new Set(setA)
@@ -58,6 +63,7 @@ export function getEventsEmitter (eth: Eth, contractAbi: AbiItem[], options?: Ev
   const logger = loggingFactory('blockchain:')
 
   const eventsToListen = config.get<string[]>('blockchain.events')
+  const topicsToListen = config.get<string[]>('blockchain.topics')
   logger.info(`For listening on service 'blockchain' for events ${eventsToListen.join(', ')} using contract on address: ${contractAddresses}`)
   const eventsEmitterOptions = config.get<EventsEmitterOptions>('blockchain.eventsEmitter')
   const newBlockEmitterOptions = config.get<NewBlockEmitterOptions>('blockchain.newBlockEmitter')
@@ -70,5 +76,5 @@ export function getEventsEmitter (eth: Eth, contractAbi: AbiItem[], options?: Ev
     options
   )
 
-  return eventsEmitterFactory(eth, contract, eventsToListen, configOptions)
+  return eventsEmitterFactory(eth, contract, eventsToListen, hashTopics(topicsToListen), configOptions)
 }
