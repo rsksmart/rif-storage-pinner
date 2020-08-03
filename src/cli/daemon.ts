@@ -6,6 +6,10 @@ import path from 'path'
 import BaseCommand from '../utils'
 import initApp from '../index'
 import { Strategy } from '../definitions'
+import { loggingFactory } from '../logger'
+import fs from 'fs'
+
+const logger = loggingFactory('cli:daemon')
 
 export default class PinningServiceCommand extends BaseCommand {
   static description = 'Run pinning service'
@@ -78,7 +82,35 @@ export default class PinningServiceCommand extends BaseCommand {
   async run (): Promise<void> {
     const offerId = this.offerId
 
-    // Run app
-    await initApp(offerId)
+    // An infinite loop which you can exit only with SIGINT/SIGKILL
+    while (true) {
+      // Promise that resolves when reset callback is called
+      let stopCallback = (() => { throw new Error('No stop callback was assigned!') }) as () => void
+
+      const resetPromise = new Promise(resolve => {
+        initApp(offerId, {
+          appResetCallback: () => resolve()
+        }).then(value => {
+          // Lets save the function that stops the app
+          stopCallback = value.stop
+        })
+      })
+
+      // Let see if we have to restart the app at some point most probably because
+      // reorgs outside of confirmation range.
+      await resetPromise
+
+      logger.warn('Reorg detected outside of confirmation range. Rebuilding the service\'s state!')
+      logger.info('Stopping service')
+      stopCallback()
+
+      logger.info('Removing current DB')
+      fs.unlinkSync(this.dbPath as string)
+      this.isDbInitialized = false
+      await this.initDB(this.dbPath as string, true)
+      this.offerId = offerId // Lets reset the offerId so the DB is properly configured
+
+      logger.info('Restarting the app')
+    }
   }
 }

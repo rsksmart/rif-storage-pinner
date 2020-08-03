@@ -12,7 +12,7 @@ import type { AppOptions, JobManagerOptions } from './definitions'
 
 const logger = loggingFactory('pinning-service')
 
-function getEventProcessor (offerId: string, manager: ProviderManager, options?: AppOptions): BlockchainEventsProcessor | MarketplaceEventsProcessor {
+function getEventProcessor (offerId: string, manager: ProviderManager, options: AppOptions): BlockchainEventsProcessor | MarketplaceEventsProcessor {
   const strategy = options?.strategy ?? config.get('strategy')
 
   switch (strategy) {
@@ -28,7 +28,7 @@ function getEventProcessor (offerId: string, manager: ProviderManager, options?:
   }
 }
 
-export default async (offerId: string, options?: AppOptions): Promise<{ stop: () => void }> => {
+export default async (offerId: string, options: AppOptions): Promise<{ stop: () => void }> => {
   const jobsOptions = config.get<JobManagerOptions>('jobs')
   const jobsManager = new JobsManager(jobsOptions)
 
