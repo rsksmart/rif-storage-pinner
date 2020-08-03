@@ -26,6 +26,11 @@ import { loggingFactory } from './logger'
 
 import { sequelizeFactory } from './sequelize'
 import { initStore } from './store'
+import { ProviderManager } from './providers'
+import { JobManagerOptions } from './definitions'
+import { JobsManager } from './jobs-manager'
+import { IpfsProvider } from './providers/ipfs'
+import { table } from 'cli-ux/lib/styled/table'
 
 const logger = loggingFactory('utils')
 
@@ -164,6 +169,10 @@ export default abstract class BaseCommand extends Command {
     return cli.confirm(message)
   }
 
+  protected get table (): typeof table {
+    return cli.table
+  }
+
   protected get spinner (): ActionBase {
     return cli.action
   }
@@ -180,6 +189,15 @@ export default abstract class BaseCommand extends Command {
     if (!store.offerId) throw new Error('Offer Id is not found in DB')
 
     return getObject().offerId as string
+  }
+
+  protected async getProviderManager (): Promise<ProviderManager> {
+    const jobsOptions = config.get<JobManagerOptions>('jobs')
+    const jobsManager = new JobsManager(jobsOptions)
+
+    const manager = new ProviderManager()
+    manager.register(await IpfsProvider.bootstrap(jobsManager, duplicateObject(config.get<string>('ipfs.clientOptions'))))
+    return manager
   }
 
   protected baseConfig (flags: OutputFlags<typeof BaseCommand.flags>): void {

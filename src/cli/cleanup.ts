@@ -35,15 +35,6 @@ export default class CleanupCommand extends BaseCommand {
     return fs.promises.unlink(path)
   }
 
-  private async getProviderManager (): Promise<ProviderManager> {
-    const jobsOptions = config.get<JobManagerOptions>('jobs')
-    const jobsManager = new JobsManager(jobsOptions)
-
-    const manager = new ProviderManager()
-    manager.register(await IpfsProvider.bootstrap(jobsManager, duplicateObject(config.get<string>('ipfs.clientOptions'))))
-    return manager
-  }
-
   private async unpinAgreements () {
     const provider = await this.getProviderManager()
 
