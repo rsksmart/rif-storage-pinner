@@ -116,8 +116,6 @@ export interface Config {
 export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
 
 export interface AppOptions {
-  dataDir: string
-  db?: string
   forcePrecache?: boolean
   errorHandler?: ErrorHandler
   contractAddress?: string

@@ -14,6 +14,8 @@ import initApp from '../src'
 import { Logger, Strategy } from '../src/definitions'
 import { FakeMarketplaceService } from './fake-marketplace-service'
 import { loggingFactory } from '../src/logger'
+import { initStore } from '../src/store'
+import { sequelizeFactory } from '../src/sequelize'
 
 export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 
@@ -139,9 +141,12 @@ export class TestingApp {
     await this.purgeDb()
     this.logger.info('Database removed')
 
+    // Init DB
+    const sequelize = await sequelizeFactory(config.get<string>('db'))
+    await initStore(sequelize)
+
     // Run Pinning service
     this.app = await initApp(this.providerAddress, {
-      dataDir: process.cwd(),
       errorHandler: errorHandlerStub,
       contractAddress: this.contract?.options.address
     })

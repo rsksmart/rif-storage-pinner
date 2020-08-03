@@ -79,6 +79,6 @@ export default class PinningServiceCommand extends BaseCommand {
     const offerId = this.offerId
 
     // Run app
-    await initApp(offerId, { db: this.dbPath, dataDir: this.config.dataDir })
+    await initApp(offerId)
   }
 }
