@@ -38,8 +38,8 @@
     "ipfs:consumer": "cross-env IPFS_PATH='./.repos/consumer' ipfs",
     "ipfs:provider": "cross-env IPFS_PATH='./.repos/provider' ipfs",
     "lint": "tasegir lint",
-    "postpack": "rm -f oclif.manifest.json",
-    "prepack": "tasegir run --watch node_modules/.bin/oclif-dev -- manifest",
+    "prepack": "tasegir run --watch node_modules/.bin/oclif-dev -- manifest && sed -i '' 's#\"./src/cli\"#\"./lib/cli\"#g' package.json",
+    "postpack": "sed -i '' 's#\"./lib/cli\"#\"./src/cli\"#g' package.json",
     "release": "tasegir release --no-build",
     "start": "tasegir run --watch ./bin/run --",
     "test:integration": "cross-env ALLOW_CONFIG_MUTATIONS=true tasegir test --target node --files ./test/integration/*.spec.ts",
@@ -60,6 +60,7 @@
     "@rsksmart/rif-marketplace-storage": "^0.1.0-dev.0",
     "async-sema": "^3.1.0",
     "cids": "^0.8.3",
+    "cli-ux": "^5.4.9",
     "colors": "^1.4.0",
     "config": "^3.3.1",
     "ipfs-http-client": "^44.3.0",
@@ -115,6 +116,7 @@
   ],
   "oclif": {
     "bin": "rif-pinning",
+    "commands": "./src/cli",
     "plugins": [
       "@oclif/plugin-help"
     ]

@@ -132,8 +132,6 @@ export interface JobManagerOptions {
 export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
 
 export interface AppOptions {
-  dataDir: string
-  removeCache?: boolean
   forcePrecache?: boolean
   errorHandler?: ErrorHandler
   contractAddress?: string
@@ -190,3 +188,12 @@ export type BlockchainEventsWithProvider = BlockchainOfferEvents | NewAgreement
 export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEvents
 
 export type StorageEvents = BlockchainEvent | MarketplaceEvent
+
+/**
+ * CLI
+ */
+export interface InitCommandOption {
+  db?: { sync: boolean } | boolean
+  baseConfig?: boolean
+  serviceRequired?: boolean
+}

@@ -1,14 +1,10 @@
 import config from 'config'
-import { promises as fs } from 'fs'
-import path from 'path'
 
 import { loggingFactory } from './logger'
 import { BlockchainEventsProcessor } from './processor/blockchain-events'
 import { MarketplaceEventsProcessor } from './processor/marketplace-events'
 import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
-import { sequelizeFactory } from './sequelize'
-import { initStore } from './store'
 import { duplicateObject } from './utils'
 import { JobsManager } from './jobs-manager'
 import { Strategy } from './definitions'
@@ -32,22 +28,7 @@ function getEventProcessor (offerId: string, manager: ProviderManager, options?:
   }
 }
 
-export default async (offerId: string, options: AppOptions): Promise<{ stop: () => void }> => {
-  // dataDir is set when entry point is CLI, for testing we have also the CWD option.
-  const dbPath = path.join(options?.dataDir, config.get<string>('db'))
-  logger.verbose(`Using database path ${dbPath}`)
-
-  // Initialize DB
-  if (options?.removeCache) {
-    // dataDir is set when entry point is CLI, for testing we have also the CWD option.
-    await fs
-      .unlink(dbPath)
-      .catch(e => logger.error(e.message))
-  }
-  const sequelize = await sequelizeFactory(dbPath)
-  await initStore(sequelize)
-  logger.info('DB initialized')
-
+export default async (offerId: string, options?: AppOptions): Promise<{ stop: () => void }> => {
   const jobsOptions = config.get<JobManagerOptions>('jobs')
   const jobsManager = new JobsManager(jobsOptions)
 

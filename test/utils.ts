@@ -1,19 +1,22 @@
 import config from 'config'
 import sinon from 'sinon'
+import path from 'path'
+import { promises as fs } from 'fs'
 import ipfsClient, { CID, ClientOptions, IpfsClient } from 'ipfs-http-client'
 import Eth from 'web3-eth'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem, asciiToHex } from 'web3-utils'
 import { promisify } from 'util'
-import path from 'path'
-import { promises as fs } from 'fs'
 import type { HttpProvider } from 'web3-core'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
+
 import initApp from '../src'
 import { AppOptions, Logger, Strategy } from '../src/definitions'
 import { FakeMarketplaceService } from './fake-marketplace-service'
 import { loggingFactory } from '../src/logger'
+import { initStore } from '../src/store'
+import { sequelizeFactory } from '../src/sequelize'
 
 export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 
@@ -138,6 +141,10 @@ export class TestingApp {
     await this.purgeDb()
     this.logger.info('Database removed')
 
+    // Init DB
+    const sequelize = await sequelizeFactory(config.get<string>('db'))
+    await initStore(sequelize)
+
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
     this.logger.info('IPFS clients created')
@@ -146,7 +153,6 @@ export class TestingApp {
   async start (options?: Partial<AppOptions>): Promise<void> {
     // Run Pinning service
     options = Object.assign({
-      dataDir: process.cwd(),
       errorHandler: errorHandlerStub
     }, options, { contractAddress: this.contract?.options.address })
     this.app = await initApp(this.providerAddress, options as AppOptions)

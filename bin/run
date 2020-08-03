@@ -16,5 +16,6 @@ if (!process.env.NODE_ENV && !dev) {
   process.env.NODE_ENV = 'production'
 }
 
-require(`../${dev ? 'src' : 'lib'}/cli`).default.run()
+require('@oclif/command').run()
+  .then(require('@oclif/command/flush'))
   .catch(require('@oclif/errors/handle'))

@@ -1,17 +1,31 @@
 import { hexToAscii } from 'web3-utils'
+import fs from 'fs'
+import config from 'config'
+import path from 'path'
+import cli, { ActionBase, IPromptOptions } from 'cli-ux'
+import { IOptionFlag } from '@oclif/command/lib/flags'
+import { IConfig } from '@oclif/config'
+import Command, { flags } from '@oclif/command'
+import { OutputFlags } from '@oclif/parser'
+import { getObject } from 'sequelize-store'
 import type { EventEmitter } from 'events'
 
 import type {
   BlockchainEvent,
   BlockchainEventsWithProvider,
+  Config,
   EventProcessorOptions,
   EventsHandler,
   Logger,
   StorageEvents,
-  HandlersObject
+  HandlersObject,
+  InitCommandOption
 } from './definitions'
 
 import { loggingFactory } from './logger'
+
+import { sequelizeFactory } from './sequelize'
+import { initStore } from './store'
 
 const logger = loggingFactory('utils')
 
@@ -83,4 +97,171 @@ export function runAndAwaitFirstEvent<T = void> (emitted: EventEmitter, event: s
 
 export function sleep<T> (ms: number, ...args: T[]): Promise<T> {
   return new Promise(resolve => setTimeout(() => resolve(...args), ms))
+}
+
+/**
+ * Prompt for flag if not provided wrapper
+ * @param {IOptionFlag<any>} flag Oclif flag object
+ * @return IOptionFlag<any> & { prompt: string | boolean }
+ */
+export function promptForFlag (flag: IOptionFlag<any>): IOptionFlag<any> {
+  return { ...flag, prompt: true, required: false } as IOptionFlag<any> & { prompt: boolean | string }
+}
+
+/**
+ * Base class for Pinner service commands
+ * It have predefined some basic flags and config processing
+ * Also have some helpers for initializing DB, storing Offer ID and some ui (spinner, prompt for flag)
+ * @abstract
+ * @class BaseCommand
+ */
+export default abstract class BaseCommand extends Command {
+  protected initOptions: InitCommandOption
+  protected defaultInitOptions: InitCommandOption = { baseConfig: true, db: true, serviceRequired: true }
+  protected configuration: Record<string, any> = {}
+  protected parsedArgs: any
+  protected dbPath: string | undefined
+  protected isDbInitialized = false
+  static flags = {
+    db: flags.string({
+      char: 'd',
+      description: 'Name or path to DB file',
+      env: 'RIFS_DB',
+      required: false
+    }),
+    config: flags.string({
+      description: 'path to JSON config file to load',
+      env: 'RIFS_CONFIG'
+    }),
+    log: flags.string({
+      description: 'what level of information to log',
+      options: ['error', 'warn', 'info', 'verbose', 'debug'],
+      default: 'error',
+      env: 'LOG_LEVEL'
+    }),
+    'log-filter': flags.string(
+      {
+        description: 'what components should be logged (+-, chars allowed)'
+      }
+    ),
+    'log-path': flags.string(
+      {
+        description: 'log to file, default is STDOUT'
+      }
+    )
+  }
+
+  constructor (argv: string[], config: IConfig, options: InitCommandOption = {}) {
+    super(argv, config)
+    this.initOptions = { ...this.defaultInitOptions, ...options }
+  }
+
+  protected prompt (message: string, options: IPromptOptions = { required: true }): Promise<any> {
+    return cli.prompt(message, options)
+  }
+
+  protected confirm (message: string): Promise<boolean> {
+    return cli.confirm(message)
+  }
+
+  protected get spinner (): ActionBase {
+    return cli.action
+  }
+
+  protected set offerId (offerId: string) {
+    const store = getObject()
+    store.offerId = offerId
+  }
+
+  protected get offerId (): string {
+    if (!this.isDbInitialized) throw new Error('DB is not initialized')
+    const store = getObject()
+
+    if (!store.offerId) throw new Error('Offer Id is not found in DB')
+
+    return getObject().offerId as string
+  }
+
+  protected baseConfig (flags: OutputFlags<typeof BaseCommand.flags>): void {
+    const configObject: Config = {
+      log: {
+        level: flags.log,
+        filter: flags['log-filter'] || null,
+        path: flags['log-path'] || null
+      }
+    }
+
+    let userConfig: Config = {}
+
+    if (flags.config) {
+      userConfig = config.util.parseFile(flags.config)
+    }
+    config.util.extendDeep(config, configObject)
+    config.util.extendDeep(config, userConfig)
+
+    this.configuration = { userConfig, configObject }
+  }
+
+  protected resolveDbPath (db: string): string {
+    if (!db) return path.resolve(this.config.dataDir, config.get<string>('db'))
+
+    const parsed = path.parse(db)
+
+    // File name
+    if (!parsed.dir) {
+      return path.resolve(
+        this.config.dataDir,
+        parsed.ext
+          ? db
+          : `${parsed.base}.sqlite`
+      )
+    } else {
+      if (db[db.length - 1] === '/') throw new Error('Path should include the file name')
+      return path.resolve(`${db}${parsed.ext ? '' : '.sqlite'}`)
+    }
+  }
+
+  protected async promptForFlags (flagsSchema: Record<any, any> = {}, parsed: Record<string, any>): Promise<Record<string, any>> {
+    for (const [flagName, flagOption] of Object.entries(flagsSchema)) {
+      // TODO extend to support prompt for boolean, options
+      if (flagOption.prompt && !parsed.flags[flagName]) {
+        parsed.flags[flagName] = await this.prompt(typeof flagOption.prompt === 'string'
+          ? flagOption.prompt
+          : `Please enter ${flagName}`
+        )
+      }
+    }
+    return parsed
+  }
+
+  protected async initDB (path: string, sync = false): Promise<void> {
+    const sequelize = await sequelizeFactory(path)
+
+    if (sync) {
+      await sequelize.sync()
+    }
+    await initStore(sequelize)
+    this.isDbInitialized = true
+  }
+
+  protected parseWithPrompt (command: any): Promise<Record<string, any>> {
+    return this.promptForFlags(command.flags, this.parse(command))
+  }
+
+  protected async init (): Promise<void> {
+    const { db, baseConfig, serviceRequired } = this.initOptions
+    this.parsedArgs = await this.parseWithPrompt(this.constructor)
+
+    if (baseConfig) this.baseConfig(this.parsedArgs.flags)
+    this.dbPath = this.resolveDbPath(this.parsedArgs.flags.db)
+
+    if (serviceRequired && !fs.existsSync(this.dbPath as string)) {
+      throw new Error('Service was not yet initialized, first run \'init\' command!')
+    }
+
+    if (db) {
+      const sync = typeof db === 'object' ? db.sync : false
+      await this.initDB(this.dbPath, sync)
+    }
+  }
 }
