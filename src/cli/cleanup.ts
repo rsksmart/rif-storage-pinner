@@ -52,7 +52,6 @@ export default class CleanupCommand extends BaseCommand {
   }
 
   async run (): Promise<void> {
-    await this.initCommand(CleanupCommand)
     const { flags: originalFlags } = this.parsedArgs
     const flags = originalFlags as OutputFlags<typeof CleanupCommand.flags>
 

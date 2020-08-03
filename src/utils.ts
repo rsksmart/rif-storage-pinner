@@ -4,6 +4,7 @@ import config from 'config'
 import path from 'path'
 import cli, { ActionBase, IPromptOptions } from 'cli-ux'
 import { IOptionFlag } from '@oclif/command/lib/flags'
+import { IConfig } from '@oclif/config'
 import Command, { flags } from '@oclif/command'
 import { OutputFlags } from '@oclif/parser'
 import { getObject } from 'sequelize-store'
@@ -86,7 +87,8 @@ export function promptForFlag (flag: IOptionFlag<any>): IOptionFlag<any> {
  * @class BaseCommand
  */
 export default abstract class BaseCommand extends Command {
-  private defaultInitOptions: InitCommandOption = { baseConfig: true, db: true, serviceRequired: true }
+  protected initOptions: InitCommandOption
+  protected defaultInitOptions: InitCommandOption = { baseConfig: true, db: true, serviceRequired: true }
   protected configuration: Record<string, any> = {}
   protected parsedArgs: any
   protected dbPath: string | undefined
@@ -118,6 +120,11 @@ export default abstract class BaseCommand extends Command {
         description: 'log to file, default is STDOUT'
       }
     )
+  }
+
+  constructor (argv: string[], config: IConfig, options: InitCommandOption = {}) {
+    super(argv, config)
+    this.initOptions = { ...this.defaultInitOptions, ...options }
   }
 
   protected prompt (message: string, options: IPromptOptions = { required: true }): Promise<any> {
@@ -212,9 +219,9 @@ export default abstract class BaseCommand extends Command {
     return this.promptForFlags(command.flags, this.parse(command))
   }
 
-  protected async initCommand (command: any, options: InitCommandOption = {}): Promise<void> {
-    const { db, baseConfig, serviceRequired } = { ...this.defaultInitOptions, ...options }
-    this.parsedArgs = await this.parseWithPrompt(command)
+  protected async init (): Promise<void> {
+    const { db, baseConfig, serviceRequired } = this.initOptions
+    this.parsedArgs = await this.parseWithPrompt(this.constructor)
 
     if (baseConfig) this.baseConfig(this.parsedArgs.flags)
     this.dbPath = this.resolveDbPath(this.parsedArgs.flags.db)

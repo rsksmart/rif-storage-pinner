@@ -76,7 +76,6 @@ export default class PinningServiceCommand extends BaseCommand {
   }
 
   async run (): Promise<void> {
-    await this.initCommand(PinningServiceCommand)
     const offerId = this.offerId
 
     // Run app

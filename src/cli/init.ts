@@ -1,6 +1,7 @@
 import fs from 'fs'
 import { flags } from '@oclif/command'
 import { isAddress } from 'web3-utils'
+import { IConfig } from '@oclif/config'
 
 import BaseCommand, { promptForFlag } from '../utils'
 
@@ -22,8 +23,11 @@ export default class InitCommand extends BaseCommand {
     '$ rif-pinning init --db ./folder'
   ]
 
+  constructor (argv: string[], config: IConfig) {
+    super(argv, config, { serviceRequired: false, db: false })
+  }
+
   async run (): Promise<void> {
-    await this.initCommand(InitCommand, { serviceRequired: false, db: false })
     const offerId = this.parsedArgs.flags.offerId
 
     if (!isAddress(offerId)) throw new Error('Invalid Offer Address')

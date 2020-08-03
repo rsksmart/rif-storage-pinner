@@ -10,6 +10,7 @@ import sinonChai from 'sinon-chai'
 import BaseCommand from '../../src/utils'
 import * as sequalize from '../../src/sequelize'
 import * as store from '../../src/store'
+import { InitCommandOption } from '../../src/definitions'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
@@ -19,9 +20,10 @@ const expect = chai.expect
 const DATA_DIR = 'dataDir'
 class BaseCommandMock extends BaseCommand {
   config: IConfig = { dataDir: DATA_DIR } as IConfig
+  setInitOptions (options: InitCommandOption) { this.initOptions = { ...this.defaultInitOptions, ...options } }
   get getIsDbInitialized (): boolean { return this.isDbInitialized }
   get getInitDB () { return this.initDB }
-  get getInitCommand () { return this.initCommand }
+  get getInitCommand () { return this.init }
   get getResolveDbPath () { return this.resolveDbPath }
   run (): PromiseLike<any> {
     return Promise.resolve(undefined)
@@ -137,17 +139,17 @@ describe('CLI', function () {
         fsExistStub.restore()
       })
 
-      const baseCheck = () => {
+      const baseCheck = (baseCommand: BaseCommandMock) => {
         expect(baseCommand['dbPath']).to.be.eql(dbPath)
         expect(baseCommand['parsedArgs']).to.be.eql({ flags })
-        expect(parseWithPromptStub.calledOnceWith(fakeCommand)).to.be.true()
+        expect(parseWithPromptStub.calledOnceWith(baseCommand.constructor)).to.be.true()
         expect(resolveDbPath.calledOnceWith(db)).to.be.true()
       }
 
       it('init command: default options', async () => {
-        await baseCommand.getInitCommand(fakeCommand)
+        await baseCommand.getInitCommand()
 
-        baseCheck()
+        baseCheck(baseCommand)
 
         expect(baseConfigStub.calledOnceWith(flags)).to.be.true()
         expect(fsExistStub.calledOnce).to.be.true()
@@ -155,9 +157,10 @@ describe('CLI', function () {
       })
 
       it('init command: { db: false }', async () => {
-        await baseCommand.getInitCommand(fakeCommand, { db: false })
+        baseCommand.setInitOptions({ db: false })
+        await baseCommand.getInitCommand()
 
-        baseCheck()
+        baseCheck(baseCommand)
 
         expect(baseConfigStub.calledOnceWith(flags)).to.be.true()
         expect(fsExistStub.calledOnce).to.be.true()
@@ -165,9 +168,10 @@ describe('CLI', function () {
       })
 
       it('init command: { baseConfig: false }', async () => {
-        await baseCommand.getInitCommand(fakeCommand, { baseConfig: false })
+        baseCommand.setInitOptions({ baseConfig: false })
+        await baseCommand.getInitCommand()
 
-        baseCheck()
+        baseCheck(baseCommand)
 
         expect(baseConfigStub.called).to.be.false()
         expect(fsExistStub.calledOnce).to.be.true()
@@ -175,9 +179,10 @@ describe('CLI', function () {
       })
 
       it('init command: { serviceRequired: false }', async () => {
-        await baseCommand.getInitCommand(fakeCommand, { serviceRequired: false })
+        baseCommand.setInitOptions({ serviceRequired: false })
+        await baseCommand.getInitCommand()
 
-        baseCheck()
+        baseCheck(baseCommand)
 
         expect(baseConfigStub.called).to.be.true()
         expect(fsExistStub.called).to.be.false()
@@ -187,13 +192,14 @@ describe('CLI', function () {
       it('init command: { serviceRequired: true }, db file not found', async () => {
         fsExistStub.restore()
         fsExistStub = sinon.stub(fs, 'existsSync').returns(false)
+        baseCommand.setInitOptions({ serviceRequired: true })
 
-        await expect(baseCommand.getInitCommand(fakeCommand, { serviceRequired: true })).to.eventually.be.rejectedWith(
+        await expect(baseCommand.getInitCommand()).to.eventually.be.rejectedWith(
           Error,
           'Service was not yet initialized, first run \'init\' command!'
         )
 
-        baseCheck()
+        baseCheck(baseCommand)
 
         expect(baseConfigStub.called).to.be.true()
         expect(fsExistStub.called).to.be.true()
