@@ -68,7 +68,7 @@
     "reflect-metadata": "^0.1.13",
     "semver": "^7.3.2",
     "sequelize": "^6.3.3",
-    "sequelize-store": "^0.3.1",
+    "sequelize-store": "^0.4.0",
     "sequelize-typescript": "^2.0.0-beta.0",
     "socket.io-client": "^2.3.0",
     "sql-formatter": "^2.3.3",
