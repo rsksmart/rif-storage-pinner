@@ -1,6 +1,7 @@
 {
   blockchain: {
     //contractAddress : ''
+    networkId: 31,
   },
   marketplace: {
     provider: 'https://marketplace-cache.testnet.rifos.org/'

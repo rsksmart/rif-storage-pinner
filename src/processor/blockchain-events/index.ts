@@ -1,6 +1,7 @@
 import type { Eth } from 'web3-eth'
 import { AbiItem } from 'web3-utils'
 import { getObject } from 'sequelize-store'
+import config from 'config'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
@@ -74,6 +75,12 @@ export class BlockchainEventsProcessor extends EventProcessor {
   // eslint-disable-next-line require-await
   async initialize (): Promise<void> {
     if (this.initialized) throw new Error('Already Initialized')
+
+    const networkId = config.get<string|number>('blockchain.networkId')
+
+    if (networkId !== '*' && networkId !== await this.eth.net.getId()) {
+      throw new Error(`Network ID not defined or incorrect. Expected ${networkId}, got ${await this.eth.net.getId()}`)
+    }
 
     this.newBlockEmitter = getNewBlockEmitter(this.eth)
     this.eventsEmitter = getEventsEmitter(

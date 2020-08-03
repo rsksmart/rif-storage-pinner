@@ -5,8 +5,8 @@
     contractAddress: 'RIFS_CONTRACT_ADDR'
   },
   log: {
-    level: "LOG_LEVEL",
-    filter: "LOG_FILTER",
-    path: "LOG_PATH"
+    level: 'LOG_LEVEL',
+    filter: 'LOG_FILTER',
+    path: 'LOG_PATH'
   }
 }

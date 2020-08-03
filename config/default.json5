@@ -20,6 +20,9 @@
     // Immediately remove events when they are confirmed
     waitBlockCountBeforeConfirmationRemoved: 0,
 
+    // Network ID check for blockchain connection, * means any
+    networkId: "*",
+
     // Specify behavior of EventsEmitter, that retrieves events from blockchain and pass them onwards for further processing.
     eventsEmitter: {
       // If to use polling strategy, if false then listening is used.
