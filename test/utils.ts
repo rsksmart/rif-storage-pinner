@@ -8,6 +8,8 @@ import { Contract } from 'web3-eth-contract'
 import { AbiItem, asciiToHex } from 'web3-utils'
 import { promisify } from 'util'
 import type { HttpProvider } from 'web3-core'
+import { Sequelize } from 'sequelize'
+import { reset as resetStore } from 'sequelize-store'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
@@ -99,11 +101,12 @@ export class TestingApp {
 
   private logger = loggingFactory('test:test-app')
   private app: { stop: () => void } | undefined
-  public fakeCacheServer: FakeMarketplaceService | undefined = undefined
-  public contract: Contract | undefined = undefined
-  public eth: Eth | undefined = undefined
-  public ipfsConsumer: IpfsClient | undefined = undefined
-  public ipfsProvider: IpfsClient | undefined = undefined
+  public fakeCacheServer: FakeMarketplaceService | undefined
+  public contract: Contract | undefined
+  public eth: Eth | undefined
+  public ipfsConsumer: IpfsClient | undefined
+  public ipfsProvider: IpfsClient | undefined
+  public sequelize: Sequelize | undefined
   public consumerAddress = ''
   public providerAddress = ''
 
@@ -142,8 +145,8 @@ export class TestingApp {
     this.logger.info('Database removed')
 
     // Init DB
-    const sequelize = await sequelizeFactory(config.get<string>('db'))
-    await initStore(sequelize)
+    this.sequelize = await sequelizeFactory(config.get<string>('db'))
+    await initStore(this.sequelize)
 
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
@@ -163,7 +166,10 @@ export class TestingApp {
     if (this.app) {
       await this.app.stop()
       this.fakeCacheServer?.stop()
+      await this.sequelize?.close()
+      resetStore()
 
+      this.sequelize = undefined
       this.app = undefined
       TestingApp.app = undefined
       this.eth = undefined
