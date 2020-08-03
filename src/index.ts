@@ -1,12 +1,14 @@
 import config from 'config'
 
-import { AppOptions, Strategy } from './definitions'
 import { loggingFactory } from './logger'
 import { BlockchainEventsProcessor } from './processor/blockchain-events'
 import { MarketplaceEventsProcessor } from './processor/marketplace-events'
 import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
 import { duplicateObject } from './utils'
+import { JobsManager } from './jobs-manager'
+import { Strategy } from './definitions'
+import type { AppOptions, JobManagerOptions } from './definitions'
 
 const logger = loggingFactory('pinning-service')
 
@@ -27,9 +29,12 @@ function getEventProcessor (offerId: string, manager: ProviderManager, options?:
 }
 
 export default async (offerId: string, options?: AppOptions): Promise<{ stop: () => void }> => {
+  const jobsOptions = config.get<JobManagerOptions>('jobs')
+  const jobsManager = new JobsManager(jobsOptions)
+
   // Initialize Provider Manager
   const providerManager = new ProviderManager()
-  const ipfs = await IpfsProvider.bootstrap(duplicateObject(config.get<string>('ipfs.clientOptions')), config.get<number|string>('ipfs.sizeFetchTimeout'))
+  const ipfs = await IpfsProvider.bootstrap(jobsManager, duplicateObject(config.get<string>('ipfs.clientOptions')))
   providerManager.register(ipfs)
   logger.info('IPFS provider initialized')
 

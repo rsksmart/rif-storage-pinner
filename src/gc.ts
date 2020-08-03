@@ -26,7 +26,7 @@ export function collectPinsClosure (manager: ProviderManager) {
     const nonExpiredAgreements = await Agreement.findAll({ where: { expiredAtBlockNumber: null, isActive: true } })
     for (const agreement of nonExpiredAgreements) {
       if (!agreement.hasSufficientFunds) {
-        logger.verbose(`Marking agreement ${agreement.agreementReference} to be collected.`)
+        logger.info(`Marking agreement ${agreement.agreementReference} to be collected at block ${block.number}.`)
         agreement.expiredAtBlockNumber = block.number
         await agreement.save()
       }

@@ -93,6 +93,9 @@ jobs:
       - run:
           name: "Code linting"
           command: npx tasegir lint
+      - run:
+          name: "Types check"
+          command: npx tasegir types-check
 
 
   # Run test on top of Ganache

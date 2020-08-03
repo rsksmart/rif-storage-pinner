@@ -8,18 +8,22 @@ import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
 import Agreement from '../../models/agreement.model'
+import { collectPinsClosure } from '../../gc'
 import { loggingFactory } from '../../logger'
 import type {
   AppOptions,
   BaseEventProcessorOptions,
+  EventProcessorOptions,
   MarketplaceEvent,
   Logger,
   EventsHandler,
   Processor
 } from '../../definitions'
 import type { ProviderManager } from '../../providers'
+import { errorHandler as originalErrorHandler } from '../../utils'
 
 const logger: Logger = loggingFactory('processor:cache')
+const NEW_BLOCK_EVENT = 'newBlock'
 
 // TODO remove after cache service will be able to filter events for us
 function filterCacheEvents (offerId: string, callback: Processor<MarketplaceEvent>): Processor<MarketplaceEvent> {
@@ -28,17 +32,27 @@ function filterCacheEvents (offerId: string, callback: Processor<MarketplaceEven
   }
 }
 
-// TODO GC using Cache service
 export class MarketplaceEventsProcessor extends EventProcessor {
     private readonly handlers = [offer, agreement] as EventsHandler<MarketplaceEvent, BaseEventProcessorOptions>[]
+    private readonly gcHandler: (...args: any) => Promise<void>
     private readonly processor: Processor<MarketplaceEvent>
+    private readonly manager: ProviderManager
     private services: Record<string, feathers.Service<any>> = {}
+    private newBlockService: feathers.Service<any> | undefined
 
     constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
-      super(offerId, manager, options)
+      super(offerId, options)
 
-      this.processorOptions = { ...this.processorOptions, errorLogger: logger }
-      this.processor = filterCacheEvents(this.offerId, this.getProcessor<MarketplaceEvent, BaseEventProcessorOptions>(this.handlers))
+      const errorHandler = options?.errorHandler ?? originalErrorHandler
+      const deps: EventProcessorOptions = {
+        manager
+      }
+      this.processor = filterCacheEvents(this.offerId,
+        errorHandler(this.getProcessor<MarketplaceEvent, EventProcessorOptions>(this.handlers, deps), logger)
+      )
+
+      this.manager = manager
+      this.gcHandler = errorHandler(collectPinsClosure(this.manager), loggingFactory('gc'))
     }
 
     // eslint-disable-next-line require-await
@@ -55,8 +69,10 @@ export class MarketplaceEventsProcessor extends EventProcessor {
         offer: client.service(config.get<string>('marketplace.offers')),
         agreement: client.service(config.get<string>('marketplace.agreements'))
       }
+      this.newBlockService = client.service(config.get<string>('marketplace.newBlock'))
 
       this.initialized = true
+      logger.info('Services initialized')
     }
 
     async run (): Promise<void> {
@@ -65,6 +81,8 @@ export class MarketplaceEventsProcessor extends EventProcessor {
       // Run precache
       await this.precache()
 
+      // Subscribe for new blocks
+      this.newBlockService?.on(NEW_BLOCK_EVENT, this.gcHandler)
       // Subscribe for events
       Object
         .values(this.services)
@@ -103,6 +121,8 @@ export class MarketplaceEventsProcessor extends EventProcessor {
 
     // eslint-disable-next-line require-await
     async stop (): Promise<void> {
+      // Unsubscribe from new blocks event
+      this.newBlockService?.removeListener(NEW_BLOCK_EVENT, this.gcHandler)
       // Unsubscribe from events
       Object
         .values(this.services)

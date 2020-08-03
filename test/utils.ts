@@ -11,7 +11,7 @@ import type { HttpProvider } from 'web3-core'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 import initApp from '../src'
-import { Logger, Strategy } from '../src/definitions'
+import { AppOptions, Logger, Strategy } from '../src/definitions'
 import { FakeMarketplaceService } from './fake-marketplace-service'
 import { loggingFactory } from '../src/logger'
 import { initStore } from '../src/store'
@@ -30,8 +30,6 @@ function errorHandlerStub (fn: (...args: any[]) => Promise<void>, logger: Logger
     })
   }
 }
-
-export const sleep = (timeout: number): Promise<void> => new Promise(resolve => setTimeout(resolve, timeout))
 
 export function encodeHash (hash: string): string[] {
   if (hash.length <= 32) {
@@ -112,6 +110,7 @@ export class TestingApp {
     if (!TestingApp.app) {
       TestingApp.app = new TestingApp()
       await TestingApp.app.init()
+      await TestingApp.app.start()
     }
     return TestingApp.app
   }
@@ -145,16 +144,18 @@ export class TestingApp {
     const sequelize = await sequelizeFactory(config.get<string>('db'))
     await initStore(sequelize)
 
-    // Run Pinning service
-    this.app = await initApp(this.providerAddress, {
-      errorHandler: errorHandlerStub,
-      contractAddress: this.contract?.options.address
-    })
-    this.logger.info('Pinning service started')
-
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
     this.logger.info('IPFS clients created')
+  }
+
+  async start (options?: Partial<AppOptions>): Promise<void> {
+    // Run Pinning service
+    options = Object.assign({
+      errorHandler: errorHandlerStub
+    }, options, { contractAddress: this.contract?.options.address })
+    this.app = await initApp(this.providerAddress, options as AppOptions)
+    this.logger.info('Pinning service started')
   }
 
   async stop (): Promise<void> {

@@ -1,6 +1,8 @@
 {
   db: 'db.sqlite',
+
   strategy: 'blockchain',
+
   ipfs: {
     clientOptions: {
       // The default value for go-ipfs
@@ -10,12 +12,16 @@
     // What is timeout for fetching size of given hash
     sizeFetchTimeout: '4m'
   },
+
   blockchain: {
     // Events that will be listened to
     events: ['TotalCapacitySet', 'MessageEmitted', 'NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
 
     // Immediately remove events when they are confirmed
     waitBlockCountBeforeConfirmationRemoved: 0,
+
+    // Network ID check for blockchain connection, * means any
+    networkId: "*",
 
     // Specify behavior of EventsEmitter, that retrieves events from blockchain and pass them onwards for further processing.
     eventsEmitter: {
@@ -40,7 +46,13 @@
   },
   marketplace: {
     offers: '/storage/v0/offers',
-    agreements: '/storage/v0/agreements'
+    agreements: '/storage/v0/agreements',
+    newBlock: '/new-block'
+  },
+
+  jobs: {
+    // Number of how many retries before job is pronounced for errored one
+    retries: 3
   },
 
   log: {
