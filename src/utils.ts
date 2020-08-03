@@ -132,6 +132,20 @@ export default abstract class BaseCommand extends Command {
     return cli.action
   }
 
+  protected set offerId (offerId: string) {
+    const store = getObject()
+    store.offerId = offerId
+  }
+
+  protected get offerId (): string {
+    if (!this.isDbInitialized) throw new Error('DB is not initialized')
+    const store = getObject()
+
+    if (!store.offerId) throw new Error('Offer Id is not found in DB')
+
+    return getObject().offerId as string
+  }
+
   protected baseConfig (flags: OutputFlags<typeof BaseCommand.flags>): void {
     const configObject: Config = {
       log: {
@@ -166,6 +180,7 @@ export default abstract class BaseCommand extends Command {
           : `${parsed.base}.sqlite`
       )
     } else {
+      if (db[db.length - 1] === '/') throw new Error('Path should include the file name')
       return path.resolve(`${db}${parsed.ext ? '' : '.sqlite'}`)
     }
   }
@@ -191,20 +206,6 @@ export default abstract class BaseCommand extends Command {
     }
     await initStore(sequelize)
     this.isDbInitialized = true
-  }
-
-  protected set offerId (offerId: string) {
-    const store = getObject()
-    store.offerId = offerId
-  }
-
-  protected get offerId (): string {
-    if (!this.isDbInitialized) throw new Error('DB is not initialized')
-    const store = getObject()
-
-    if (!store.offerId) throw new Error('Offer Id is not found in DB')
-
-    return getObject().offerId as string
   }
 
   protected parseWithPrompt (command: any): Promise<Record<string, any>> {

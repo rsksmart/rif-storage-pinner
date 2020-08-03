@@ -1,3 +1,4 @@
+import config from 'config'
 import chai from 'chai'
 import sinon from 'sinon'
 import dirtyChai from 'dirty-chai'
@@ -14,9 +15,12 @@ chai.use(chaiAsPromised)
 chai.use(dirtyChai)
 const expect = chai.expect
 
+const DATA_DIR = 'dataDir'
 class BaseCommandMock extends BaseCommand {
+  config: IConfig = { dataDir: DATA_DIR } as IConfig
   get getIsDbInitialized (): boolean { return this.isDbInitialized }
   get getInitDB () { return this.initDB }
+  get getResolveDbPath () { return this.resolveDbPath }
   run (): PromiseLike<any> {
     return Promise.resolve(undefined)
   }
@@ -33,7 +37,7 @@ describe('CLI', function () {
       baseCommand = getBaseCommandMock()
     })
 
-    describe('init DB', () => {
+    describe('initDB', () => {
       const syncSpy: sinon.SinonSpy = sinon.spy()
       let sequalizeStub: any
       let sequelizeFactoryStub: sinon.SinonStub
@@ -72,6 +76,34 @@ describe('CLI', function () {
         expect(initStoreStub.calledOnceWith(sequalizeStub)).to.be.true()
         expect(syncSpy.calledOnce).to.be.false()
         expect(baseCommand.getIsDbInitialized).to.be.true()
+      })
+    })
+
+    describe('resolvePath', () => {
+      const baseCommand = getBaseCommandMock()
+      const TEST_CASES = [
+        // File name
+        { db: 'someDbName', resolved: `${process.cwd()}/${DATA_DIR}/someDbName.sqlite` },
+        { db: 'someDbName.sqlite', resolved: `${process.cwd()}/${DATA_DIR}/someDbName.sqlite` },
+        // Get from config
+        { db: '', resolved: `${process.cwd()}/${DATA_DIR}/${config.get('db')}` },
+        // Absolute or relative path
+        { db: './someFolder/test', resolved: `${process.cwd()}/someFolder/test.sqlite` },
+        { db: './someFolder/test.sqlite', resolved: `${process.cwd()}/someFolder/test.sqlite` },
+        { db: '/absolutePath/test', resolved: '/absolutePath/test.sqlite' },
+        { db: '/absolutePath/test.sqlite', resolved: '/absolutePath/test.sqlite' },
+        { db: '/absolutePath', resolved: '/absolutePath.sqlite' },
+        { db: '/absolutePath/', rejected: 'Path should include the file name' }
+      ]
+
+      TEST_CASES.forEach(({ db, resolved, rejected }) => {
+        it(`should resolve path for --db ${db ?? 'empty'}`, () => {
+          if (resolved) {
+            expect(baseCommand.getResolveDbPath(db)).to.be.eql(resolved)
+          } else {
+            expect(() => baseCommand.getResolveDbPath(db)).to.throw(rejected)
+          }
+        })
       })
     })
   })
