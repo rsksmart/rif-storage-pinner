@@ -1,15 +1,16 @@
 import config from 'config'
 import sinon from 'sinon'
+import path from 'path'
+import { promises as fs } from 'fs'
 import ipfsClient, { CID, ClientOptions, IpfsClient } from 'ipfs-http-client'
 import Eth from 'web3-eth'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem, asciiToHex } from 'web3-utils'
 import { promisify } from 'util'
-import path from 'path'
-import { promises as fs } from 'fs'
 import type { HttpProvider } from 'web3-core'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
+
 import initApp from '../src'
 import { AppOptions, Logger, Strategy } from '../src/definitions'
 import { FakeMarketplaceService } from './fake-marketplace-service'
