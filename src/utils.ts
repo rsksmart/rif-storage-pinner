@@ -217,7 +217,7 @@ export default abstract class BaseCommand extends Command {
     this.parsedArgs = await this.parseWithPrompt(command)
 
     if (baseConfig) this.baseConfig(this.parsedArgs.flags)
-    this.dbPath = this.resolveDbPath(this.parsedArgs.db)
+    this.dbPath = this.resolveDbPath(this.parsedArgs.flags.db)
 
     if (serviceRequired && !fs.existsSync(this.dbPath as string)) {
       throw new Error('Service was not yet initialized, first run \'init\' command!')

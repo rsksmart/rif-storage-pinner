@@ -1,5 +1,6 @@
 import config from 'config'
 import chai from 'chai'
+import fs from 'fs'
 import sinon from 'sinon'
 import dirtyChai from 'dirty-chai'
 import { IConfig } from '@oclif/config'
@@ -20,6 +21,7 @@ class BaseCommandMock extends BaseCommand {
   config: IConfig = { dataDir: DATA_DIR } as IConfig
   get getIsDbInitialized (): boolean { return this.isDbInitialized }
   get getInitDB () { return this.initDB }
+  get getInitCommand () { return this.initCommand }
   get getResolveDbPath () { return this.resolveDbPath }
   run (): PromiseLike<any> {
     return Promise.resolve(undefined)
@@ -80,7 +82,6 @@ describe('CLI', function () {
     })
 
     describe('resolvePath', () => {
-      const baseCommand = getBaseCommandMock()
       const TEST_CASES = [
         // File name
         { db: 'someDbName', resolved: `${process.cwd()}/${DATA_DIR}/someDbName.sqlite` },
@@ -97,13 +98,106 @@ describe('CLI', function () {
       ]
 
       TEST_CASES.forEach(({ db, resolved, rejected }) => {
-        it(`should resolve path for --db ${db ?? 'empty'}`, () => {
+        it(`should resolve ${db ? 'path for --db ' + db : 'from config'}`, () => {
           if (resolved) {
             expect(baseCommand.getResolveDbPath(db)).to.be.eql(resolved)
           } else {
             expect(() => baseCommand.getResolveDbPath(db)).to.throw(rejected)
           }
         })
+      })
+    })
+
+    describe('initCommand', () => {
+      const db = 'test'
+      const flags = { db }
+      const dbPath = 'testPath'
+      const fakeCommand = 'FakeCommand'
+
+      const initDbStub: sinon.SinonStub = sinon.stub()
+      const parseWithPromptStub: sinon.SinonStub = sinon.stub()
+      const baseConfigStub: sinon.SinonStub = sinon.stub()
+      const resolveDbPath: sinon.SinonStub = sinon.stub()
+      let fsExistStub: sinon.SinonStub
+
+      beforeEach(() => {
+        baseCommand = getBaseCommandMock()
+        baseCommand['initDB'] = initDbStub
+        baseCommand['resolveDbPath'] = resolveDbPath.returns('testPath')
+        baseCommand['parseWithPrompt'] = parseWithPromptStub.returns({ flags })
+        baseCommand['baseConfig'] = baseConfigStub.returns(true)
+        fsExistStub = sinon.stub(fs, 'existsSync').returns(true)
+      })
+
+      afterEach(() => {
+        initDbStub.reset()
+        parseWithPromptStub.reset()
+        baseConfigStub.reset()
+        resolveDbPath.reset()
+        fsExistStub.restore()
+      })
+
+      const baseCheck = () => {
+        expect(baseCommand['dbPath']).to.be.eql(dbPath)
+        expect(baseCommand['parsedArgs']).to.be.eql({ flags })
+        expect(parseWithPromptStub.calledOnceWith(fakeCommand)).to.be.true()
+        expect(resolveDbPath.calledOnceWith(db)).to.be.true()
+      }
+
+      it('init command: default options', async () => {
+        await baseCommand.getInitCommand(fakeCommand)
+
+        baseCheck()
+
+        expect(baseConfigStub.calledOnceWith(flags)).to.be.true()
+        expect(fsExistStub.calledOnce).to.be.true()
+        expect(initDbStub.calledOnceWith(dbPath, false)).to.be.true()
+      })
+
+      it('init command: { db: false }', async () => {
+        await baseCommand.getInitCommand(fakeCommand, { db: false })
+
+        baseCheck()
+
+        expect(baseConfigStub.calledOnceWith(flags)).to.be.true()
+        expect(fsExistStub.calledOnce).to.be.true()
+        expect(initDbStub.called).to.be.false()
+      })
+
+      it('init command: { baseConfig: false }', async () => {
+        await baseCommand.getInitCommand(fakeCommand, { baseConfig: false })
+
+        baseCheck()
+
+        expect(baseConfigStub.called).to.be.false()
+        expect(fsExistStub.calledOnce).to.be.true()
+        expect(initDbStub.called).to.be.true()
+      })
+
+      it('init command: { serviceRequired: false }', async () => {
+        await baseCommand.getInitCommand(fakeCommand, { serviceRequired: false })
+
+        baseCheck()
+
+        expect(baseConfigStub.called).to.be.true()
+        expect(fsExistStub.called).to.be.false()
+        expect(initDbStub.called).to.be.true()
+      })
+
+      it('init command: { serviceRequired: true }, db file not found', async () => {
+        fsExistStub.restore()
+        fsExistStub = sinon.stub(fs, 'existsSync').returns(false)
+
+        await expect(baseCommand.getInitCommand(fakeCommand, { serviceRequired: true })).to.eventually.be.rejectedWith(
+          Error,
+          'Service was not yet initialized, first run \'init\' command!'
+        )
+
+        baseCheck()
+
+        expect(baseConfigStub.called).to.be.true()
+        expect(fsExistStub.called).to.be.true()
+        expect(initDbStub.called).to.be.false()
       })
     })
   })

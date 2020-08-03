@@ -1,6 +1,5 @@
 import fs from 'fs'
 import { flags } from '@oclif/command'
-import { OutputFlags } from '@oclif/parser'
 import { isAddress } from 'web3-utils'
 
 import BaseCommand, { promptForFlag } from '../utils'
@@ -24,7 +23,7 @@ export default class InitCommand extends BaseCommand {
   ]
 
   async run (): Promise<void> {
-    await this.initCommand(InitCommand, { serviceRequired: false, db: { sync: true } })
+    await this.initCommand(InitCommand, { serviceRequired: false, db: false })
     const offerId = this.parsedArgs.flags.offerId
 
     if (!isAddress(offerId)) throw new Error('Invalid Offer Address')
