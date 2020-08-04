@@ -83,6 +83,9 @@ export interface Config {
     // Events that will be listened to
     events?: string[]
 
+    // Topics that will be listened to, if specified than has priority over "events" configuration
+    topics?: string[]
+
     // Specify behavior of EventsEmitter, that retrieves events from blockchain and pass them onwards for further processing.
     eventsEmitter?: EventsEmitterOptions
 
