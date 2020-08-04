@@ -169,10 +169,6 @@ export default abstract class BaseCommand extends Command {
     return cli.confirm(message)
   }
 
-  protected get table (): typeof table {
-    return cli.table
-  }
-
   protected get spinner (): ActionBase {
     return cli.action
   }
