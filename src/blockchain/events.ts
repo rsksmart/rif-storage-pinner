@@ -324,9 +324,9 @@ export abstract class BaseEventsEmitter extends AutoStartStopEventEmitter {
  * @see ListeningNewBlockEmitter
  */
 export class PollingEventsEmitter extends BaseEventsEmitter {
-  private topics?: string[]
+  private topics?: string[] | string[][]
 
-  constructor (eth: Eth, contract: Contract, events?: string[], topics?: string[], options?: EventsEmitterOptions) {
+  constructor (eth: Eth, contract: Contract, events?: string[], topics?: string[] | string[][], options?: EventsEmitterOptions) {
     const loggerName = options?.loggerName || (options?.loggerBaseName ? `${options.loggerBaseName}:events:polling` : 'blockchain:events:polling')
     const logger = loggingFactory(loggerName)
     super(eth, contract, logger, events, options)
@@ -400,7 +400,7 @@ export class ListeningEventsEmitter extends BaseEventsEmitter {
   }
 }
 
-export default function eventsEmitterFactory (eth: Eth, contract: Contract, events?: string[], topics?: string[], options?: EventsEmitterOptions): BaseEventsEmitter {
+export default function eventsEmitterFactory (eth: Eth, contract: Contract, events?: string[], topics?: string[] | string[][], options?: EventsEmitterOptions): BaseEventsEmitter {
   if (!options?.strategy || options?.strategy === EventsEmitterStrategy.POLLING) {
     return new PollingEventsEmitter(eth, contract, events, topics, options)
   }
