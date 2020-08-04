@@ -1,9 +1,11 @@
 import { flags } from '@oclif/command'
-import { OutputFlags } from '@oclif/parser'
+import { Op } from 'sequelize'
 
 import BaseCommand from '../utils'
 import Agreement from '../models/agreement.model'
 import { loggingFactory } from '../logger'
+import JobModel from '../models/job.model'
+import { JobState } from '../definitions'
 
 const logger = loggingFactory('cli:agreements')
 
@@ -19,10 +21,6 @@ export default class AgreementsCommand extends BaseCommand {
     ls: flags.boolean({
       description: 'Show list of agreements'
     }),
-    ref: flags.string({
-      char: 'r',
-      description: 'Find agreement by reference'
-    }),
     sort: flags.string({ description: 'property to sort by (prepend \'-\' for descending)' })
   }
 
@@ -34,42 +32,85 @@ export default class AgreementsCommand extends BaseCommand {
     '$ rif-pinning agreements --ls -f pending'
   ]
 
-  agreementCommand () {
-    const { flags } = this.parsedArgs
+  static getStatus (agreement: Agreement & { jobs: JobModel[] }): string {
+    return agreement.isActive && agreement.hasSufficientFunds ? 'ACTIVE' : 'INACTIVE'
+  }
+
+  static getJobInfo (agreement: Agreement & { jobs: JobModel[] }): string {
+    const [latestJob] = agreement.jobs
+
+    if (!latestJob) return ''
+
+    if (latestJob.state === JobState.ERRORED) return `ERRORED(retries: ${latestJob.retry}) - ${latestJob.errorMessage}`
+    return latestJob.state.toUpperCase()
+  }
+
+  static expireIn (agreement: Agreement): string {
+    const expired = agreement.expiredIn
+    return expired > 0 ? `${expired} min` : 'now'
+  }
+
+  async queryAgreement (filterStatus: string[] = []) {
+    const options = { where: {} } as Record<string, any>
+
+    if (filterStatus && filterStatus.length && !(filterStatus.includes('active') && filterStatus.includes('inactive'))) {
+      options.where.isActive = filterStatus.includes('active')
+    }
+
+    // TODO write raw query to improve performance
+    const agreements = await Agreement.findAll(options) as any[]
+    const jobs = await JobModel.findAll({
+      raw: true,
+      order: [['finish', 'DESC']],
+      where: { name: { [Op.in]: agreements.map(a => a.dataReference) } }
+    })
+
+    return agreements.map(
+      agreement => Object.assign(
+        agreement,
+        { jobs: jobs.filter(j => j.name === agreement.dataReference) || [] }
+      )
+    )
   }
 
   async agreementLsCommand () {
     const { flags: { sort, filter } } = this.parsedArgs
-    const options = { where: {} } as Record<string, any>
-
-    if (filter && filter.length && !(filter.includes('active') && filter.includes('inactive'))) {
-      options.where.isActive = filter.includes('active')
-    }
 
     this.table(
-      await Agreement.findAll(options),
+      await this.queryAgreement(filter),
       {
-        isActive: {
-          header: 'Status',
-          minWidth: 10,
-          get: row => row.isActive ? 'active' : 'inactive'
-        },
         dataReference: {
-          header: 'Reference',
+          header: 'Hash',
           minWidth: 54
         },
         size: {
+          extended: true,
           minWidth: 6
         },
         billingPeriod: {
+          extended: true,
           header: 'Billing Period',
           minWidth: 16
         },
         lastPayout: {
+          extended: true,
           minWidth: 26
         },
         agreementReference: {
-          header: 'Agreement Ref'
+          header: 'Reference',
+          minWidth: 68
+        },
+        isActive: {
+          header: 'Status',
+          minWidth: 10,
+          get: AgreementsCommand.getStatus
+        },
+        expired: {
+          header: 'Expire in',
+          get: AgreementsCommand.expireIn
+        },
+        info: {
+          get: AgreementsCommand.getJobInfo
         }
       },
       { sort }
@@ -82,7 +123,6 @@ export default class AgreementsCommand extends BaseCommand {
 
     if (flags.ls) return this.agreementLsCommand()
 
-    if (flags.ref) return this.agreementCommand()
-    return this._help()
+    return this.agreementLsCommand()
   }
 }
