@@ -2,6 +2,7 @@ import { flags } from '@oclif/command'
 import { Op } from 'sequelize'
 import LogSymbols from 'log-symbols'
 import Table from 'cli-table3'
+import colors from 'colors/safe'
 
 import BaseCommand from '../utils'
 import Agreement from '../models/agreement.model'
@@ -27,7 +28,7 @@ export default class AgreementsCommand extends BaseCommand {
 
   static examples = [
     '$ rif-pinning agreements',
-    '$ rif-pinning agreements--db myOffer.sqlite -f active -f pending',
+    '$ rif-pinning agreements--db myOffer.sqlite',
     '$ rif-pinning agreements --ls -f active',
     '$ rif-pinning agreements --ls -f inactive'
   ]
@@ -43,9 +44,9 @@ export default class AgreementsCommand extends BaseCommand {
 
     switch (latestJob.state) {
       case JobState.ERRORED:
-        return `ERRORED(retries: ${latestJob.retry}) - ${latestJob.errorMessage}`
+        return colors.red(`ERRORED(retries: ${latestJob.retry}) - ${latestJob.errorMessage}`)
       case JobState.FINISHED:
-        return 'PINNED'
+        return colors.green('PINNED')
       default:
         return latestJob.state.toUpperCase()
     }
@@ -53,10 +54,10 @@ export default class AgreementsCommand extends BaseCommand {
 
   static expireIn (agreement: Agreement): string {
     const expired = agreement.expiredIn
-    return expired > 0 ? `${expired} min` : 'EXPIRED'
+    return expired > 0 ? colors.green(`${expired} min`) : colors.red('EXPIRED')
   }
 
-  static prepareAgreementForTable (agreement: AgreementWithJobs): string[] {
+  static prepareAgreementForTable (agreement: AgreementWithJobs): any[] {
     return [
       AgreementsCommand.getStatus(agreement),
       `${agreement.agreementReference} ${agreement.dataReference}`,
@@ -104,10 +105,11 @@ export default class AgreementsCommand extends BaseCommand {
     const { flags: { filter } } = this.parsedArgs
 
     const table = new Table({
-      head: ['', 'Reference', 'Expire in', 'Pinning Status'],
+      head: ['', 'Reference', 'Expire in', 'Pinning Status'].map(t => colors.bold(t)),
       colWidths: [3, 68],
       colAligns: ['center', 'center', 'center', 'left'],
-      wordWrap: true
+      wordWrap: true,
+      style: { head: [] }
     })
 
     const data = (await this.queryAgreement(filter)).map(AgreementsCommand.prepareAgreementForTable)
