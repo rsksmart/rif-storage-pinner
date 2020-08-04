@@ -67,7 +67,7 @@
     "multiaddr": "^7.5.0",
     "reflect-metadata": "^0.1.13",
     "semver": "^7.3.2",
-    "sequelize": "^6.3.3",
+    "sequelize": "^6.3.4",
     "sequelize-store": "^0.4.0",
     "sequelize-typescript": "^2.0.0-beta.0",
     "socket.io-client": "^2.3.0",
