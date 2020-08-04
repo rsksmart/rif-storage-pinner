@@ -143,6 +143,7 @@ export class TestingApp {
 
     // Init DB
     const sequelize = await sequelizeFactory(config.get<string>('db'))
+    await sequelize.sync({ force: true })
     await initStore(sequelize)
 
     // Connection to IPFS consumer/provider nodes

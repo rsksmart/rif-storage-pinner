@@ -107,6 +107,7 @@ export default class AgreementsCommand extends BaseCommand {
         },
         expired: {
           header: 'Expire in',
+          minWidth: 13,
           get: AgreementsCommand.expireIn
         },
         info: {

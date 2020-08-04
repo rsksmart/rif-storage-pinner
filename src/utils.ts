@@ -256,7 +256,7 @@ export default abstract class BaseCommand extends Command {
     const sequelize = await sequelizeFactory(path)
 
     if (sync) {
-      await sequelize.sync()
+      await sequelize.sync({ force: true })
     }
     await initStore(sequelize)
     this.isDbInitialized = true
