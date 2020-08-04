@@ -88,8 +88,8 @@ export default class AgreementsCommand extends BaseCommand {
         return [
           ...acc,
           ...(
-            (filterStatus === 'active' && agreement.hasSufficientFunds) ||
-            (filterStatus === 'inactive' && !agreement.hasSufficientFunds) ||
+            (filterStatus === 'active' && agreement.isActive) ||
+            (filterStatus === 'inactive' && !agreement.isActive) ||
             !filterStatus
               ? [agreement]
               : []

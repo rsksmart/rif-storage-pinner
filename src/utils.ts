@@ -30,7 +30,6 @@ import { ProviderManager } from './providers'
 import { JobManagerOptions } from './definitions'
 import { JobsManager } from './jobs-manager'
 import { IpfsProvider } from './providers/ipfs'
-import { table } from 'cli-ux/lib/styled/table'
 
 const logger = loggingFactory('utils')
 
