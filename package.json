@@ -64,7 +64,7 @@
     "cli-ux": "^5.4.9",
     "colors": "^1.4.0",
     "config": "^3.3.1",
-    "ipfs-http-client": "^44.3.0",
+    "ipfs-http-client": "^45.0.0",
     "log-symbols": "^4.0.0",
     "multiaddr": "^7.5.0",
     "reflect-metadata": "^0.1.13",
