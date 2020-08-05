@@ -145,8 +145,9 @@ export class TestingApp {
     this.logger.info('Database removed')
 
     // Init DB
-    this.sequelize = await sequelizeFactory(config.get<string>('db'))
-    await initStore(this.sequelize)
+    const sequelize = await sequelizeFactory(config.get<string>('db'))
+    await sequelize.sync({ force: true })
+    await initStore(sequelize)
 
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()

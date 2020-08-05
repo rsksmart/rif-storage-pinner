@@ -26,6 +26,10 @@ import { loggingFactory } from './logger'
 
 import { sequelizeFactory } from './sequelize'
 import { initStore } from './store'
+import { ProviderManager } from './providers'
+import { JobManagerOptions } from './definitions'
+import { JobsManager } from './jobs-manager'
+import { IpfsProvider } from './providers/ipfs'
 
 const logger = loggingFactory('utils')
 
@@ -182,6 +186,15 @@ export default abstract class BaseCommand extends Command {
     return getObject().offerId as string
   }
 
+  protected async getProviderManager (): Promise<ProviderManager> {
+    const jobsOptions = config.get<JobManagerOptions>('jobs')
+    const jobsManager = new JobsManager(jobsOptions)
+
+    const manager = new ProviderManager()
+    manager.register(await IpfsProvider.bootstrap(jobsManager, duplicateObject(config.get<string>('ipfs.clientOptions'))))
+    return manager
+  }
+
   protected baseConfig (flags: OutputFlags<typeof BaseCommand.flags>): void {
     const configObject: Config = {
       log: {
@@ -238,7 +251,7 @@ export default abstract class BaseCommand extends Command {
     const sequelize = await sequelizeFactory(path)
 
     if (sync) {
-      await sequelize.sync()
+      await sequelize.sync({ force: true })
     }
     await initStore(sequelize)
     this.isDbInitialized = true

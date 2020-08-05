@@ -64,4 +64,13 @@ export default class Agreement extends Model {
   get hasSufficientFunds () {
     return this.availableFunds - this.toBePayedOut >= this.size * this.billingPrice
   }
+
+  @Column(DataType.VIRTUAL)
+  get expiredIn () {
+    if (!this.hasSufficientFunds) return 0
+    const availableFundsAfterPayout = this.availableFunds - this.toBePayedOut
+    const periodPrice = this.billingPrice * this.size
+
+    return Math.floor(availableFundsAfterPayout / periodPrice) * (this.billingPeriod / 60) // in minutes
+  }
 }

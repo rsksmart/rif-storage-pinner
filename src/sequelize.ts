@@ -42,6 +42,5 @@ export async function sequelizeFactory (dbPath?: string): Promise<Sequelize> {
     }
   })
 
-  await sequelize.sync()
   return sequelize
 }

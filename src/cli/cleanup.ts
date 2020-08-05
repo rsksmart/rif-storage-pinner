@@ -1,15 +1,10 @@
 import fs from 'fs'
-import config from 'config'
 import { flags } from '@oclif/command'
 import { OutputFlags } from '@oclif/parser'
 
-import BaseCommand, { duplicateObject } from '../utils'
-import { IpfsProvider } from '../providers/ipfs'
+import BaseCommand from '../utils'
 import Agreement from '../models/agreement.model'
 import { loggingFactory } from '../logger'
-import { ProviderManager } from '../providers'
-import { JobManagerOptions } from '../definitions'
-import { JobsManager } from '../jobs-manager'
 
 const logger = loggingFactory('cli:cleanup')
 
@@ -33,15 +28,6 @@ export default class CleanupCommand extends BaseCommand {
 
   purgeDb (path: string): Promise<void> {
     return fs.promises.unlink(path)
-  }
-
-  private async getProviderManager (): Promise<ProviderManager> {
-    const jobsOptions = config.get<JobManagerOptions>('jobs')
-    const jobsManager = new JobsManager(jobsOptions)
-
-    const manager = new ProviderManager()
-    manager.register(await IpfsProvider.bootstrap(jobsManager, duplicateObject(config.get<string>('ipfs.clientOptions'))))
-    return manager
   }
 
   private async unpinAgreements () {
