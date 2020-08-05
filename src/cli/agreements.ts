@@ -50,7 +50,7 @@ export default class AgreementsCommand extends BaseCommand {
     '$ rif-pinning agreements --ls -f active',
     '$ rif-pinning agreements --ls -f inactive',
     '$ rif-pinning agreements --ls -f inactive -p pinned',
-    '$ rif-pinning agreements --ls -f active -p not-pinned',
+    '$ rif-pinning agreements --ls -f active -p not-pinned'
   ]
 
   static getStatus (agreement: Agreement): string {
