@@ -13,14 +13,32 @@ import { JobState } from '../definitions'
 const logger = loggingFactory('cli:agreements')
 
 type AgreementWithJobs = Agreement & { jobs: JobModel[] }
+type AgreementFilters = { status?: FilterStatus, pinningStatus?: FilterPinningStatus }
+enum FilterStatus { active = 'active', inactive = 'inactive '}
+enum FilterPinningStatus { pinned = 'pinned', notPinned = 'not-pinned' }
+
+const statusFilter = (agreement: AgreementWithJobs, status: FilterStatus | undefined): boolean =>
+  !status ||
+  (status === FilterStatus.active && agreement.isActive) ||
+  (status === FilterStatus.inactive && !agreement.isActive)
+
+const pinningStatusFilter = (job: JobModel, pinningStatus: FilterPinningStatus | undefined): boolean =>
+  !pinningStatus ||
+  (pinningStatus === FilterPinningStatus.pinned && job.state === JobState.FINISHED) ||
+  (pinningStatus === FilterPinningStatus.notPinned && job.state !== JobState.FINISHED)
 
 export default class AgreementsCommand extends BaseCommand {
   static flags = {
     ...BaseCommand.flags,
-    filter: flags.string({
-      char: 'f',
+    status: flags.string({
+      char: 's',
       description: 'Filter by status',
       options: ['active', 'inactive']
+    }),
+    pinningStatus: flags.string({
+      char: 'p',
+      description: 'Filter by pinning status',
+      options: ['pinned', 'not-pinned']
     })
   }
 
@@ -28,9 +46,11 @@ export default class AgreementsCommand extends BaseCommand {
 
   static examples = [
     '$ rif-pinning agreements',
-    '$ rif-pinning agreements--db myOffer.sqlite',
+    '$ rif-pinning agreements --db myOffer.sqlite',
     '$ rif-pinning agreements --ls -f active',
-    '$ rif-pinning agreements --ls -f inactive'
+    '$ rif-pinning agreements --ls -f inactive',
+    '$ rif-pinning agreements --ls -f inactive -p pinned',
+    '$ rif-pinning agreements --ls -f active -p not-pinned',
   ]
 
   static getStatus (agreement: Agreement): string {
@@ -66,8 +86,16 @@ export default class AgreementsCommand extends BaseCommand {
     ]
   }
 
-  async queryAgreement (filterStatus?: string): Promise<Array<AgreementWithJobs>> {
-    // TODO write raw query to improve performance
+  static filterAgreement (agreement: AgreementWithJobs, filters: AgreementFilters): Array<Agreement> {
+    const { status, pinningStatus } = filters
+    const [latestJob] = agreement.jobs
+
+    return statusFilter(agreement, status) && pinningStatusFilter(latestJob, pinningStatus)
+      ? [agreement]
+      : []
+  }
+
+  async queryAgreement (filters: AgreementFilters = {}): Promise<Array<AgreementWithJobs>> {
     const agreements = await Agreement.findAll() as any[]
     const jobs = await JobModel.findAll({
       raw: true,
@@ -87,13 +115,7 @@ export default class AgreementsCommand extends BaseCommand {
 
         return [
           ...acc,
-          ...(
-            (filterStatus === 'active' && agreement.isActive) ||
-            (filterStatus === 'inactive' && !agreement.isActive) ||
-            !filterStatus
-              ? [agreement]
-              : []
-          )
+          ...AgreementsCommand.filterAgreement(agreement, filters)
         ]
       },
       []
@@ -102,7 +124,7 @@ export default class AgreementsCommand extends BaseCommand {
 
   // eslint-disable-next-line require-await
   async run (): Promise<void> {
-    const { flags: { filter } } = this.parsedArgs
+    const { flags: { status, pinningStatus } } = this.parsedArgs
 
     const table = new Table({
       head: ['', 'Reference', 'Expire in', 'Pinning Status'].map(t => colors.bold(t)),
@@ -112,7 +134,7 @@ export default class AgreementsCommand extends BaseCommand {
       style: { head: [] }
     })
 
-    const data = (await this.queryAgreement(filter)).map(AgreementsCommand.prepareAgreementForTable)
+    const data = (await this.queryAgreement({ status, pinningStatus })).map(AgreementsCommand.prepareAgreementForTable)
 
     table.push(...data)
     // eslint-disable-next-line no-console
