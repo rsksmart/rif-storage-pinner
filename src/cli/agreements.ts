@@ -13,19 +13,17 @@ import { JobState } from '../definitions'
 const logger = loggingFactory('cli:agreements')
 
 type AgreementWithJobs = Agreement & { jobs: JobModel[] }
-type AgreementFilters = { status?: FilterStatus, pinningStatus?: FilterPinningStatus }
+type AgreementFilters = { status?: FilterStatus, pinningStatus?: JobState[] }
 enum FilterStatus { active = 'active', inactive = 'inactive '}
-enum FilterPinningStatus { pinned = 'pinned', notPinned = 'not-pinned' }
 
 const statusFilter = (agreement: AgreementWithJobs, status: FilterStatus | undefined): boolean =>
   !status ||
   (status === FilterStatus.active && agreement.isActive) ||
   (status === FilterStatus.inactive && !agreement.isActive)
 
-const pinningStatusFilter = (job: JobModel, pinningStatus: FilterPinningStatus | undefined): boolean =>
-  !pinningStatus ||
-  (pinningStatus === FilterPinningStatus.pinned && job.state === JobState.FINISHED) ||
-  (pinningStatus === FilterPinningStatus.notPinned && job.state !== JobState.FINISHED)
+const pinningStatusFilter = (job: JobModel, pinningStatuses: JobState[] | undefined): boolean =>
+  !pinningStatuses ||
+  pinningStatuses.includes(job.state as JobState)
 
 export default class AgreementsCommand extends BaseCommand {
   static flags = {
@@ -38,7 +36,8 @@ export default class AgreementsCommand extends BaseCommand {
     pinningStatus: flags.string({
       char: 'p',
       description: 'Filter by pinning status',
-      options: ['pinned', 'not-pinned']
+      options: [JobState.RUNNING, JobState.BACKOFF, JobState.CREATED, JobState.FINISHED, JobState.ERRORED],
+      multiple: true
     })
   }
 
@@ -66,7 +65,11 @@ export default class AgreementsCommand extends BaseCommand {
       case JobState.ERRORED:
         return colors.red(`ERRORED(retries: ${latestJob.retry}) - ${latestJob.errorMessage}`)
       case JobState.FINISHED:
-        return colors.green('PINNED')
+        return colors.green(latestJob.state.toUpperCase())
+      case JobState.CREATED:
+      case JobState.BACKOFF:
+      case JobState.RUNNING:
+        return colors.yellow(latestJob.state.toUpperCase())
       default:
         return latestJob.state.toUpperCase()
     }
@@ -74,6 +77,8 @@ export default class AgreementsCommand extends BaseCommand {
 
   static expireIn (agreement: Agreement): string {
     const expired = agreement.expiredIn
+
+    if (expired > 0 && expired < 2 * agreement.billingPeriod / 60) return colors.yellow(`${expired} min`)
     return expired > 0 ? colors.green(`${expired} min`) : colors.red('EXPIRED')
   }
 
