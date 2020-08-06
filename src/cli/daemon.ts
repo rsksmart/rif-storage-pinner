@@ -6,6 +6,7 @@ import path from 'path'
 import BaseCommand from '../utils'
 import initApp from '../index'
 import { Strategy } from '../definitions'
+import { IConfig } from '@oclif/config'
 
 export default class PinningServiceCommand extends BaseCommand {
   static description = 'Run pinning service'
@@ -37,6 +38,10 @@ export default class PinningServiceCommand extends BaseCommand {
       description: 'specifies a connection URL to IPFS node. Default is go-ipfs listening configuration.',
       env: 'RIFS_IPFS'
     })
+  }
+
+  constructor (argv: string[], config: IConfig) {
+    super(argv, config, { db: { sync: false, migrate: true } })
   }
 
   protected baseConfig (flags: OutputFlags<typeof PinningServiceCommand.flags>): void {

@@ -1,17 +1,15 @@
-import config from 'config'
 import path from 'path'
 import Umzug from 'umzug'
 
-import { sequelizeFactory } from '../src/sequelize'
 import { loggingFactory } from '../src/logger'
+import { Sequelize } from 'sequelize-typescript'
 
 const logger = loggingFactory('db:migration')
 
 export class Migration {
   private umzugIns: Umzug.Umzug
 
-  constructor (dbPath: string) {
-    const sequelize = sequelizeFactory(dbPath)
+  constructor (sequelize: Sequelize) {
     this.umzugIns = new Umzug({
       storage: 'sequelize',
       logging: logger.info,
@@ -52,9 +50,10 @@ export class Migration {
 export default class DbMigration {
   private static ins: Migration | undefined
 
-  static getInstance (path?: string): Migration {
+  static getInstance (sequelize?: Sequelize): Migration {
     if (!DbMigration.ins) {
-      DbMigration.ins = new Migration(path ?? config.get('db'))
+      if (!sequelize) throw new Error('You need to provide Sequelize instance')
+      DbMigration.ins = new Migration(sequelize)
     }
 
     return DbMigration.ins

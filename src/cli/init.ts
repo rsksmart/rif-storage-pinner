@@ -24,7 +24,7 @@ export default class InitCommand extends BaseCommand {
   ]
 
   constructor (argv: string[], config: IConfig) {
-    super(argv, config, { serviceRequired: false, db: false })
+    super(argv, config, { serviceRequired: false, db: undefined })
   }
 
   async run (): Promise<void> {
@@ -41,7 +41,7 @@ export default class InitCommand extends BaseCommand {
     try {
       // Init DB
       this.spinner.start('Init DB')
-      await this.initDB(this.dbPath as string, true)
+      await this.initDB(this.dbPath as string, { sync: true, migrate: true, forcePrompt: true })
       this.spinner.stop()
 
       // Store offerId

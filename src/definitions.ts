@@ -196,7 +196,9 @@ export type StorageEvents = BlockchainEvent | MarketplaceEvent
  * CLI
  */
 export interface InitCommandOption {
-  db?: { sync: boolean } | boolean
+  db?: CliInitDbOptions
   baseConfig?: boolean
   serviceRequired?: boolean
 }
+
+export type CliInitDbOptions = { sync?: boolean, migrate?: boolean }

@@ -9,6 +9,7 @@ import Agreement from '../models/agreement.model'
 import { loggingFactory } from '../logger'
 import JobModel from '../models/job.model'
 import { JobState } from '../definitions'
+import { IConfig } from '@oclif/config'
 
 const logger = loggingFactory('cli:agreements')
 
@@ -51,6 +52,10 @@ export default class AgreementsCommand extends BaseCommand {
     '$ rif-pinning agreements --ls -f inactive -p pinned',
     '$ rif-pinning agreements --ls -f active -p not-pinned'
   ]
+
+  constructor (argv: string[], config: IConfig) {
+    super(argv, config, { db: { sync: false, migrate: true } })
+  }
 
   static getStatus (agreement: Agreement): string {
     return agreement.isActive ? LogSymbols.success : LogSymbols.error

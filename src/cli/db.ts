@@ -46,20 +46,15 @@ export default class DbCommand extends BaseCommand {
     '$ rif-pinning db --up --db ./test.sqlite --from 01-test --to 09-test'
   ]
 
-  async init (): Promise<void> {
-    this.initOptions = { ...this.initOptions, db: false }
-    await super.init()
-  }
-
   async migrate (migrations?: string[], options?: { from: string, to: string }): Promise<void> {
     this.spinner.start('DB migration')
-    await DbMigration.getInstance(this.dbPath).up(options)
+    await DbMigration.getInstance().up(options)
     this.spinner.stop()
   }
 
   async undo (migrations?: string[], options?: { from: string, to: string }): Promise<void> {
     this.spinner.start('Undo DB migration')
-    await DbMigration.getInstance(this.dbPath).down(options)
+    await DbMigration.getInstance().down(options)
     this.spinner.stop()
   }
 
