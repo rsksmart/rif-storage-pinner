@@ -50,7 +50,7 @@ describe('CLI', function () {
       beforeEach(() => {
         baseCommand = getBaseCommandMock()
         sequalizeStub = { sync: syncSpy } as any
-        sequelizeFactoryStub = sinon.stub(sequalize, 'sequelizeFactory').returns(Promise.resolve(sequalizeStub))
+        sequelizeFactoryStub = sinon.stub(sequalize, 'sequelizeFactory').returns(sequalizeStub)
         initStoreStub = sinon.stub(store, 'initStore').returns(Promise.resolve())
       })
       afterEach(() => {

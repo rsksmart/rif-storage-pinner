@@ -10,6 +10,7 @@ import { OutputFlags } from '@oclif/parser'
 import { getObject } from 'sequelize-store'
 import type { EventEmitter } from 'events'
 
+import DbMigration from '../migrations/index'
 import type {
   BlockchainEvent,
   BlockchainEventsWithProvider,
@@ -253,7 +254,13 @@ export default abstract class BaseCommand extends Command {
     if (sync) {
       await sequelize.sync({ force: true })
     }
+
+    // Init store
     await initStore(sequelize)
+
+    // Run migration
+    await DbMigration.getInstance(path).up()
+
     this.isDbInitialized = true
   }
 
