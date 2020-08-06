@@ -11,6 +11,7 @@ import BaseCommand from '../../src/utils'
 import * as sequalize from '../../src/sequelize'
 import * as store from '../../src/store'
 import { InitCommandOption } from '../../src/definitions'
+import * as Migration from '../../migrations'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
@@ -42,26 +43,37 @@ describe('CLI', function () {
     })
 
     describe('initDB', () => {
+      const upSpy: sinon.SinonSpy = sinon.spy()
       const syncSpy: sinon.SinonSpy = sinon.spy()
       let sequalizeStub: any
       let sequelizeFactoryStub: sinon.SinonStub
       let initStoreStub: sinon.SinonStub
+      let migrationStub: any
 
       beforeEach(() => {
         baseCommand = getBaseCommandMock()
         sequalizeStub = { sync: syncSpy } as any
         sequelizeFactoryStub = sinon.stub(sequalize, 'sequelizeFactory').returns(sequalizeStub)
         initStoreStub = sinon.stub(store, 'initStore').returns(Promise.resolve())
+        migrationStub = sinon.stub(Migration.default, 'getInstance').returns({ up: () => upSpy() } as any)
       })
       afterEach(() => {
         syncSpy.resetHistory()
         sequelizeFactoryStub.restore()
         initStoreStub.restore()
+        upSpy.resetHistory()
+        migrationStub.restore()
+      })
+
+      it('should run migrations', async () => {
+        expect(baseCommand.getIsDbInitialized).to.be.false()
+        await baseCommand.getInitDB('path3', true)
+
+        expect(upSpy.called).to.be.true()
       })
 
       it('should init DB: sync true', async () => {
         expect(baseCommand.getIsDbInitialized).to.be.false()
-
         await baseCommand.getInitDB('path1', true)
 
         expect(sequelizeFactoryStub.calledOnce).to.be.true()
