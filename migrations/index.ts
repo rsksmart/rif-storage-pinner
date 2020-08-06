@@ -1,7 +1,11 @@
+import config from 'config'
 import path from 'path'
 import Umzug from 'umzug'
 
 import { sequelizeFactory } from '../src/sequelize'
+import { loggingFactory } from '../src/logger'
+
+const logger = loggingFactory('db:migration')
 
 export class Migration {
   private umzugIns: Umzug.Umzug
@@ -10,6 +14,7 @@ export class Migration {
     const sequelize = sequelizeFactory(dbPath)
     this.umzugIns = new Umzug({
       storage: 'sequelize',
+      logging: logger.info,
       storageOptions: { sequelize },
       migrations: {
         path: path.resolve(__dirname, './scripts'),
@@ -25,7 +30,7 @@ export class Migration {
   }
 
   // eslint-disable-next-line require-await
-  async down (options?: string | string[] | Umzug.DownToOptions | Umzug.UpDownMigrationsOptions) {
+  async down (options?: string | string[] | Umzug.DownToOptions | Umzug.UpDownMigrationsOptions): Promise<Umzug.Migration[]> {
     return this.umzugIns.down(options as any)
   }
 
@@ -44,14 +49,14 @@ export class Migration {
   }
 }
 
-export default class MigrationSingleton {
+export default class DbMigration {
   private static ins: Migration | undefined
 
-  static getInstance (path: string): Migration {
-    if (!MigrationSingleton.ins) {
-      MigrationSingleton.ins = new Migration(path)
+  static getInstance (path?: string): Migration {
+    if (!DbMigration.ins) {
+      DbMigration.ins = new Migration(path ?? config.get('db'))
     }
 
-    return MigrationSingleton.ins
+    return DbMigration.ins
   }
 }
