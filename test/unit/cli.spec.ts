@@ -55,7 +55,7 @@ describe('CLI', function () {
         sequalizeStub = { sync: syncSpy } as any
         sequelizeFactoryStub = sinon.stub(sequalize, 'sequelizeFactory').returns(sequalizeStub)
         initStoreStub = sinon.stub(store, 'initStore').returns(Promise.resolve())
-        migrationStub = sinon.stub(Migration.default, 'getInstance').returns({ up: () => upSpy() } as any)
+        migrationStub = sinon.stub(Migration.default, 'getInstance').returns({ up: () => upSpy(), pending: () => Promise.resolve(['01.js']) } as any)
       })
       afterEach(() => {
         syncSpy.resetHistory()
@@ -67,14 +67,14 @@ describe('CLI', function () {
 
       it('should run migrations', async () => {
         expect(baseCommand.getIsDbInitialized).to.be.false()
-        await baseCommand.getInitDB('path3', true)
+        await baseCommand.getInitDB('path3', { migrate: true, forcePrompt: true })
 
         expect(upSpy.called).to.be.true()
       })
 
       it('should init DB: sync true', async () => {
         expect(baseCommand.getIsDbInitialized).to.be.false()
-        await baseCommand.getInitDB('path1', true)
+        await baseCommand.getInitDB('path1', { sync: true })
 
         expect(sequelizeFactoryStub.calledOnce).to.be.true()
         expect(sequelizeFactoryStub.calledOnceWith('path1')).to.be.true()
@@ -85,7 +85,7 @@ describe('CLI', function () {
       it('should init DB: sync false', async () => {
         expect(baseCommand.getIsDbInitialized).to.be.false()
 
-        await baseCommand.getInitDB('path', false)
+        await baseCommand.getInitDB('path', { sync: false })
 
         expect(sequelizeFactoryStub.calledOnce).to.be.true()
         expect(sequelizeFactoryStub.calledOnceWith('path')).to.be.true()
@@ -165,11 +165,11 @@ describe('CLI', function () {
 
         expect(baseConfigStub.calledOnceWith(flags)).to.be.true()
         expect(fsExistStub.calledOnce).to.be.true()
-        expect(initDbStub.calledOnceWith(dbPath, false)).to.be.true()
+        expect(initDbStub.calledOnceWith(dbPath, { migrate: false, sync: false })).to.be.true()
       })
 
       it('init command: { db: false }', async () => {
-        baseCommand.setInitOptions({ db: false })
+        baseCommand.setInitOptions({ db: undefined })
         await baseCommand.getInitCommand()
 
         baseCheck(baseCommand)
