@@ -19,14 +19,6 @@ export default class DbCommand extends BaseCommand {
       char: 'u',
       description: 'Undo db migration'
     }),
-    from: flags.string({
-      char: 'f',
-      description: 'From migration'
-    }),
-    to: flags.string({
-      char: 't',
-      description: 'To migration'
-    }),
     migration: flags.string({
       char: 'm',
       description: 'Migration file',
@@ -66,9 +58,9 @@ export default class DbCommand extends BaseCommand {
 
     if (flags.up && flags.down) throw new Error('Required one of [--migrate, --undo]')
 
-    if (flags.up) await this.migrate(flags.migration, flags)
+    if (flags.up) await this.migrate(flags.migration)
 
-    if (flags.down) await this.undo(flags.migration, flags)
+    if (flags.down) await this.undo(flags.migration)
     this.exit()
   }
 }
