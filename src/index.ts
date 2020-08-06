@@ -28,7 +28,7 @@ function getEventProcessor (offerId: string, manager: ProviderManager, options: 
   }
 }
 
-export default async (offerId: string, options: AppOptions): Promise<{ stop: () => void }> => {
+export async function initApp (offerId: string, options: AppOptions): Promise<{ stop: () => void }> {
   const jobsOptions = config.get<JobManagerOptions>('jobs')
   const jobsManager = new JobsManager(jobsOptions)
 

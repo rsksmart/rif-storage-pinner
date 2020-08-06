@@ -2,16 +2,17 @@ import { flags } from '@oclif/command'
 import type { OutputFlags } from '@oclif/parser'
 import config from 'config'
 import path from 'path'
+import { reset as resetStore } from 'sequelize-store'
 
 import BaseCommand from '../utils'
-import initApp from '../index'
+import { initApp } from '../index'
 import { Strategy } from '../definitions'
 import { loggingFactory } from '../logger'
 import fs from 'fs'
 
 const logger = loggingFactory('cli:daemon')
 
-export default class PinningServiceCommand extends BaseCommand {
+export default class DaemonCommand extends BaseCommand {
   static description = 'Run pinning service'
 
   static examples = [
@@ -43,7 +44,7 @@ export default class PinningServiceCommand extends BaseCommand {
     })
   }
 
-  protected baseConfig (flags: OutputFlags<typeof PinningServiceCommand.flags>): void {
+  protected baseConfig (flags: OutputFlags<typeof DaemonCommand.flags>): void {
     super.baseConfig(flags)
     const { userConfig, configObject } = this.configuration
 
@@ -84,9 +85,9 @@ export default class PinningServiceCommand extends BaseCommand {
 
     // An infinite loop which you can exit only with SIGINT/SIGKILL
     while (true) {
-      // Promise that resolves when reset callback is called
       let stopCallback = (() => { throw new Error('No stop callback was assigned!') }) as () => void
 
+      // Promise that resolves when reset callback is called
       const resetPromise = new Promise(resolve => {
         initApp(offerId, {
           appResetCallback: () => resolve()
@@ -107,6 +108,7 @@ export default class PinningServiceCommand extends BaseCommand {
       logger.info('Removing current DB')
       fs.unlinkSync(this.dbPath as string)
       this.isDbInitialized = false
+      resetStore() // We need to reset the store object so it gets re-initted
       await this.initDB(this.dbPath as string, true)
       this.offerId = offerId // Lets reset the offerId so the DB is properly configured
 

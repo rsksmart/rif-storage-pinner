@@ -56,7 +56,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
   private readonly eth: Eth
   private eventsEmitter: BaseEventsEmitter | undefined
   private newBlockEmitter: AutoStartStopEventEmitter | undefined
-  private appResetCallback: any
+  private appResetCallback: () => void
 
   constructor (offerId: string, manager: ProviderManager, options: AppOptions) {
     super(offerId, options)
