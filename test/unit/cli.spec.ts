@@ -277,9 +277,9 @@ describe('CLI', function () {
 
       // Launches the Daemon
       // @ts-ignore
-      DaemonCommand.run(['--skipPrompt']).catch((e) => expect.fail(e))
+      DaemonCommand.run(['--skipPrompt', '--log=verbose']).catch((e) => expect.fail(e))
 
-      await sleep(100)
+      await sleep(300)
       agreements = await Agreement.findAll()
       expect(agreements).to.have.length(1)
       expect(agreements[0].agreementReference).to.eql('111')

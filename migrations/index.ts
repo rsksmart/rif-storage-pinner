@@ -38,7 +38,10 @@ export class Migration {
 
   // eslint-disable-next-line require-await
   async pending (): Promise<Umzug.Migration[]> {
-    return this.umzugIns.pending()
+    return this.umzugIns.pending().catch(e => {
+      if (e.code === 'ENOENT') return []
+      throw e
+    })
   }
 
   // eslint-disable-next-line require-await
