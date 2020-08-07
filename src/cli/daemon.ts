@@ -1,14 +1,19 @@
+import fs from 'fs'
 import { flags } from '@oclif/command'
 import type { OutputFlags } from '@oclif/parser'
+import { IConfig } from '@oclif/config'
 import config from 'config'
 import path from 'path'
+import { reset as resetStore } from 'sequelize-store'
 
 import BaseCommand from '../utils'
-import initApp from '../index'
+import { initApp } from '../index'
 import { Strategy } from '../definitions'
-import { IConfig } from '@oclif/config'
+import { loggingFactory } from '../logger'
 
-export default class PinningServiceCommand extends BaseCommand {
+const logger = loggingFactory('cli:daemon')
+
+export default class DaemonCommand extends BaseCommand {
   static description = 'Run pinning service'
 
   static examples = [
@@ -44,7 +49,7 @@ export default class PinningServiceCommand extends BaseCommand {
     super(argv, config, { db: { sync: false, migrate: true } })
   }
 
-  protected baseConfig (flags: OutputFlags<typeof PinningServiceCommand.flags>): void {
+  protected baseConfig (flags: OutputFlags<typeof DaemonCommand.flags>): void {
     super.baseConfig(flags)
     const { userConfig, configObject } = this.configuration
 
@@ -83,7 +88,36 @@ export default class PinningServiceCommand extends BaseCommand {
   async run (): Promise<void> {
     const offerId = this.offerId
 
-    // Run app
-    await initApp(offerId)
+    // An infinite loop which you can exit only with SIGINT/SIGKILL
+    while (true) {
+      let stopCallback = (() => { throw new Error('No stop callback was assigned!') }) as () => void
+
+      // Promise that resolves when reset callback is called
+      const resetPromise = new Promise(resolve => {
+        initApp(offerId, {
+          appResetCallback: () => resolve()
+        }).then(value => {
+          // Lets save the function that stops the app
+          stopCallback = value.stop
+        })
+      })
+
+      // Let see if we have to restart the app at some point most probably because
+      // reorgs outside of confirmation range.
+      await resetPromise
+
+      logger.warn('Reorg detected outside of confirmation range. Rebuilding the service\'s state!')
+      logger.info('Stopping service')
+      stopCallback()
+
+      logger.info('Removing current DB')
+      fs.unlinkSync(this.dbPath as string)
+      this.isDbInitialized = false
+      resetStore() // We need to reset the store object so it gets re-initted
+      await this.initDB(this.dbPath as string, true)
+      this.offerId = offerId // Lets reset the offerId so the DB is properly configured
+
+      logger.info('Restarting the app')
+    }
   }
 }

@@ -1,17 +1,26 @@
+/* eslint-disable dot-notation */
 import config from 'config'
 import chai from 'chai'
-import fs from 'fs'
+import fs, { unlinkSync } from 'fs'
 import sinon from 'sinon'
 import dirtyChai from 'dirty-chai'
 import { IConfig } from '@oclif/config'
 import chaiAsPromised from 'chai-as-promised'
 import sinonChai from 'sinon-chai'
+import { getObject as getStore, getEndPromise } from 'sequelize-store'
+import path from 'path'
 
-import BaseCommand from '../../src/utils'
+import BaseCommand, { sleep } from '../../src/utils'
 import * as sequalize from '../../src/sequelize'
 import * as store from '../../src/store'
-import { InitCommandOption } from '../../src/definitions'
 import * as Migration from '../../migrations'
+import { AppOptions, InitCommandOption, InitCommandOption } from '../../src/definitions'
+import DaemonCommand from '../../src/cli/daemon'
+import { sequelizeFactory } from '../../src/sequelize'
+import { initStore } from '../../src/store'
+import * as initAppModule from '../../src/index'
+import Agreement from '../../src/models/agreement.model'
+import { mockAgreement } from '../fake-marketplace-service'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
@@ -19,13 +28,20 @@ chai.use(dirtyChai)
 const expect = chai.expect
 
 const DATA_DIR = 'dataDir'
+
 class BaseCommandMock extends BaseCommand {
   config: IConfig = { dataDir: DATA_DIR } as IConfig
+
   setInitOptions (options: InitCommandOption) { this.initOptions = { ...this.defaultInitOptions, ...options } }
+
   get getIsDbInitialized (): boolean { return this.isDbInitialized }
+
   get getInitDB () { return this.initDB }
+
   get getInitCommand () { return this.init }
+
   get getResolveDbPath () { return this.resolveDbPath }
+
   run (): PromiseLike<any> {
     return Promise.resolve(undefined)
   }
@@ -217,6 +233,64 @@ describe('CLI', function () {
         expect(fsExistStub.called).to.be.true()
         expect(initDbStub.called).to.be.false()
       })
+    })
+  })
+
+  describe('daemon', () => {
+    it('should restart when appResetCallback is triggered', async () => {
+      // Prepare DB and set it to be used
+      const dbPath = path.join(__dirname, '..', '..', 'db_test.sqlite')
+      try {
+        unlinkSync(dbPath)
+      } catch (e) {
+        // Ignore "not found" errors
+        if (e.code !== 'ENOENT') {
+          throw e
+        }
+      }
+      process.env.RIFS_DB = dbPath
+
+      // Init the DB
+      const sequelize = await sequelizeFactory(dbPath)
+      await sequelize.sync({ force: true })
+      await initStore(sequelize)
+      let store = getStore()
+      store.offerId = '0x123'
+      store.peerId = '0x333'
+      await getEndPromise()
+
+      // Let save something to DB so we can assert that the DB was resetted
+      const testingAgreement = new Agreement(mockAgreement({ agreementReference: '111' }))
+      await testingAgreement.save()
+
+      // Mock the dependencies
+      let agreements: Agreement[]
+      let appResetCallback = (() => { throw new Error('AppResetCallback was not assigned!') }) as () => void
+      const stopSpy = sinon.spy()
+      const initAppStub = sinon.stub(initAppModule, 'initApp')
+      initAppStub.callsFake((offerId: string, opts: AppOptions): Promise<{ stop: () => void }> => {
+        expect(offerId).to.eql('0x123')
+        appResetCallback = opts.appResetCallback
+
+        return Promise.resolve({ stop: stopSpy })
+      })
+
+      // Launches the Daemon
+      // @ts-ignore
+      DaemonCommand.run([]).catch((e) => expect.fail(e))
+
+      await sleep(100)
+      agreements = await Agreement.findAll()
+      expect(agreements).to.have.length(1)
+      expect(agreements[0].agreementReference).to.eql('111')
+
+      appResetCallback() // Trigger reset
+
+      await sleep(100)
+      agreements = await Agreement.findAll()
+      expect(agreements).to.have.length(0)
+      store = getStore() // fetch the new store object
+      expect(store.peerId).to.be.undefined()
     })
   })
 })

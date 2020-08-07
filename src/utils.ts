@@ -23,16 +23,12 @@ import type {
   InitCommandOption
 } from './definitions'
 
-import { loggingFactory } from './logger'
-
 import { sequelizeFactory } from './sequelize'
 import { initStore } from './store'
 import { ProviderManager } from './providers'
 import { CliInitDbOptions, JobManagerOptions } from './definitions'
 import { JobsManager } from './jobs-manager'
 import { IpfsProvider } from './providers/ipfs'
-
-const logger = loggingFactory('utils')
 
 export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> {
   return (...args) => {

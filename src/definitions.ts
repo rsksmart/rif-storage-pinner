@@ -135,6 +135,7 @@ export interface JobManagerOptions {
 export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
 
 export interface AppOptions {
+  appResetCallback: () => void
   forcePrecache?: boolean
   errorHandler?: ErrorHandler
   contractAddress?: string
