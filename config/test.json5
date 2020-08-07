@@ -20,6 +20,6 @@
     }
   },
   log: {
-    level: 'info'
+    level: 'verbose'
   }
 }
