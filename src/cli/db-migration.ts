@@ -12,12 +12,16 @@ export default class DbCommand extends BaseCommand {
   static flags = {
     ...BaseCommand.flags,
     up: flags.boolean({
-      char: 'm',
+      char: 'u',
       description: 'Migrate DB'
     }),
     down: flags.boolean({
-      char: 'u',
+      char: 'd',
       description: 'Undo db migration'
+    }),
+    to: flags.string({
+      char: 't',
+      description: 'Migrate to'
     }),
     migration: flags.string({
       char: 'm',
@@ -31,20 +35,19 @@ export default class DbCommand extends BaseCommand {
   static examples = [
     '$ rif-pinning db --up',
     '$ rif-pinning db --down',
-    '$ rif-pinning db --up --from 01-test --to -0-test',
+    '$ rif-pinning db --up --to 0-test',
     '$ rif-pinning db --up --migration 01-test --migration 02-test',
-    '$ rif-pinning db --up --db ./test.sqlite --from 01-test --to 09-test',
-    '$ rif-pinning db --down --db ./test.sqlite --from 01-test --to 09-test',
-    '$ rif-pinning db --up --db ./test.sqlite --from 01-test --to 09-test'
+    '$ rif-pinning db --up --db ./test.sqlite --to 09-test',
+    '$ rif-pinning db --down --db ./test.sqlite --to 09-test'
   ]
 
-  async migrate (migrations?: string[], options?: { from: string, to: string }): Promise<void> {
+  async migrate (migrations?: string[], options?: { to: string }): Promise<void> {
     this.spinner.start('DB migration')
     await DbMigration.getInstance().up(options)
     this.spinner.stop()
   }
 
-  async undo (migrations?: string[], options?: { from: string, to: string }): Promise<void> {
+  async undo (migrations?: string[], options?: { to: string }): Promise<void> {
     this.spinner.start('Undo DB migration')
     await DbMigration.getInstance().down(options)
     this.spinner.stop()
@@ -58,9 +61,9 @@ export default class DbCommand extends BaseCommand {
 
     if (flags.up && flags.down) throw new Error('Required one of [--migrate, --undo]')
 
-    if (flags.up) await this.migrate(flags.migration)
+    if (flags.up) await this.migrate(flags.migration, flags)
 
-    if (flags.down) await this.undo(flags.migration)
+    if (flags.down) await this.undo(flags.migration, flags)
     this.exit()
   }
 }

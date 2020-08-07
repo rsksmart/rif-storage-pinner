@@ -67,7 +67,7 @@ describe('CLI', function () {
 
       it('should run migrations', async () => {
         expect(baseCommand.getIsDbInitialized).to.be.false()
-        await baseCommand.getInitDB('path3', { migrate: true, forcePrompt: true })
+        await baseCommand.getInitDB('path3', { migrate: true, skipPrompt: true })
 
         expect(upSpy.called).to.be.true()
       })

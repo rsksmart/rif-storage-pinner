@@ -248,7 +248,7 @@ export default abstract class BaseCommand extends Command {
     return parsed
   }
 
-  protected async initDB (path: string, options?: CliInitDbOptions & { forcePrompt?: boolean }): Promise<void> {
+  protected async initDB (path: string, options?: CliInitDbOptions & { skipPrompt?: boolean }): Promise<void> {
     const sequelize = await sequelizeFactory(path)
     const migrator = DbMigration.getInstance(sequelize)
 
@@ -262,7 +262,7 @@ export default abstract class BaseCommand extends Command {
     // Run migration
     if (options?.migrate) {
       if ((await migrator.pending()).length) {
-        if (options?.forcePrompt || await this.prompt('DB Migration required! Run Migration (y/n)?')) {
+        if (options?.skipPrompt || await this.prompt('DB Migration required! Run Migration (y/n)?')) {
           await migrator.up()
         } else {
           this.exit()
