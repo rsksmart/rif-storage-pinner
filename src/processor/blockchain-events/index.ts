@@ -56,10 +56,16 @@ export class BlockchainEventsProcessor extends EventProcessor {
   private readonly eth: Eth
   private eventsEmitter: BaseEventsEmitter | undefined
   private newBlockEmitter: AutoStartStopEventEmitter | undefined
+  private appResetCallback: () => void
 
-  constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
+  constructor (offerId: string, manager: ProviderManager, options: AppOptions) {
     super(offerId, options)
 
+    if (!options?.appResetCallback) {
+      throw new Error('We need appResetCallback to be defined for BlockchainEventsProcessor!')
+    }
+
+    this.appResetCallback = options.appResetCallback
     this.manager = manager
     this.errorHandler = options?.errorHandler ?? originalErrorHandler
     this.eth = ethFactory()
@@ -105,6 +111,9 @@ export class BlockchainEventsProcessor extends EventProcessor {
 
     // Listen on Offer events
     this.eventsEmitter?.on('newEvent', this.processor)
+
+    // Listening for reorgs outside of confirmations range
+    this.eventsEmitter?.on('reorgOutOfRange', this.appResetCallback)
 
     // Pinning Garbage Collecting
     this.newBlockEmitter?.on('newBlock', this.errorHandler(collectPinsClosure(this.manager), loggingFactory('gc')))

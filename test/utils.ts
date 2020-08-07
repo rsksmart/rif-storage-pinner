@@ -13,7 +13,7 @@ import { reset as resetStore } from 'sequelize-store'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
-import initApp from '../src'
+import { initApp } from '../src'
 import { AppOptions, Logger, Strategy } from '../src/definitions'
 import { FakeMarketplaceService } from './fake-marketplace-service'
 import { loggingFactory } from '../src/logger'
@@ -24,6 +24,7 @@ export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 
 export const providerAddress = '0xB22230f21C57f5982c2e7C91162799fABD5733bE'
 export const errorSpy = sinon.spy()
+export const appResetCallbackSpy = sinon.spy()
 
 function errorHandlerStub (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> {
   return (...args) => {
@@ -156,10 +157,11 @@ export class TestingApp {
 
   async start (options?: Partial<AppOptions>): Promise<void> {
     // Run Pinning service
-    options = Object.assign({
-      errorHandler: errorHandlerStub
-    }, options, { contractAddress: this.contract?.options.address })
-    this.app = await initApp(this.providerAddress, options as AppOptions)
+    const appOptions = Object.assign({
+      errorHandler: errorHandlerStub,
+      appResetCallback: appResetCallbackSpy
+    }, options, { contractAddress: this.contract?.options.address }) as AppOptions
+    this.app = await initApp(this.providerAddress, appOptions)
     this.logger.info('Pinning service started')
   }
 
