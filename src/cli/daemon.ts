@@ -114,7 +114,7 @@ export default class DaemonCommand extends BaseCommand {
       fs.unlinkSync(this.dbPath as string)
       this.isDbInitialized = false
       resetStore() // We need to reset the store object so it gets re-initted
-      await this.initDB(this.dbPath as string, true)
+      await this.initDB(this.dbPath as string, { sync: true, migrate: true, skipPrompt: true })
       this.offerId = offerId // Lets reset the offerId so the DB is properly configured
 
       logger.info('Restarting the app')

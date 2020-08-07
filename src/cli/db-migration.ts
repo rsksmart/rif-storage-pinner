@@ -83,12 +83,13 @@ export default class DbCommand extends BaseCommand {
     const fileName = `./${Date.now()}-${name}.ts`
     const filePath = path.resolve(scriptsFolder, fileName)
 
-    if (!fs.statSync(migrationsFolder)) {
+    if (!fs.existsSync(migrationsFolder)) {
       throw new Error('Migrations folder not found. Please run command from project root and make sure that you have \'migrations\' folder setup')
     }
+
     this.spinner.start(`Creating migration ${fileName}`)
 
-    if (!fs.statSync(scriptsFolder)) {
+    if (!fs.existsSync(scriptsFolder)) {
       fs.mkdirSync(scriptsFolder)
     }
 

@@ -33,7 +33,7 @@ export default class InitCommand extends BaseCommand {
     if (!isAddress(offerId)) throw new Error('Invalid Offer Address')
 
     if (fs.existsSync(this.dbPath as string)) {
-      if (!(await this.confirm('Are you sure you want to overwrite your current DB? (y/n)'))) {
+      if (!this.parsedArgs.flags.skipPrompt && !(await this.confirm('Are you sure you want to overwrite your current DB? (y/n)'))) {
         this.exit()
       }
     }

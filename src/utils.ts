@@ -140,6 +140,10 @@ export default abstract class BaseCommand extends Command {
       default: 'error',
       env: 'LOG_LEVEL'
     }),
+    skipPrompt: flags.boolean({
+      description: 'Answer yes for any prompting',
+      default: false
+    }),
     'log-filter': flags.string(
       {
         description: 'what components should be logged (+-, chars allowed)'
@@ -285,7 +289,7 @@ export default abstract class BaseCommand extends Command {
     }
 
     if (db) {
-      await this.initDB(this.dbPath, db)
+      await this.initDB(this.dbPath, { ...db, skipPrompt: Boolean(this.parsedArgs.flags.skipPrompt) })
     }
   }
 }

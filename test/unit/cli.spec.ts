@@ -14,7 +14,7 @@ import BaseCommand, { sleep } from '../../src/utils'
 import * as sequalize from '../../src/sequelize'
 import * as store from '../../src/store'
 import * as Migration from '../../migrations'
-import { AppOptions, InitCommandOption, InitCommandOption } from '../../src/definitions'
+import { AppOptions, InitCommandOption } from '../../src/definitions'
 import DaemonCommand from '../../src/cli/daemon'
 import { sequelizeFactory } from '../../src/sequelize'
 import { initStore } from '../../src/store'
@@ -181,7 +181,7 @@ describe('CLI', function () {
 
         expect(baseConfigStub.calledOnceWith(flags)).to.be.true()
         expect(fsExistStub.calledOnce).to.be.true()
-        expect(initDbStub.calledOnceWith(dbPath, { migrate: false, sync: false })).to.be.true()
+        expect(initDbStub.calledOnceWith(dbPath, { migrate: false, sync: false, skipPrompt: false })).to.be.true()
       })
 
       it('init command: { db: false }', async () => {
@@ -277,7 +277,7 @@ describe('CLI', function () {
 
       // Launches the Daemon
       // @ts-ignore
-      DaemonCommand.run([]).catch((e) => expect.fail(e))
+      DaemonCommand.run(['--skipPrompt']).catch((e) => expect.fail(e))
 
       await sleep(100)
       agreements = await Agreement.findAll()
