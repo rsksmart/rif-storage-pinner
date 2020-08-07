@@ -18,8 +18,5 @@
       // Interval in milliseconds, how often is blockchain checked.
       pollingInterval: 200
     }
-  },
-  log: {
-    level: 'info'
   }
 }

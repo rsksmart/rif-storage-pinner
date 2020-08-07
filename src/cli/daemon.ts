@@ -1,5 +1,7 @@
+import fs from 'fs'
 import { flags } from '@oclif/command'
 import type { OutputFlags } from '@oclif/parser'
+import { IConfig } from '@oclif/config'
 import config from 'config'
 import path from 'path'
 import { reset as resetStore } from 'sequelize-store'
@@ -8,7 +10,6 @@ import BaseCommand from '../utils'
 import { initApp } from '../index'
 import { Strategy } from '../definitions'
 import { loggingFactory } from '../logger'
-import fs from 'fs'
 
 const logger = loggingFactory('cli:daemon')
 
@@ -42,6 +43,10 @@ export default class DaemonCommand extends BaseCommand {
       description: 'specifies a connection URL to IPFS node. Default is go-ipfs listening configuration.',
       env: 'RIFS_IPFS'
     })
+  }
+
+  constructor (argv: string[], config: IConfig) {
+    super(argv, config, { db: { sync: false, migrate: true } })
   }
 
   protected baseConfig (flags: OutputFlags<typeof DaemonCommand.flags>): void {
@@ -109,7 +114,7 @@ export default class DaemonCommand extends BaseCommand {
       fs.unlinkSync(this.dbPath as string)
       this.isDbInitialized = false
       resetStore() // We need to reset the store object so it gets re-initted
-      await this.initDB(this.dbPath as string, true)
+      await this.initDB(this.dbPath as string, { sync: true, migrate: true, skipPrompt: true })
       this.offerId = offerId // Lets reset the offerId so the DB is properly configured
 
       logger.info('Restarting the app')

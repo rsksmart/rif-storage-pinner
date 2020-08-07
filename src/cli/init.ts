@@ -24,7 +24,7 @@ export default class InitCommand extends BaseCommand {
   ]
 
   constructor (argv: string[], config: IConfig) {
-    super(argv, config, { serviceRequired: false, db: false })
+    super(argv, config, { serviceRequired: false, db: undefined })
   }
 
   async run (): Promise<void> {
@@ -33,7 +33,7 @@ export default class InitCommand extends BaseCommand {
     if (!isAddress(offerId)) throw new Error('Invalid Offer Address')
 
     if (fs.existsSync(this.dbPath as string)) {
-      if (!(await this.confirm('Are you sure you want to overwrite your current DB? (y/n)'))) {
+      if (!this.parsedArgs.flags.skipPrompt && !(await this.confirm('Are you sure you want to overwrite your current DB? (y/n)'))) {
         this.exit()
       }
     }
@@ -41,7 +41,7 @@ export default class InitCommand extends BaseCommand {
     try {
       // Init DB
       this.spinner.start('Init DB')
-      await this.initDB(this.dbPath as string, true)
+      await this.initDB(this.dbPath as string, { sync: true, migrate: true, skipPrompt: true })
       this.spinner.stop()
 
       // Store offerId
