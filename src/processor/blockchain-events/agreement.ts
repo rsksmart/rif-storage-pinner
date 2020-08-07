@@ -15,6 +15,7 @@ import type {
   BlockchainEventProcessorOptions,
   BlockchainAgreementEvents, HandlersObject
 } from '../../definitions'
+import { channel, MessageCodesEnum } from '../../communication'
 
 const logger = loggingFactory('processor:blockchain:agreement')
 
@@ -52,7 +53,10 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     await Agreement.upsert(data) // Agreement might already exist
     logger.info(`Created new Agreement with ID ${agreementReference} for offer ${offerId}`)
 
-    if (options.manager) await options.manager.pin(dataReference, parseInt(data.size))
+    if (options.manager) {
+      await options.manager.pin(dataReference, parseInt(data.size))
+      channel.broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: agreementReference })
+    }
   },
 
   async AgreementStopped (event: BlockchainAgreementEvents, options: BlockchainEventProcessorOptions): Promise<void> {
@@ -66,7 +70,10 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     agreement.isActive = false
     await agreement.save()
 
-    if (options.manager) await options.manager.unpin(agreement.dataReference)
+    if (options.manager) {
+      await options.manager.unpin(agreement.dataReference)
+      channel.broadcast(MessageCodesEnum.I_AGREEMENT_STOPPED, { agreementReference: agreement.agreementReference })
+    }
 
     logger.info(`Agreement ${id} was stopped.`)
   },

@@ -1,4 +1,3 @@
-
 /**
  * Error for problems during processing of received events
  */
@@ -46,6 +45,10 @@ export class HashExceedsSizeError extends JobsError {
   public code: string
   private readonly _currentSize: number
   private readonly _expectedSize: number
+
+  static is (e: any): e is HashExceedsSizeError {
+    return e.code === HashExceedsSizeError.code
+  }
 
   constructor (message: string, currentSize: number, expectedSize: number) {
     super(message, false)

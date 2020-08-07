@@ -4,7 +4,8 @@ import JobModel from './models/job.model'
 import { runAndAwaitFirstEvent, sleep } from './utils'
 import { loggingFactory } from './logger'
 import { JobManagerOptions, JobState } from './definitions'
-import { NonRecoverableError } from './errors'
+import { channel, MessageCodesEnum } from './communication'
+import { HashExceedsSizeError, JobsError } from './errors'
 
 const logger = loggingFactory('jobs')
 export const FINISHED_EVENT_NAME = 'finished'
@@ -75,6 +76,23 @@ export class JobsManager {
     this.isExponentialBackoff = options?.exponentialBackoff ?? false
   }
 
+  private handleError (job: Job, e: JobsError | HashExceedsSizeError): never {
+    if (HashExceedsSizeError.is(e)) {
+      channel.broadcast(MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED, {
+        hash: job.name,
+        size: e.currentSize,
+        expectedSize: e.expectedSize
+      })
+    } else {
+      channel.broadcast(MessageCodesEnum.E_GENERAL, {
+        hash: job.name,
+        error: e.message
+      })
+    }
+
+    throw e
+  }
+
   public async run (job: Job): Promise<void> {
     const start = process.hrtime()
     let backoff = this.backoffStart
@@ -82,21 +100,32 @@ export class JobsManager {
     for (let retry = 1; retry <= this.retries; retry++) {
       try {
         logger.info(`Starting job (${job.name})`)
+        channel.broadcast(MessageCodesEnum.I_HASH_START, { hash: job.name })
+
         await runAndAwaitFirstEvent(job, FINISHED_EVENT_NAME, () => { job.run() })
+
+        channel.broadcast(MessageCodesEnum.I_HASH_PINNED, { hash: job.name })
         logger.info(`Finished job in ${process.hrtime(start)[0]}s (${job.name})`)
         break // Lets exit then!
       } catch (e) {
         // If the Error directly specifies that it does not make sense to retry the Job, exit immediately
         if (e.retryable === false) {
-          throw e
+          this.handleError(job, e)
         }
 
         logger.error(`While ${retry}/${this.retries} try of job ${job.name} error happened: ${e}`)
 
         if (retry === this.retries) { // Last retry ==> reject the promise
-          throw e
+          this.handleError(job, e)
         } else {
           await job.retry(retry, this.retries)
+
+          channel.broadcast(MessageCodesEnum.W_HASH_RETRY, {
+            hash: job.name,
+            retryNumber: retry,
+            totalRetries: this.retries,
+            error: e.message
+          })
 
           if (backoff > 0) {
             logger.verbose(`Backing off for ${backoff / 1000}s (${job.name})`)
