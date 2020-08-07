@@ -86,7 +86,8 @@ export class JobsManager {
         logger.info(`Finished job in ${process.hrtime(start)[0]}s (${job.name})`)
         break // Lets exit then!
       } catch (e) {
-        if (e.code === NonRecoverableError.code) {
+        // If the Error directly specifies that it does not make sense to retry the Job, exit immediately
+        if (e.retryable === false) {
           throw e
         }
 

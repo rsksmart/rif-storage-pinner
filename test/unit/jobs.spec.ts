@@ -12,7 +12,7 @@ import { randomHex } from 'web3-utils'
 import { JobState } from '../../src/definitions'
 import JobModel from '../../src/models/job.model'
 import { runAndAwaitFirstEvent } from '../../src/utils'
-import { NonRecoverableError } from '../../src/errors'
+import { HashExceedsSizeError } from '../../src/errors'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
@@ -177,7 +177,7 @@ describe('Jobs', function () {
       const manager = new JobsManager({ retries: 3 })
       const job = new StubJob()
       job.stub.onCall(0).rejects(new Error('testing1'))
-      job.stub.onCall(1).rejects(new NonRecoverableError('testing2'))
+      job.stub.onCall(1).rejects(new HashExceedsSizeError('testing2', 10, 9))
 
       models = await JobModel.findAll()
       expect(models).to.have.length(0)

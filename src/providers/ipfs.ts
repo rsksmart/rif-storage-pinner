@@ -5,7 +5,7 @@ import config from 'config'
 import type { Provider } from '../definitions'
 import { loggingFactory } from '../logger'
 import { Job, JobsManager } from '../jobs-manager'
-import { NonRecoverableError } from '../errors'
+import { HashExceedsSizeError } from '../errors'
 
 const logger = loggingFactory('ipfs')
 
@@ -34,7 +34,7 @@ class PinJob extends Job {
 
       if (stats.CumulativeSize > this.expectedSize) {
         logger.error(`${hash}The hash ${hash} has cumulative size of ${stats.CumulativeSize} bytes while it was expected to have ${this.expectedSize} bytes.`)
-        throw new NonRecoverableError('The hash exceeds payed size!')
+        throw new HashExceedsSizeError('The hash exceeds payed size!', stats.CumulativeSize, this.expectedSize)
       }
     } catch (e) {
       if (e.name === 'TimeoutError') {
