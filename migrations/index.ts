@@ -16,7 +16,7 @@ export class Migration {
       storageOptions: { sequelize },
       migrations: {
         path: path.resolve(__dirname, './scripts'),
-        params: [sequelize.getQueryInterface()],
+        params: [sequelize.getQueryInterface(), sequelize],
         pattern: /^\d+[\w-]+\.ts$/
       }
     })
