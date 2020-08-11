@@ -4,14 +4,17 @@ import chai from 'chai'
 import dirtyChai from 'dirty-chai'
 import chaiAsPromised from 'chai-as-promised'
 import sinonChai from 'sinon-chai'
+import sinon from 'sinon'
 import { Sequelize } from 'sequelize-typescript'
 import { Op } from 'sequelize'
 import config from 'config'
+import type Sinon from 'sinon'
 
 import { sequelizeFactory } from '../../src/sequelize'
 import Agreement from '../../src/models/agreement.model'
 import { ProviderManager } from '../../src/providers'
 import { collectPinsClosure } from '../../src/gc'
+import { channel, MessageCodesEnum } from '../../src/communication'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
@@ -21,6 +24,7 @@ const expect = chai.expect
 describe('Pinning GC', function () {
   let sequelize: Sequelize
   let originalConfirmations: number
+  let channelSpy: Sinon.SinonSpy
 
   before(async (): Promise<void> => {
     sequelize = await sequelizeFactory()
@@ -30,15 +34,20 @@ describe('Pinning GC', function () {
 
     // @ts-ignore
     config.blockchain.eventsEmitter.confirmations = 5
+
+    channelSpy = sinon.stub(channel, 'broadcast')
   })
 
   after(() => {
     // @ts-ignore
     config.blockchain.eventsEmitter.confirmations = originalConfirmations
+
+    channelSpy.restore()
   })
 
   beforeEach(async () => {
     await sequelize.sync({ force: true })
+    channelSpy.resetHistory()
   })
 
   it('should mark expired Agreement expired', async () => {
@@ -96,6 +105,7 @@ describe('Pinning GC', function () {
     expect(markedAgreements[0].dataReference).to.eql('222')
     expect(markedAgreements[1].dataReference).to.eql('321')
     manager.didNotReceive().unpin(Arg.all())
+    expect(channelSpy).not.called()
   })
 
   it('should unmark Agreement when it received funds', async () => {
@@ -124,6 +134,7 @@ describe('Pinning GC', function () {
     expect(markedAgreements[0].expiredAtBlockNumber).to.be.null()
     expect(markedAgreements[0].isActive).to.be.true()
     manager.didNotReceive().unpin(Arg.all())
+    expect(channelSpy).not.called()
   })
 
   it('should unpin marked Agreements', async () => {
@@ -172,5 +183,8 @@ describe('Pinning GC', function () {
     manager.received(1).unpin('222')
     manager.received(1).unpin('111')
     expect(await Agreement.count({ where: { isActive: true } })).to.eql(1)
+    expect(channelSpy).has.callCount(2)
+    expect(channelSpy).calledWith(MessageCodesEnum.I_AGREEMENT_EXPIRED, { agreementReference: '111' })
+    expect(channelSpy).calledWith(MessageCodesEnum.I_AGREEMENT_EXPIRED, { agreementReference: '222' })
   })
 })
