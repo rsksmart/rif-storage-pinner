@@ -1,7 +1,7 @@
-# RIF Storage.js IPFS Pinning service
+# RIF Storage.js Pinning service
 
-[![CircleCI](https://flat.badgen.net/circleci/github/rsksmart/rds-ipfs/master)](https://circleci.com/gh/rsksmart/rds-ipfs/)
-[![Dependency Status](https://david-dm.org/rsksmart/rds-ipfs.svg?style=flat-square)](https://david-dm.org/rsksmart/rds-ipfs)
+[![CircleCI](https://flat.badgen.net/circleci/github/rsksmart/rif-storage-pinner/master)](https://circleci.com/gh/rsksmart/rif-storage-pinner/)
+[![Dependency Status](https://david-dm.org/rsksmart/rif-storage-pinner.svg?style=flat-square)](https://david-dm.org/rsksmart/rif-storage-pinner)
 [![](https://img.shields.io/badge/made%20by-IOVLabs-blue.svg?style=flat-square)](http://iovlabs.org)
 [![](https://img.shields.io/badge/project-RIF%20Storage-blue.svg?style=flat-square)](https://www.rifos.org/)
 [![standard-readme compliant](https://img.shields.io/badge/standard--readme-OK-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
@@ -10,7 +10,7 @@
 ![](https://img.shields.io/badge/npm-%3E%3D6.0.0-orange.svg?style=flat-square)
 ![](https://img.shields.io/badge/Node.js-%3E%3D10.0.0-orange.svg?style=flat-square)
 
-> Application for providing your storage space on IPFS network to other to use in exchange of RIF Tokens
+> Application for providing your storage space on decentralized storage networks to other to use in exchange of RIF Tokens
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@
 ### npm
 
 ```sh
-> npm install @rsksmart/rif-storage-ipfs-pinning
+> npm install @rsksmart/rif-storage-pinning
 ```
 
 **WARNING: This package still have not been released!**
@@ -33,28 +33,93 @@
 
 Example of usage:
 ```bash
-$ rif-pinning --offerId 0x123456789 --provider 'ws://localhost:8546' --ipfs '/ip4/127.0.0.1/tcp/5001' --network testnet
+$ rif-pinning init --offerId=0x123456789
+$ rif-pinning --provider='ws://localhost:8546' --ipfs='/ip4/127.0.0.1/tcp/5001' --network=testnet --strategy=blockchain
 ```
 
 This will:
- - start the pinning service
+ - initialize pinning service for given Offer
+ - start the daemon of the pinning service
  - listens only for events for the Offer ID `0x123456789`
  - use blockchain node for listening on events at `ws://localhost:8546` that is connected to testnet network
  - thanks to `--network testnet` will use predefined deployed smart-contracts on testnet
  - connects to your locally running IPFS node at `/ip4/127.0.0.1/tcp/5001`
 
+## Commands
 <!-- commands -->
+* [`rif-pinning agreements`](#rif-pinning-agreements)
+* [`rif-pinning cleanup`](#rif-pinning-cleanup)
+* [`rif-pinning daemon`](#rif-pinning-daemon)
+* [`rif-pinning db-migration`](#rif-pinning-db-migration)
+* [`rif-pinning help [COMMAND]`](#rif-pinning-help-command)
+* [`rif-pinning init`](#rif-pinning-init)
+
+#### `rif-pinning agreements`
+
+Agreements info
+
 ```
 USAGE
-  $ rif-pinning --offerId=OFFER_ID
+  $ rif-pinning agreements
 
 OPTIONS
-  -n, --network=testnet|mainnet        specifies to which network is the provider connected
-  -o, --offerId=offerId                (required) ID of Offer to which should the service listen to
-  -p, --provider=provider              URL to blockchain node or Marketplace server
+  -d, --db=db                                                   Name or path to DB file
+  -p, --pinningStatus=running|backoff|created|finished|errored  Filter by pinning status
+  -s, --status=active|inactive                                  Filter by status
+  --config=config                                               path to JSON config file to load
+  --log=error|warn|info|verbose|debug                           [default: error] what level of information to log
+  --log-filter=log-filter                                       what components should be logged (+-, chars allowed)
+  --log-path=log-path                                           log to file, default is STDOUT
+  --skipPrompt                                                  Answer yes for any prompting
 
-  --ipfs=ipfs                          specifies a connection URL to IPFS node. Default is go-ipfs
-                                       listening configuration.
+EXAMPLES
+  $ rif-pinning agreements
+  $ rif-pinning agreements --db myOffer.sqlite
+  $ rif-pinning agreements --ls -f active
+  $ rif-pinning agreements --ls -f inactive
+  $ rif-pinning agreements --ls -f inactive -p pinned
+  $ rif-pinning agreements --ls -f active -p not-pinned
+```
+
+### `rif-pinning cleanup`
+
+Cleanup pinner files
+
+```
+USAGE
+  $ rif-pinning cleanup
+
+OPTIONS
+  -d, --db=db                          Name or path to DB file
+  -u, --unpin                          Unpin all files
+  --config=config                      path to JSON config file to load
+  --log=error|warn|info|verbose|debug  [default: error] what level of information to log
+  --log-filter=log-filter              what components should be logged (+-, chars allowed)
+  --log-path=log-path                  log to file, default is STDOUT
+  --skipPrompt                         Answer yes for any prompting
+
+EXAMPLES
+  $ rif-pinning cleanup
+  $ rif-pinning cleanup --db myOffer.sqlite
+  $ rif-pinning cleanup --unpin
+```
+
+### `rif-pinning daemon`
+
+Run pinning service
+
+```
+USAGE
+  $ rif-pinning daemon
+
+OPTIONS
+  -d, --db=db                          Name or path to DB file
+  -n, --network=testnet|mainnet        specifies to which network is the provider connected
+  -p, --provider=provider              URL to blockchain node or Marketplace server
+  --config=config                      path to JSON config file to load
+
+  --ipfs=ipfs                          specifies a connection URL to IPFS node. Default is go-ipfs listening
+                                       configuration.
 
   --log=error|warn|info|verbose|debug  [default: error] what level of information to log
 
@@ -62,30 +127,88 @@ OPTIONS
 
   --log-path=log-path                  log to file, default is STDOUT
 
-  --remove-cache                       removes the local database prior running the service
+  --skipPrompt                         Answer yes for any prompting
 
-  --strategy=marketplace|blockchain    what type of provider will be used for listening on events.
-                                       Default is "marketplace". For blockchain you have to have
-                                       access to a node that has allowed eth_getLogs call.
-
-DESCRIPTION
-  Pinning Service that is part of RIF Storage.
-
-  This service is needed to provide your storage space as part of RIF Marketplace. It listens on
-  events and when there is new Agreement for specified Offer it will pin the content to your
-  configured IPFS node.
-
-  By default it uses RIF Marketplace servers to listen on events, which are based on events from
-  blockchain. You can eliminate this middle-man component and listen to events directly from
-  blockchain. For that use --strategy=blockchain, but you have to also provide an blockchain node
-  that has enabled eth_getLogs call using the --provider flag.
+  --strategy=marketplace|blockchain    what type of provider will be used for listening on events. Default is
+                                       "marketplace". For blockchain you have to have access to a node that has allowed
+                                       eth_getLogs call.
 
 EXAMPLES
-  $ rif-pinning --offerId 0x123456789 --strategy=blockchain --provider 'ws://localhost:8546' --ipfs
-  '/ip4/127.0.0.1/tcp/5001' --network testnet
+  $ rif-pinning daemon --strategy=blockchain --provider 'ws://localhost:8546' --ipfs '/ip4/127.0.0.1/tcp/5001' --network
+  testnet
 
-  $ rif-pinning --offerId 0x123456789 --strategy=marketplace --ipfs '/ip4/127.0.0.1/tcp/5001'
-  --network testnet
+  $ rif-pinning daemon --strategy=marketplace --ipfs '/ip4/127.0.0.1/tcp/5001' --network testnet
+```
+
+### `rif-pinning db-migration`
+
+DB migration
+
+```
+USAGE
+  $ rif-pinning db-migration
+
+OPTIONS
+  -d, --db=db                          Name or path to DB file
+  -d, --down                           Undo db migration
+  -d, --generate=generate              Generate migration
+  -m, --migration=migration            Migration file
+  -t, --to=to                          Migrate to
+  -u, --up                             Migrate DB
+  --config=config                      path to JSON config file to load
+  --log=error|warn|info|verbose|debug  [default: error] what level of information to log
+  --log-filter=log-filter              what components should be logged (+-, chars allowed)
+  --log-path=log-path                  log to file, default is STDOUT
+  --skipPrompt                         Answer yes for any prompting
+
+EXAMPLES
+  $ rif-pinning db --up
+  $ rif-pinning db --down
+  $ rif-pinning db --up --to 0-test
+  $ rif-pinning db --up --migration 01-test --migration 02-test
+  $ rif-pinning db --up --db ./test.sqlite --to 09-test
+  $ rif-pinning db --down --db ./test.sqlite --to 09-test
+```
+
+### `rif-pinning help [COMMAND]`
+
+display help for rif-pinning
+
+```
+USAGE
+  $ rif-pinning help [COMMAND]
+
+ARGUMENTS
+  COMMAND  command to show help for
+
+OPTIONS
+  --all  see all commands in CLI
+```
+
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.1.0/src/commands/help.ts)_
+
+### `rif-pinning init`
+
+Initialize Pinner service dependencies
+
+```
+USAGE
+  $ rif-pinning init
+
+OPTIONS
+  -d, --db=db                          Name or path to DB file
+  -o, --offerId=offerId                ID of Offer to which should the service listen to
+  --config=config                      path to JSON config file to load
+  --log=error|warn|info|verbose|debug  [default: error] what level of information to log
+  --log-filter=log-filter              what components should be logged (+-, chars allowed)
+  --log-path=log-path                  log to file, default is STDOUT
+  --skipPrompt                         Answer yes for any prompting
+
+EXAMPLES
+  $ rif-pinning init
+  $ rif-pinning init --offerId 0x123 --db ./relativeOrAbsolutePath/db.sqlite
+  $ rif-pinning init --db fileName.sqlite
+  $ rif-pinning init --db ./folder
 ```
 <!-- commandsstop -->
 
@@ -108,7 +231,7 @@ Pinning service supports following environmental variables:
 
 There are some ways you can make this module better:
 
-- Consult our [open issues](https://github.com/rsksmart/rds-ipfs/issues) and take on one of them
+- Consult our [open issues](https://github.com/rsksmart/rif-storage-pinner/issues) and take on one of them
 - Help our tests reach 100% coverage!
 
 ### Development
