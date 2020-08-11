@@ -7,6 +7,7 @@ import type {
 import { buildHandler } from '../../utils'
 import Agreement from '../../models/agreement.model'
 import { EventError } from '../../errors'
+import { channel, MessageCodesEnum } from '../../communication'
 
 const logger = loggingFactory('processor:cache:agreement')
 
@@ -17,7 +18,10 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
     await Agreement.upsert(newAgreement) // Agreement might already exist
     logger.info(`Created new Agreement with ID ${newAgreement.agreementReference} for offer ${newAgreement.offerId}`)
 
-    if (options.manager) await options.manager.pin(newAgreement.dataReference, parseInt(newAgreement.size))
+    if (options.manager) {
+      await options.manager.pin(newAgreement.dataReference, parseInt(newAgreement.size))
+      channel.broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: newAgreement.agreementReference })
+    }
   },
 
   async AgreementStopped (event: MarketplaceEvent, options: BaseEventProcessorOptions): Promise<void> {
@@ -31,7 +35,10 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
     agreement.isActive = false
     await agreement.save()
 
-    if (options.manager) await options.manager.unpin(agreement.dataReference)
+    if (options.manager) {
+      await options.manager.unpin(agreement.dataReference)
+      channel.broadcast(MessageCodesEnum.I_AGREEMENT_STOPPED, { agreementReference: agreement.agreementReference })
+    }
 
     logger.info(`Agreement ${agreementReference} was stopped.`)
   },

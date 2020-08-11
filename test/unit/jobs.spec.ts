@@ -12,7 +12,8 @@ import { randomHex } from 'web3-utils'
 import { JobState } from '../../src/definitions'
 import JobModel from '../../src/models/job.model'
 import { runAndAwaitFirstEvent } from '../../src/utils'
-import { NonRecoverableError } from '../../src/errors'
+import { HashExceedsSizeError } from '../../src/errors'
+import { channel, MessageCodesEnum } from '../../src/communication'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
@@ -35,14 +36,21 @@ class StubJob extends Job {
 describe('Jobs', function () {
   let sequelize: Sequelize
   let models: JobModel[]
+  let channelSpy: Sinon.SinonSpy
 
   before(async (): Promise<void> => {
     sequelize = await sequelizeFactory()
+    channelSpy = sinon.stub(channel, 'broadcast')
+  })
+
+  after(function () {
+    channelSpy.restore()
   })
 
   describe('Job class', function () {
     beforeEach(async () => {
       await sequelize.sync({ force: true })
+      channelSpy.resetHistory()
     })
 
     it('should save entity when ran', async () => {
@@ -114,6 +122,7 @@ describe('Jobs', function () {
   describe('Job Manager', function () {
     beforeEach(async () => {
       await sequelize.sync({ force: true })
+      channelSpy.resetHistory()
     })
 
     it('should run a Job', async () => {
@@ -131,6 +140,9 @@ describe('Jobs', function () {
       expect(models[0].state).to.eql(JobState.FINISHED)
       expect(models[0].retry).to.be.null()
       expect(job.stub).to.be.calledOnce()
+      expect(channelSpy).to.be.calledTwice()
+      expect(channelSpy).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
+      expect(channelSpy).calledWith(MessageCodesEnum.I_HASH_PINNED, { hash: job.name })
     })
 
     it('should retry failed Job', async () => {
@@ -171,13 +183,33 @@ describe('Jobs', function () {
       expect(models[0].state).to.eql(JobState.ERRORED)
       expect(models[0].retry).to.eql('2/3')
       expect(job.stub).to.be.calledThrice()
+      expect(channelSpy).to.have.callCount(6)
+      expect(channelSpy.getCall(0)).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
+      expect(channelSpy.getCall(1)).calledWith(MessageCodesEnum.W_HASH_RETRY, {
+        hash: job.name,
+        retryNumber: 1,
+        totalRetries: 3,
+        error: 'testing1'
+      })
+      expect(channelSpy.getCall(2)).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
+      expect(channelSpy.getCall(3)).calledWith(MessageCodesEnum.W_HASH_RETRY, {
+        hash: job.name,
+        retryNumber: 2,
+        totalRetries: 3,
+        error: 'testing2'
+      })
+      expect(channelSpy.getCall(4)).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
+      expect(channelSpy.getCall(5)).calledWith(MessageCodesEnum.E_GENERAL, {
+        hash: job.name,
+        error: 'testing3'
+      })
     })
 
     it('should ignore retries if NonRecoverableError', async () => {
       const manager = new JobsManager({ retries: 3 })
       const job = new StubJob()
       job.stub.onCall(0).rejects(new Error('testing1'))
-      job.stub.onCall(1).rejects(new NonRecoverableError('testing2'))
+      job.stub.onCall(1).rejects(new HashExceedsSizeError('testing2', 10, 9))
 
       models = await JobModel.findAll()
       expect(models).to.have.length(0)
@@ -190,6 +222,21 @@ describe('Jobs', function () {
       expect(models[0].state).to.eql(JobState.ERRORED)
       expect(models[0].retry).to.eql('1/3')
       expect(job.stub).to.be.calledTwice()
+      expect(channelSpy).to.have.callCount(4)
+      expect(channelSpy.getCall(0)).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
+      expect(channelSpy.getCall(1)).calledWith(MessageCodesEnum.W_HASH_RETRY, {
+        hash: job.name,
+        retryNumber: 1,
+        totalRetries: 3,
+        error: 'testing1'
+      })
+      expect(channelSpy.getCall(2)).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
+
+      expect(channelSpy.getCall(3)).calledWith(MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED, {
+        hash: job.name,
+        size: 10,
+        expectedSize: 9
+      })
     })
   })
 })
