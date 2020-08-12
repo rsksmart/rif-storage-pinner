@@ -1,4 +1,7 @@
 import { Table, Column, Model, DataType } from 'sequelize-typescript'
+import BigNumber from 'bignumber.js'
+
+import { BigNumberStringType } from '../sequelize'
 
 @Table({
   freezeTableName: true,
@@ -15,8 +18,8 @@ export default class Agreement extends Model {
   @Column({ type: DataType.STRING(64), allowNull: false })
   consumer!: string
 
-  @Column({ allowNull: false })
-  size!: number
+  @Column({ allowNull: false, ...BigNumberStringType('size') })
+  size!: BigNumber
 
   @Column({ defaultValue: true })
   isActive!: boolean
@@ -27,16 +30,16 @@ export default class Agreement extends Model {
   @Column({ allowNull: false })
   billingPeriod!: number
 
-  @Column({ allowNull: false })
-  billingPrice!: number
+  @Column({ allowNull: false, ...BigNumberStringType('billingPrice') })
+  billingPrice!: BigNumber
 
-  @Column({ allowNull: false })
-  availableFunds!: number
+  @Column({ allowNull: false, ...BigNumberStringType('availableFunds') })
+  availableFunds!: BigNumber
 
   @Column({ allowNull: false })
   lastPayout!: Date
 
-  @Column({ type: DataType.INTEGER() })
+  @Column({ type: DataType.STRING() })
   expiredAtBlockNumber!: number | null
 
   @Column(DataType.VIRTUAL)
