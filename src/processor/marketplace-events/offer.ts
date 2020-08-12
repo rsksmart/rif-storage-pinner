@@ -11,7 +11,7 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
     const store = getObject()
     const { payload: { totalCapacity: capacity } } = event
 
-    store.totalCapacity = parseInt(capacity)
+    store.totalCapacity = capacity
     logger.info(`Updating capacity ${capacity}`)
     return Promise.resolve()
   },

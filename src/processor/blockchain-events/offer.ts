@@ -19,7 +19,7 @@ const handlers: HandlersObject<BlockchainOfferEvents, BlockchainEventProcessorOp
     const store = getObject()
     const { returnValues: { capacity } } = event as TotalCapacitySet
 
-    store.totalCapacity = parseInt(capacity)
+    store.totalCapacity = capacity
     logger.info(`Updating capacity ${capacity}`)
     return await Promise.resolve()
   },
