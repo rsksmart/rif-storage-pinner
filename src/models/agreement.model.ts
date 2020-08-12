@@ -2,6 +2,7 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript'
 import BigNumber from 'bignumber.js'
 
 import { BigNumberStringType } from '../sequelize'
+import { bn, bnFloor } from '../utils'
 
 @Table({
   freezeTableName: true,
@@ -18,7 +19,7 @@ export default class Agreement extends Model {
   @Column({ type: DataType.STRING(64), allowNull: false })
   consumer!: string
 
-  @Column({ allowNull: false, ...BigNumberStringType('size') })
+  @Column({ allowNull: false, ...BigNumberStringType({ propName: 'size' }) })
   size!: BigNumber
 
   @Column({ defaultValue: true })
@@ -30,50 +31,55 @@ export default class Agreement extends Model {
   @Column({ allowNull: false })
   billingPeriod!: number
 
-  @Column({ allowNull: false, ...BigNumberStringType('billingPrice') })
+  @Column({ allowNull: false, ...BigNumberStringType({ propName: 'billingPrice' }) })
   billingPrice!: BigNumber
 
-  @Column({ allowNull: false, ...BigNumberStringType('availableFunds') })
+  @Column({ allowNull: false, ...BigNumberStringType({ propName: 'availableFunds' }) })
   availableFunds!: BigNumber
 
   @Column({ allowNull: false })
   lastPayout!: Date
 
-  @Column({ type: DataType.STRING() })
+  @Column({ type: DataType.NUMBER() })
   expiredAtBlockNumber!: number | null
 
-  @Column(DataType.VIRTUAL)
-  get numberOfPrepaidPeriods () {
-    const totalPeriodPrice = this.size * this.billingPrice
-    return totalPeriodPrice ? Math.floor(this.availableFunds / totalPeriodPrice) : 0
+  periodPrice (): BigNumber {
+    return this.size.times(this.billingPrice)
   }
 
   @Column(DataType.VIRTUAL)
-  get periodsSinceLastPayout () {
+  get numberOfPrepaidPeriods (): BigNumber {
+    return this.periodPrice().gt(0)
+      ? bnFloor(this.availableFunds.div(this.periodPrice()))
+      : bn(0)
+  }
+
+  @Column(DataType.VIRTUAL)
+  get periodsSinceLastPayout (): BigNumber {
     // Date.now = ms
     // this.lastPayout.getTime = ms
     // this.billingPeriod = seconds ==> * 1000
-    return Math.floor((Date.now() - this.lastPayout.getTime()) / (this.billingPeriod * 1000))
+    return bnFloor(bn(Date.now() - this.lastPayout.getTime()).div(this.billingPeriod * 1000))
   }
 
   @Column(DataType.VIRTUAL)
-  get toBePayedOut () {
-    const totalPeriodPrice = this.size * this.billingPrice
-    const price = this.periodsSinceLastPayout * totalPeriodPrice
-    return price <= this.availableFunds ? price : this.availableFunds
+  get toBePayedOut (): BigNumber {
+    const amountToPay = this.periodsSinceLastPayout.times(this.periodPrice())
+    return amountToPay.lte(this.availableFunds)
+      ? amountToPay
+      : this.availableFunds
   }
 
   @Column(DataType.VIRTUAL)
-  get hasSufficientFunds () {
-    return this.availableFunds - this.toBePayedOut >= this.size * this.billingPrice
+  get hasSufficientFunds (): boolean {
+    return this.availableFunds.minus(this.toBePayedOut).gte(this.periodPrice())
   }
 
   @Column(DataType.VIRTUAL)
-  get expiredIn () {
-    if (!this.hasSufficientFunds) return 0
-    const availableFundsAfterPayout = this.availableFunds - this.toBePayedOut
-    const periodPrice = this.billingPrice * this.size
+  get expiredIn (): BigNumber {
+    if (!this.hasSufficientFunds) return bn(0)
+    const availableFundsAfterPayout = this.availableFunds.minus(this.toBePayedOut)
 
-    return Math.floor(availableFundsAfterPayout / periodPrice) * (this.billingPeriod / 60) // in minutes
+    return bnFloor(availableFundsAfterPayout.div(this.periodPrice())).times(this.billingPeriod / 60) // in minutes
   }
 }

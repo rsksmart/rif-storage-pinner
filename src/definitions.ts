@@ -1,6 +1,8 @@
 /**
  * Basic logger interface used around the application.
  */
+import { BigNumber } from 'bignumber.js'
+
 import type {
   AgreementFundsDeposited,
   AgreementFundsPayout,
@@ -20,7 +22,7 @@ export enum Providers {
 }
 
 export interface Provider {
-  pin (hash: string, expectedSize: number): Promise<void>
+  pin (hash: string, expectedSize: BigNumber): Promise<void>
   unpin (hash: string): void
 }
 

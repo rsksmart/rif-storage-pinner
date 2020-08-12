@@ -4,7 +4,7 @@ import type {
   MarketplaceEvent,
   HandlersObject
 } from '../../definitions'
-import { buildHandler } from '../../utils'
+import { bn, buildHandler } from '../../utils'
 import Agreement from '../../models/agreement.model'
 import { EventError } from '../../errors'
 import { channel, MessageCodesEnum } from '../../communication'
@@ -15,11 +15,11 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
   async NewAgreement (event: MarketplaceEvent, options: BaseEventProcessorOptions): Promise<void> {
     const newAgreement = event.payload
 
-    await Agreement.upsert(newAgreement) // Agreement might already exist
+    const [agreement] = await Agreement.upsert(newAgreement) // Agreement might already exist
     logger.info(`Created new Agreement with ID ${newAgreement.agreementReference} for offer ${newAgreement.offerId}`)
 
     if (options.manager) {
-      await options.manager.pin(newAgreement.dataReference, parseInt(newAgreement.size))
+      await options.manager.pin(newAgreement.dataReference, agreement.size)
       channel.broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: newAgreement.agreementReference })
     }
   },
@@ -51,7 +51,7 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
       throw new EventError(`Agreement with ID ${id} was not found!`, 'AgreementFundsDeposited')
     }
 
-    agreement.availableFunds = parseInt(availableFunds)
+    agreement.availableFunds = bn(availableFunds)
     await agreement.save()
 
     logger.info(`Agreement ${id} was topped up with ${availableFunds}.`)
@@ -65,7 +65,7 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
       throw new EventError(`Agreement with ID ${id} was not found!`, 'AgreementFundsWithdrawn')
     }
 
-    agreement.availableFunds = parseInt(availableFunds)
+    agreement.availableFunds = bn(availableFunds)
     await agreement.save()
 
     logger.info(`${availableFunds} was withdrawn from funds of Agreement ${id}.`)
@@ -80,7 +80,7 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
     }
 
     agreement.lastPayout = lastPayout
-    agreement.availableFunds = parseInt(availableFunds)
+    agreement.availableFunds = bn(availableFunds)
     await agreement.save()
 
     logger.info(`${availableFunds} was payed out from funds of Agreement ${id}.`)

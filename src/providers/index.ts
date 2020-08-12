@@ -1,3 +1,5 @@
+import { BigNumber } from 'bignumber.js'
+
 import { Provider } from '../definitions'
 import { IpfsProvider } from './ipfs'
 
@@ -14,7 +16,7 @@ export class ProviderManager implements Provider {
     }
   }
 
-  public async pin (hash: string, expectedSize: number): Promise<void> {
+  public async pin (hash: string, expectedSize: BigNumber): Promise<void> {
     if (hash.startsWith('/ipfs/')) {
       if (!this.ipfs) {
         throw new Error('IPFS provider was not registered!')

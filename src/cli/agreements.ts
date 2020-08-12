@@ -83,8 +83,13 @@ export default class AgreementsCommand extends BaseCommand {
   static expireIn (agreement: Agreement): string {
     const expired = agreement.expiredIn
 
-    if (expired > 0 && expired < 2 * agreement.billingPeriod / 60) return colors.yellow(`${expired} min`)
-    return expired > 0 ? colors.green(`${expired} min`) : colors.red('EXPIRED')
+    if (expired.gt(0) && expired.lt(2 * agreement.billingPeriod / 60)) {
+      return colors.yellow(`${expired} min`)
+    }
+
+    return expired.gt(0)
+      ? colors.green(`${expired} min`)
+      : colors.red('EXPIRED')
   }
 
   static prepareAgreementForTable (agreement: AgreementWithJobs): any[] {

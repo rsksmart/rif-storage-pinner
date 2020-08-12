@@ -7,6 +7,7 @@ import config from 'config'
 import BigNumber from 'bignumber.js'
 
 import { loggingFactory } from './logger'
+import { bn } from './utils'
 
 const logger = loggingFactory('db')
 
@@ -47,17 +48,20 @@ export function sequelizeFactory (dbPath?: string): Sequelize {
   return sequelize
 }
 
-export function BigNumberStringType (propName: string): Partial<ModelAttributeColumnOptions> {
+type BigNumberStringTypeMeta = { propName: string, model?: string }
+export function BigNumberStringType (meta: BigNumberStringTypeMeta): Partial<ModelAttributeColumnOptions> {
   return {
     type: DataType.STRING(),
     get (this: Model): BigNumber {
-      return new BigNumber(this.getDataValue('size'))
+      return bn(this.getDataValue(meta.propName))
     },
     set (this: Model, value: string | number | BigNumber): void {
-      if (isNaN(parseInt(value.toString()))) {
-        throw new Error(`${propName} should be a one of [number, string(number), BigNumber]`)
+      const n = bn(value)
+
+      if (isNaN(n.toNumber())) {
+        throw new Error(`${meta?.model + ' ' || ''}Model Error: ${meta?.propName} should be a one of [number, string(number), BigNumber]`)
       }
-      this.setDataValue('size', (new BigNumber(value)).toString(10))
+      this.setDataValue(meta.propName, bn(value).toString(10))
     }
   }
 }

@@ -8,7 +8,7 @@ import {
 
 import { loggingFactory } from '../../logger'
 import { EventError } from '../../errors'
-import { buildHandler, decodeByteArray } from '../../utils'
+import { bn, buildHandler, decodeByteArray } from '../../utils'
 import { getBlockDate } from '../../blockchain/utils'
 import Agreement from '../../models/agreement.model'
 import type {
@@ -50,11 +50,11 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
       lastPayout: await getBlockDate(options.eth, blockNumber)
     }
 
-    await Agreement.upsert(data) // Agreement might already exist
+    const [agreement] = await Agreement.upsert(data) // Agreement might already exist
     logger.info(`Created new Agreement with ID ${agreementReference} for offer ${offerId}`)
 
     if (options.manager) {
-      await options.manager.pin(dataReference, parseInt(data.size))
+      await options.manager.pin(dataReference, agreement.size)
       channel.broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: agreementReference })
     }
   },
@@ -86,7 +86,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
       throw new EventError(`Agreement with ID ${id} was not found!`, 'AgreementFundsDeposited')
     }
 
-    agreement.availableFunds += parseInt(amount)
+    agreement.availableFunds = agreement.availableFunds.plus(bn(amount))
     await agreement.save()
 
     logger.info(`Agreement ${id} was topped up with ${amount}.`)
@@ -100,7 +100,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
       throw new EventError(`Agreement with ID ${id} was not found!`, 'AgreementFundsWithdrawn')
     }
 
-    agreement.availableFunds -= parseInt(amount)
+    agreement.availableFunds = agreement.availableFunds.minus(bn(amount))
     await agreement.save()
 
     logger.info(`${amount} was withdrawn from funds of Agreement ${id}.`)
@@ -115,7 +115,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     }
 
     agreement.lastPayout = await getBlockDate(options.eth, blockNumber)
-    agreement.availableFunds -= parseInt(amount)
+    agreement.availableFunds = agreement.availableFunds.minus(bn(amount))
     await agreement.save()
 
     logger.info(`${amount} was payed out from funds of Agreement ${id}.`)

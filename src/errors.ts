@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js'
 /**
  * Error for problems during processing of received events
  */
@@ -43,14 +44,14 @@ export class JobsError extends Error {
 export class HashExceedsSizeError extends JobsError {
   static code = 'HASH_EXCEEDS_SIZE_ERR'
   public code: string
-  private readonly _currentSize: number
-  private readonly _expectedSize: number
+  private readonly _currentSize: BigNumber
+  private readonly _expectedSize: BigNumber
 
   static is (e: any): e is HashExceedsSizeError {
     return e.code === HashExceedsSizeError.code
   }
 
-  constructor (message: string, currentSize: number, expectedSize: number) {
+  constructor (message: string, currentSize: BigNumber, expectedSize: BigNumber) {
     super(message, false)
     this.name = 'HASH_EXCEEDS_SIZE_ERR'
     this.code = HashExceedsSizeError.code
@@ -58,11 +59,11 @@ export class HashExceedsSizeError extends JobsError {
     this._expectedSize = expectedSize
   }
 
-  get currentSize (): number {
+  get currentSize (): BigNumber {
     return this._currentSize
   }
 
-  get expectedSize (): number {
+  get expectedSize (): BigNumber {
     return this._expectedSize
   }
 }
