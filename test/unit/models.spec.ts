@@ -235,7 +235,6 @@ const AGREEMENT_TEST_SCHEMA = [
     ]
   }
 ]
-
 describe('Models', () => {
   before(() => sequelizeFactory())
   describe('Agreement', () => generateModelGettersTests(AGREEMENT_TEST_SCHEMA, agreementFactory))

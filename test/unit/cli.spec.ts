@@ -251,7 +251,7 @@ describe('CLI', function () {
       process.env.RIFS_DB = dbPath
 
       // Init the DB
-      const sequelize = await sequelizeFactory(dbPath)
+      const sequelize = sequelizeFactory(dbPath)
       await sequelize.sync({ force: true })
       await initStore(sequelize)
       let store = getStore()

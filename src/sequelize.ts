@@ -48,20 +48,19 @@ export function sequelizeFactory (dbPath?: string): Sequelize {
   return sequelize
 }
 
-type BigNumberStringTypeMeta = { propName: string, model?: string }
-export function BigNumberStringType (meta: BigNumberStringTypeMeta): Partial<ModelAttributeColumnOptions> {
+export function BigNumberStringType (propName: string): Partial<ModelAttributeColumnOptions> {
   return {
     type: DataType.STRING(),
     get (this: Model): BigNumber {
-      return bn(this.getDataValue(meta.propName))
+      return bn(this.getDataValue(propName))
     },
     set (this: Model, value: string | number | BigNumber): void {
       const n = bn(value)
 
       if (isNaN(n.toNumber())) {
-        throw new Error(`${meta?.model + ' ' || ''}Model Error: ${meta?.propName} should be a one of [number, string(number), BigNumber]`)
+        throw new Error(`${this.constructor.name + ' ' || ''}Model Error: ${propName} should be a one of [number, string(number), BigNumber]`)
       }
-      this.setDataValue(meta.propName, bn(value).toString(10))
+      this.setDataValue(propName, bn(value).toString(10))
     }
   }
 }

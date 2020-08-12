@@ -19,7 +19,7 @@ export default class Agreement extends Model {
   @Column({ type: DataType.STRING(64), allowNull: false })
   consumer!: string
 
-  @Column({ allowNull: false, ...BigNumberStringType({ propName: 'size' }) })
+  @Column({ allowNull: false, ...BigNumberStringType('size') })
   size!: BigNumber
 
   @Column({ defaultValue: true })
@@ -28,13 +28,13 @@ export default class Agreement extends Model {
   /**
    * Billing period IN SECONDS
    */
-  @Column({ allowNull: false })
-  billingPeriod!: number
+  @Column({ allowNull: false, ...BigNumberStringType('billingPeriod') })
+  billingPeriod!: BigNumber
 
-  @Column({ allowNull: false, ...BigNumberStringType({ propName: 'billingPrice' }) })
+  @Column({ allowNull: false, ...BigNumberStringType('billingPrice') })
   billingPrice!: BigNumber
 
-  @Column({ allowNull: false, ...BigNumberStringType({ propName: 'availableFunds' }) })
+  @Column({ allowNull: false, ...BigNumberStringType('availableFunds') })
   availableFunds!: BigNumber
 
   @Column({ allowNull: false })
@@ -59,7 +59,7 @@ export default class Agreement extends Model {
     // Date.now = ms
     // this.lastPayout.getTime = ms
     // this.billingPeriod = seconds ==> * 1000
-    return bnFloor(bn(Date.now() - this.lastPayout.getTime()).div(this.billingPeriod * 1000))
+    return bnFloor(bn(Date.now() - this.lastPayout.getTime()).div(this.billingPeriod.times(1000)))
   }
 
   @Column(DataType.VIRTUAL)
@@ -80,6 +80,6 @@ export default class Agreement extends Model {
     if (!this.hasSufficientFunds) return bn(0)
     const availableFundsAfterPayout = this.availableFunds.minus(this.toBePayedOut)
 
-    return bnFloor(availableFundsAfterPayout.div(this.periodPrice())).times(this.billingPeriod / 60) // in minutes
+    return bnFloor(availableFundsAfterPayout.div(this.periodPrice())).times(this.billingPeriod.div(60)) // in minutes
   }
 }
