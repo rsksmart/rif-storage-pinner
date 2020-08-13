@@ -5,7 +5,7 @@ import config from 'config'
 import { TestingApp, encodeHash, errorSpy, File, uploadRandomData, isPinned } from '../utils'
 import { loggingFactory } from '../../src/logger'
 import { Strategy } from '../../src/definitions'
-import { sleep } from '../../src/utils'
+import { bytesToMegabytes, sleep } from '../../src/utils'
 
 chai.use(dirtyChai)
 const logger = loggingFactory('test:pinning:blockchain')
@@ -14,14 +14,15 @@ const expect = chai.expect
 async function createAgreement (app: TestingApp, file: File, billingPeriod: number, money: number, size?: number): Promise<string> {
   const encodedFileHash = encodeHash(file.fileHash)
 
+  const agreementSize = size ?? file.size < 1 ? 1 : file.size
   const agreementGas = await app.contract
     ?.methods
-    .newAgreement(encodedFileHash, app.providerAddress, size ?? file.size, billingPeriod, [])
+    .newAgreement(encodedFileHash, app.providerAddress, agreementSize, billingPeriod, [])
     .estimateGas({ from: app.consumerAddress, value: money })
 
   const receipt = await app.contract
     ?.methods
-    .newAgreement(encodedFileHash, app.providerAddress, size ?? file.size, billingPeriod, [])
+    .newAgreement(encodedFileHash, app.providerAddress, agreementSize, billingPeriod, [])
     .send({ from: app.consumerAddress, gas: agreementGas, value: money })
   logger.info('Agreement created')
 
@@ -114,7 +115,7 @@ describe('Blockchain Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      await createAgreement(app, file, 1, 10000, file.size - 1)
+      await createAgreement(app, file, 1, 10000, file.size - bytesToMegabytes(1).toNumber())
 
       // Wait until we receive Event
       await sleep(1000)

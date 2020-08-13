@@ -19,6 +19,7 @@ import { FakeMarketplaceService } from './fake-marketplace-service'
 import { loggingFactory } from '../src/logger'
 import { initStore } from '../src/store'
 import { sequelizeFactory } from '../src/sequelize'
+import { bytesToMegabytes } from '../src/utils'
 
 export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 
@@ -92,6 +93,7 @@ export async function uploadRandomData (ipfs: IpfsClient): Promise<File> {
   ]))
   return {
     ...file,
+    size: bytesToMegabytes(file.size).toNumber(),
     fileHash: `/ipfs/${file.cid.toString()}`,
     cidString: file.cid.toString()
   }

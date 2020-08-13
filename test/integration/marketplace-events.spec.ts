@@ -22,7 +22,7 @@ import {
   stubAgreement
 } from '../fake-marketplace-service'
 import Agreement from '../../src/models/agreement.model'
-import { sleep } from '../../src/utils'
+import { bytesToMegabytes, sleep } from '../../src/utils'
 
 chai.use(chaiAsPromised)
 chai.use(dirtyChai)
@@ -101,7 +101,7 @@ describe('Marketplace Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      createAgreement(app, file, { billingPeriod: 1, size: file.size - 1 })
+      createAgreement(app, file, { billingPeriod: 1, size: file.size - bytesToMegabytes(1).toNumber() })
 
       await sleep(1000)
 
