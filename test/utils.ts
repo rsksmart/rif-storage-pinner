@@ -84,11 +84,23 @@ export interface File {
   cidString: string
 }
 
+function generateRandomData (size: number): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz'.split('')
+  const len = chars.length
+  const randomData = []
+
+  while (size--) {
+    randomData.push(chars[Math.random() * len | 0])
+  }
+
+  return randomData.join('')
+}
+
 export async function uploadRandomData (ipfs: IpfsClient): Promise<File> {
   const [file] = await asyncIterableToArray(ipfs.add([
     {
       path: `${Math.random().toString(36).substring(7)}.txt`,
-      content: `Nice to be on IPFS ${Math.random().toString(36).substring(7)}`
+      content: `Nice to be on IPFS ${generateRandomData(1000 * 1000 * 2)}`
     }
   ]))
   return {
