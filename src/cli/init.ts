@@ -2,8 +2,13 @@ import fs from 'fs'
 import { flags } from '@oclif/command'
 import { isAddress } from 'web3-utils'
 import { IConfig } from '@oclif/config'
+import config from 'config'
+import { getObject, getEndPromise as forStoreFinish } from 'sequelize-store'
 
 import BaseCommand, { promptForFlag } from '../utils'
+import PeerId from 'peer-id'
+
+const PEER_ID_PLACEHOLDER = '<<peerId>>'
 
 export default class InitCommand extends BaseCommand {
   static flags = {
@@ -11,7 +16,18 @@ export default class InitCommand extends BaseCommand {
     offerId: promptForFlag(flags.string({
       char: 'o',
       description: 'ID of Offer to which should the service listen to'
-    }))
+    })),
+    keyType: flags.string({
+      char: 't',
+      options: ['rsa', 'ed25519', 'secp256k1'],
+      default: 'rsa',
+      description: 'Type of private key that will be used for Peer Identity'
+    }),
+    keySize: flags.integer({
+      char: 's',
+      default: 2048,
+      description: 'Size of private key that will be used for Peer Identity'
+    })
   }
 
   static description = 'Initialize Pinner service dependencies'
@@ -48,6 +64,24 @@ export default class InitCommand extends BaseCommand {
       this.spinner.start('Set Offer ID')
       this.offerId = offerId
       this.spinner.stop()
+
+      // Peer identity
+      this.spinner.start('Generating Peer Identity')
+      const store = getObject()
+      const peerId = (await PeerId.create({
+        keyType: this.parsedArgs.flags.keyType,
+        bits: this.parsedArgs.flags.keySize
+      })).toJSON()
+
+      store.peerId = peerId.id
+      store.peerPubKey = peerId.pubKey
+      store.peerPrivKey = peerId.privKey
+      this.spinner.stop()
+
+      const uiUrl = config.get<string>('uiUrl')
+      this.log(`Create Offer here: ${uiUrl.replace(PEER_ID_PLACEHOLDER, peerId.id)}`)
+
+      await forStoreFinish()
     } catch (e) {
       fs.unlinkSync(this.dbPath as string)
       throw e
