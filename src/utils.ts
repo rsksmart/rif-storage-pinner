@@ -1,5 +1,6 @@
 import { hexToAscii } from 'web3-utils'
 import fs from 'fs'
+import BigNumber from 'bignumber.js'
 import config from 'config'
 import path from 'path'
 import cli, { ActionBase, IPromptOptions } from 'cli-ux'
@@ -29,6 +30,10 @@ import { ProviderManager } from './providers'
 import { CliInitDbOptions, JobManagerOptions } from './definitions'
 import { JobsManager } from './jobs-manager'
 import { IpfsProvider } from './providers/ipfs'
+
+export function bnFloor (v: string | number | BigNumber): BigNumber {
+  return new BigNumber(v).integerValue(BigNumber.ROUND_FLOOR)
+}
 
 export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> {
   return (...args) => {

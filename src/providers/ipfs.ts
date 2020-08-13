@@ -1,6 +1,7 @@
 import ipfsClient, { CID, ClientOptions, IpfsClient, Version } from 'ipfs-http-client'
 import * as semver from 'semver'
 import config from 'config'
+import BigNumber from 'bignumber.js'
 
 import type { Provider } from '../definitions'
 import { loggingFactory } from '../logger'
@@ -14,9 +15,9 @@ const REQUIRED_IPFS_VERSION = '>=0.5.0'
 class PinJob extends Job {
   private readonly hash: string
   private readonly ipfs: IpfsClient
-  private readonly expectedSize: number
+  private readonly expectedSize: BigNumber
 
-  constructor (ipfs: IpfsClient, hash: string, expectedSize: number) {
+  constructor (ipfs: IpfsClient, hash: string, expectedSize: BigNumber) {
     super(hash, 'ipfs - pin')
 
     this.expectedSize = expectedSize
@@ -32,9 +33,9 @@ class PinJob extends Job {
     try {
       const stats = await this.ipfs.object.stat(cid, { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })
 
-      if (stats.CumulativeSize > this.expectedSize) {
+      if (new BigNumber(stats.CumulativeSize).gt(this.expectedSize)) {
         logger.error(`${hash}The hash ${hash} has cumulative size of ${stats.CumulativeSize} bytes while it was expected to have ${this.expectedSize} bytes.`)
-        throw new HashExceedsSizeError('The hash exceeds payed size!', stats.CumulativeSize, this.expectedSize)
+        throw new HashExceedsSizeError('The hash exceeds payed size!', new BigNumber(stats.CumulativeSize), this.expectedSize)
       }
     } catch (e) {
       if (e.name === 'TimeoutError') {
@@ -93,7 +94,7 @@ export class IpfsProvider implements Provider {
    * @param hash
    * @param expectedSize
    */
-  pin (hash: string, expectedSize: number): Promise<void> {
+  pin (hash: string, expectedSize: BigNumber): Promise<void> {
     const job = new PinJob(this.ipfs, hash, expectedSize)
     return this.jobsManager.run(job)
   }

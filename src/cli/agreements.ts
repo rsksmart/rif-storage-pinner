@@ -83,8 +83,13 @@ export default class AgreementsCommand extends BaseCommand {
   static expireIn (agreement: Agreement): string {
     const expired = agreement.expiredIn
 
-    if (expired > 0 && expired < 2 * agreement.billingPeriod / 60) return colors.yellow(`${expired} min`)
-    return expired > 0 ? colors.green(`${expired} min`) : colors.red('EXPIRED')
+    if (expired.gt(0) && expired.lt(agreement.billingPeriod.div(60).times(2))) {
+      return colors.yellow(`${expired.toString()} min`)
+    }
+
+    return expired.gt(0)
+      ? colors.green(`${expired.toString()} min`)
+      : colors.red('EXPIRED')
   }
 
   static prepareAgreementForTable (agreement: AgreementWithJobs): any[] {
@@ -137,16 +142,16 @@ export default class AgreementsCommand extends BaseCommand {
     const { flags: { status, pinningStatus } } = this.parsedArgs
 
     const table = new Table({
-      head: ['', 'Reference', 'Expire in', 'Pinning Status'].map(t => colors.bold(t)),
+      head: ['', 'Reference', 'Expire in', 'Pinning Status'].map(colors.bold),
       colWidths: [3, 68],
       colAligns: ['center', 'center', 'center', 'left'],
       wordWrap: true,
       style: { head: [] }
     })
 
-    const data = (await this.queryAgreement({ status, pinningStatus })).map(AgreementsCommand.prepareAgreementForTable)
+    const agreements = await this.queryAgreement({ status, pinningStatus })
 
-    table.push(...data)
+    table.push(...agreements.map(AgreementsCommand.prepareAgreementForTable))
     // eslint-disable-next-line no-console
     console.log(table.toString())
 
