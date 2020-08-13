@@ -7,6 +7,7 @@ import type { Provider } from '../definitions'
 import { loggingFactory } from '../logger'
 import { Job, JobsManager } from '../jobs-manager'
 import { HashExceedsSizeError } from '../errors'
+import { bytesToMegabytes } from '../utils'
 
 const logger = loggingFactory('ipfs')
 
@@ -33,8 +34,8 @@ class PinJob extends Job {
     try {
       const stats = await this.ipfs.object.stat(cid, { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })
 
-      if (new BigNumber(stats.CumulativeSize).gt(this.expectedSize)) {
-        logger.error(`${hash}The hash ${hash} has cumulative size of ${stats.CumulativeSize} bytes while it was expected to have ${this.expectedSize} bytes.`)
+      if (bytesToMegabytes(stats.CumulativeSize).gt(this.expectedSize)) {
+        logger.error(`The hash ${hash} has cumulative size of ${bytesToMegabytes(stats.CumulativeSize)} megabytes while it was expected to have ${this.expectedSize} megabytes.`)
         throw new HashExceedsSizeError('The hash exceeds payed size!', new BigNumber(stats.CumulativeSize), this.expectedSize)
       }
     } catch (e) {
