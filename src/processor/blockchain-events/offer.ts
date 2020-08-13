@@ -36,9 +36,12 @@ const handlers: HandlersObject<BlockchainOfferEvents, BlockchainEventProcessorOp
     const flag = firstMsg.substring(2, 4)
 
     if (flag === '01') { // PeerId definition
-      store.peerId = decodeByteArray([`0x${firstMsg.substring(4)}`, ...restMsg])
+      const offersPeerId = decodeByteArray([`0x${firstMsg.substring(4)}`, ...restMsg])
 
-      logger.info(`PeerId ${store.peerId} defined`)
+      // We don' update PeerId as it is already stored locally, but will Error if they don't match
+      if (store.peerId !== offersPeerId) {
+        logger.error(`PeerId assigned to Offer is not matching the locally available PeerId! Local: ${store.peerId_id}; Offer: ${offersPeerId}`)
+      }
     } else {
       logger.error(`Unknown message flag ${flag}!`)
     }

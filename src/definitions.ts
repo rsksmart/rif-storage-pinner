@@ -72,6 +72,10 @@ export interface EventsEmitterOptions {
 }
 
 export interface Config {
+  // URL to the UI that should be passed PeerId upon initialization. Use <<peerId>> as placeholder that will
+  // get replaced with the actual PeerId.
+  uiUrl?: string
+
   // What strategy for event listening should be used
   strategy?: Strategy
 

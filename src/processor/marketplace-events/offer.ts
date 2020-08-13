@@ -18,9 +18,9 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
   MessageEmitted (event: MarketplaceEvent): Promise<void> {
     const store = getObject()
 
-    if (event.payload.peerId) {
-      store.peerId = event.payload.peerId
-      logger.info(`PeerId ${store.peerId} defined`)
+    // We don' update PeerId as it is already stored locally, but will Error if they don't match
+    if (event.payload.peerId && store.peerId !== event.payload.peerId) {
+      logger.error(`PeerId assigned to Offer is not matching the locally available PeerId! Local: ${store.peerId_id}; Offer: ${event.payload.peerId}`)
     }
     return Promise.resolve()
   }

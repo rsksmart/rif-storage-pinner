@@ -283,6 +283,7 @@ export default abstract class BaseCommand extends Command {
     return sequelize
   }
 
+  // TODO: Rework this with correct types, supporting the actual Flags
   protected parseWithPrompt (command: any): Promise<Record<string, any>> {
     return this.promptForFlags(command.flags, this.parse(command))
   }
