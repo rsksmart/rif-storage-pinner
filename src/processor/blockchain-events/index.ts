@@ -27,7 +27,6 @@ import type {
   BlockchainEventsWithProvider
 } from '../../definitions'
 import type { ProviderManager } from '../../providers'
-import { EventProcessorOptions, MarketplaceEvent } from '../../definitions'
 
 const logger: Logger = loggingFactory('processor:blockchain')
 

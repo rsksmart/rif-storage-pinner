@@ -1,4 +1,5 @@
 import { soliditySha3 } from 'web3-utils'
+import BigNumber from 'bignumber.js'
 
 import {
   AgreementFundsDeposited, AgreementFundsPayout, AgreementFundsWithdrawn,
@@ -8,7 +9,7 @@ import {
 
 import { loggingFactory } from '../../logger'
 import { EventError } from '../../errors'
-import { bn, buildHandler, decodeByteArray } from '../../utils'
+import { buildHandler, decodeByteArray } from '../../utils'
 import { getBlockDate } from '../../blockchain/utils'
 import Agreement from '../../models/agreement.model'
 import type {
@@ -86,7 +87,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
       throw new EventError(`Agreement with ID ${id} was not found!`, 'AgreementFundsDeposited')
     }
 
-    agreement.availableFunds = agreement.availableFunds.plus(bn(amount))
+    agreement.availableFunds = agreement.availableFunds.plus(new BigNumber(amount))
     await agreement.save()
 
     logger.info(`Agreement ${id} was topped up with ${amount}.`)
@@ -100,7 +101,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
       throw new EventError(`Agreement with ID ${id} was not found!`, 'AgreementFundsWithdrawn')
     }
 
-    agreement.availableFunds = agreement.availableFunds.minus(bn(amount))
+    agreement.availableFunds = agreement.availableFunds.minus(new BigNumber(amount))
     await agreement.save()
 
     logger.info(`${amount} was withdrawn from funds of Agreement ${id}.`)
@@ -115,7 +116,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     }
 
     agreement.lastPayout = await getBlockDate(options.eth, blockNumber)
-    agreement.availableFunds = agreement.availableFunds.minus(bn(amount))
+    agreement.availableFunds = agreement.availableFunds.minus(new BigNumber(amount))
     await agreement.save()
 
     logger.info(`${amount} was payed out from funds of Agreement ${id}.`)

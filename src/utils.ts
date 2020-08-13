@@ -31,12 +31,8 @@ import { CliInitDbOptions, JobManagerOptions } from './definitions'
 import { JobsManager } from './jobs-manager'
 import { IpfsProvider } from './providers/ipfs'
 
-export function bn (v: any): BigNumber {
-  return new BigNumber(v)
-}
-
-export function bnFloor (v: any): BigNumber {
-  return v.integerValue(BigNumber.ROUND_FLOOR)
+export function bnFloor (v: string | number | BigNumber): BigNumber {
+  return new BigNumber(v).integerValue(BigNumber.ROUND_FLOOR)
 }
 
 export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> {

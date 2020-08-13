@@ -1,4 +1,5 @@
 import chai from 'chai'
+import BigNumber from 'bignumber.js'
 import dirtyChai from 'dirty-chai'
 import chaiAsPromised from 'chai-as-promised'
 import sinonChai from 'sinon-chai'
@@ -11,7 +12,7 @@ import { FINISHED_EVENT_NAME, Job, JobsManager } from '../../src/jobs-manager'
 import { randomHex } from 'web3-utils'
 import { JobState } from '../../src/definitions'
 import JobModel from '../../src/models/job.model'
-import { bn, runAndAwaitFirstEvent, sleep } from '../../src/utils'
+import { runAndAwaitFirstEvent } from '../../src/utils'
 import { HashExceedsSizeError } from '../../src/errors'
 import { channel, MessageCodesEnum } from '../../src/communication'
 
@@ -209,7 +210,7 @@ describe('Jobs', function () {
       const manager = new JobsManager({ retries: 3 })
       const job = new StubJob()
       job.stub.onCall(0).rejects(new Error('testing1'))
-      job.stub.onCall(1).rejects(new HashExceedsSizeError('testing2', bn(10), bn(9)))
+      job.stub.onCall(1).rejects(new HashExceedsSizeError('testing2', new BigNumber(10), new BigNumber(9)))
 
       models = await JobModel.findAll()
       expect(models).to.have.length(0)
@@ -234,8 +235,8 @@ describe('Jobs', function () {
 
       expect(channelSpy.getCall(3)).calledWith(MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED, {
         hash: job.name,
-        size: bn(10),
-        expectedSize: bn(9)
+        size: new BigNumber(10),
+        expectedSize: new BigNumber(9)
       })
     })
   })

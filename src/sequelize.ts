@@ -7,7 +7,6 @@ import config from 'config'
 import BigNumber from 'bignumber.js'
 
 import { loggingFactory } from './logger'
-import { bn } from './utils'
 
 const logger = loggingFactory('db')
 
@@ -52,15 +51,15 @@ export function BigNumberStringType (propName: string): Partial<ModelAttributeCo
   return {
     type: DataType.STRING(),
     get (this: Model): BigNumber {
-      return bn(this.getDataValue(propName))
+      return new BigNumber(this.getDataValue(propName))
     },
     set (this: Model, value: string | number | BigNumber): void {
-      const n = bn(value)
+      const n = new BigNumber(value)
 
       if (isNaN(n.toNumber())) {
         throw new Error(`${this.constructor.name + ' ' || ''}Model Error: ${propName} should be a one of [number, string(number), BigNumber]`)
       }
-      this.setDataValue(propName, bn(value).toString(10))
+      this.setDataValue(propName, n.toString(10))
     }
   }
 }
