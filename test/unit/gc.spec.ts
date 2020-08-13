@@ -1,5 +1,5 @@
-import type { BlockHeader } from 'web3-eth'
 import { Arg, Substitute } from '@fluffy-spoon/substitute'
+import type { BlockHeader } from 'web3-eth'
 import chai from 'chai'
 import dirtyChai from 'dirty-chai'
 import chaiAsPromised from 'chai-as-promised'
