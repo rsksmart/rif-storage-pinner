@@ -1,7 +1,7 @@
 /**
  * Basic logger interface used around the application.
  */
-import { BigNumber } from 'bignumber.js'
+import type { BigNumber } from 'bignumber.js'
 
 import type {
   AgreementFundsDeposited,
