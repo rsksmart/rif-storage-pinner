@@ -81,7 +81,8 @@ export default class InitCommand extends BaseCommand {
       this.spinner.stop()
 
       const uiUrl = config.get<string>('uiUrl')
-      this.log(`Create Offer here: ${uiUrl.replace(PEER_ID_PLACEHOLDER, peerId.id)}`)
+      this.log(`Create Offer here: ${uiUrl.replace(PEER_ID_PLACEHOLDER, peerId.toB58String()}`)
+      this.log(`Or input your PeerId into the form: ${peerId.toB58String()}`)
 
       await forStoreFinish()
     } catch (e) {
