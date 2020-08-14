@@ -64,7 +64,7 @@
     "bignumber.js": "^9.0.0",
     "cids": "^1.0.0",
     "cli-table3": "^0.6.0",
-    "cli-ux": "^5.4.9",
+    "cli-ux": "^5.4.10",
     "colors": "^1.4.0",
     "config": "^3.3.1",
     "ipfs-http-client": "^44.3.0",
