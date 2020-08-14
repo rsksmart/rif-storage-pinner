@@ -11,7 +11,8 @@ import {
   uploadRandomData,
   File,
   isPinned,
-  errorSpy
+  errorSpy,
+  appResetCallbackSpy
 } from '../utils'
 import { Strategy } from '../../src/definitions'
 import {
@@ -49,6 +50,11 @@ function emitBlock (app: TestingApp, block: Record<string, any> = {}) {
   const agreementService = app.fakeCacheServer?.newBlockService
   agreementService.emit('newBlock', block)
   return block
+}
+
+function emitReorg (app: TestingApp) {
+  const reorgService = app.fakeCacheServer?.reorgService
+  reorgService.emit('reorgOutOfRange', true)
 }
 
 describe('Marketplace Strategy', function () {
@@ -170,6 +176,13 @@ describe('Marketplace Strategy', function () {
 
       // Should not be be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+    })
+    it('Handle reorg', async () => {
+      emitReorg(app)
+
+      await sleep(1000)
+
+      expect(appResetCallbackSpy.called).to.be.true()
     })
   })
 
