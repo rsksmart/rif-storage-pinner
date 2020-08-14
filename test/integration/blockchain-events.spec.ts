@@ -14,8 +14,7 @@ const expect = chai.expect
 async function createAgreement (app: TestingApp, file: File, billingPeriod: number, money: number, size?: number): Promise<string> {
   const encodedFileHash = encodeHash(file.fileHash)
 
-  const agreementSizeRounded = Math.floor(size ?? file.size) + 1
-  const agreementSize = agreementSizeRounded >= 1 ? agreementSizeRounded : 1
+  const agreementSize = Math.ceil(size ?? file.size)
   const agreementGas = await app.contract
     ?.methods
     .newAgreement(encodedFileHash, app.providerAddress, agreementSize, billingPeriod, [])
@@ -71,7 +70,7 @@ describe('Blockchain Strategy', function () {
         expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
         // Creates Agreement with funds only for one period
-        await createAgreement(app, file, 1, 30)
+        await createAgreement(app, file, 1, Math.ceil(file.size) * 10)
         await sleep(1100) // We will wait until they run out
 
         // Start service with precache
