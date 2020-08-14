@@ -130,6 +130,8 @@ export class MarketplaceEventsProcessor extends EventProcessor {
     async stop (): Promise<void> {
       // Unsubscribe from new blocks event
       this.newBlockService?.removeListener(NEW_BLOCK_EVENT, this.gcHandler)
+      // Unsubscribe from reorg event
+      this.reorgService?.removeListener(REORG_OUT_OF_RANGE, this.appResetCallback)
       // Unsubscribe from events
       Object
         .values(this.services)
