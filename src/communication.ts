@@ -1,6 +1,13 @@
+import PeerId from 'peer-id'
+import type Libp2p from 'libp2p'
+import { Room, createLibP2P } from '@rsksmart/rif-communications-pubsub'
+import { getObject } from 'sequelize-store'
+import config from 'config'
+
 import { loggingFactory } from './logger'
 
 const logger = loggingFactory('coms')
+const COMMUNICATION_PROTOCOL_VERSION = 1
 
 export enum MessageCodesEnum {
   I_GENERAL = 0,
@@ -36,30 +43,61 @@ export interface AgreementSizeExceededPayload {
   expectedSize: number
 }
 
-class Communication {
-  private static instance: Communication
+let room: Room
+let libp2p: Libp2p
 
-  private constructor () {} // eslint-disable-line
+function getRoomTopic (): string {
+  const store = getObject()
 
-  static getInstance () {
-    if (!Communication.instance) {
-      Communication.instance = new Communication()
-    }
-    return Communication.instance
-  }
-
-  broadcast (code: MessageCodesEnum.I_AGREEMENT_NEW, payload: AgreementInfoPayload): void
-  broadcast (code: MessageCodesEnum.I_AGREEMENT_STOPPED, payload: AgreementInfoPayload): void
-  broadcast (code: MessageCodesEnum.I_AGREEMENT_EXPIRED, payload: AgreementInfoPayload): void
-  broadcast (code: MessageCodesEnum.I_HASH_PINNED, payload: HashInfoPayload): void
-  broadcast (code: MessageCodesEnum.I_HASH_START, payload: HashInfoPayload): void
-  broadcast (code: MessageCodesEnum.W_HASH_RETRY, payload: RetryPayload): void
-  broadcast (code: MessageCodesEnum.E_HASH_NOT_FOUND, payload: HashInfoPayload): void
-  broadcast (code: MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED, payload: AgreementSizeExceededPayload): void
-  broadcast (code: MessageCodesEnum, payload?: Record<string, any>): void
-  broadcast (code: MessageCodesEnum, payload?: Record<string, any>): void {
-    logger.error(`NOT IMPLEMENTED - broadcasting message with code ${code}`, payload)
-  }
+  return `${config.get<string>('blockchain.networkId')}:${config.get<string>('blockchain.contractAddress')}:${store.offerId}`
 }
 
-export const channel = Communication.getInstance()
+export async function start (): Promise<void> {
+  const store = getObject()
+
+  const peerId = await PeerId.createFromJSON({
+    id: store.peerId as string,
+    privKey: store.peerPrivKey as string,
+    pubKey: store.peerPubKey as string
+  })
+
+  // Valid peerId = that has id, privKey and pubKey configured.
+  if (!peerId.isValid()) {
+    throw new Error('PeerId is not valid!')
+  }
+
+  libp2p = await createLibP2P({ peerId })
+  room = new Room(libp2p, getRoomTopic())
+}
+
+export async function stop (): Promise<void> {
+  if (!libp2p) {
+    throw new Error('Communication was not started yet!')
+  }
+
+  await libp2p.stop()
+}
+
+export async function broadcast (code: MessageCodesEnum.I_AGREEMENT_NEW, payload: AgreementInfoPayload): Promise<void>
+export async function broadcast (code: MessageCodesEnum.I_AGREEMENT_STOPPED, payload: AgreementInfoPayload): Promise<void>
+export async function broadcast (code: MessageCodesEnum.I_AGREEMENT_EXPIRED, payload: AgreementInfoPayload): Promise<void>
+export async function broadcast (code: MessageCodesEnum.I_HASH_PINNED, payload: HashInfoPayload): Promise<void>
+export async function broadcast (code: MessageCodesEnum.I_HASH_START, payload: HashInfoPayload): Promise<void>
+export async function broadcast (code: MessageCodesEnum.W_HASH_RETRY, payload: RetryPayload): Promise<void>
+export async function broadcast (code: MessageCodesEnum.E_HASH_NOT_FOUND, payload: HashInfoPayload): Promise<void>
+export async function broadcast (code: MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED, payload: AgreementSizeExceededPayload): Promise<void>
+export async function broadcast (code: MessageCodesEnum, payload?: Record<string, any>): Promise<void>
+export async function broadcast (code: MessageCodesEnum, payload?: Record<string, any>): Promise<void> {
+  if (!room) {
+    throw new Error('Communication was not started yet!')
+  }
+
+  const msg = {
+    code,
+    payload,
+    version: COMMUNICATION_PROTOCOL_VERSION,
+    timestamp: Date.now()
+  }
+
+  await room.broadcast(JSON.stringify(msg))
+}

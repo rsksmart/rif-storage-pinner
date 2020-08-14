@@ -16,7 +16,7 @@ import type {
   BlockchainEventProcessorOptions,
   BlockchainAgreementEvents, HandlersObject
 } from '../../definitions'
-import { channel, MessageCodesEnum } from '../../communication'
+import { broadcast, MessageCodesEnum } from '../../communication'
 
 const logger = loggingFactory('processor:blockchain:agreement')
 
@@ -56,7 +56,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
 
     if (options.manager) {
       await options.manager.pin(dataReference, agreement.size)
-      channel.broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: agreementReference })
+      await broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: agreementReference })
     }
   },
 
@@ -73,7 +73,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
 
     if (options.manager) {
       await options.manager.unpin(agreement.dataReference)
-      channel.broadcast(MessageCodesEnum.I_AGREEMENT_STOPPED, { agreementReference: agreement.agreementReference })
+      await broadcast(MessageCodesEnum.I_AGREEMENT_STOPPED, { agreementReference: agreement.agreementReference })
     }
 
     logger.info(`Agreement ${id} was stopped.`)
