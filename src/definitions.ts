@@ -97,13 +97,16 @@ export interface Config {
 
   marketplace?: {
     // Offer service path
-    offer?: string
+    offer: string
 
     // Agreement service path
-    agreement?: string
+    agreement: string
+
+    // Reorg service path
+    reorg: string
 
     // Cache service url
-    provider?: string
+    provider: string
   }
 
   ipfs?: {
