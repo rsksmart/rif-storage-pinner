@@ -24,6 +24,7 @@ import { errorHandler as originalErrorHandler } from '../../utils'
 
 const logger: Logger = loggingFactory('processor:cache')
 const NEW_BLOCK_EVENT = 'newBlock'
+const REORG_OUT_OF_RANGE = 'reorgOutOfRange'
 
 // TODO remove after cache service will be able to filter events for us
 function filterCacheEvents (offerId: string, callback: Processor<MarketplaceEvent>): Processor<MarketplaceEvent> {
@@ -39,10 +40,13 @@ export class MarketplaceEventsProcessor extends EventProcessor {
     private readonly manager: ProviderManager
     private services: Record<string, feathers.Service<any>> = {}
     private newBlockService: feathers.Service<any> | undefined
+    private reorgService: feathers.Service<any> | undefined
+    private appResetCallback: () => void
 
-    constructor (offerId: string, manager: ProviderManager, options?: AppOptions) {
+    constructor (offerId: string, manager: ProviderManager, options: AppOptions) {
       super(offerId, options)
 
+      this.appResetCallback = options?.appResetCallback
       const errorHandler = options?.errorHandler ?? originalErrorHandler
       const deps: EventProcessorOptions = {
         manager
@@ -70,6 +74,7 @@ export class MarketplaceEventsProcessor extends EventProcessor {
         agreement: client.service(config.get<string>('marketplace.agreements'))
       }
       this.newBlockService = client.service(config.get<string>('marketplace.newBlock'))
+      this.reorgService = client.service(config.get<string>('marketplace.reorg'))
 
       this.initialized = true
       logger.info('Services initialized')
@@ -83,6 +88,8 @@ export class MarketplaceEventsProcessor extends EventProcessor {
 
       // Subscribe for new blocks
       this.newBlockService?.on(NEW_BLOCK_EVENT, this.gcHandler)
+      // Subscribe for reorgs
+      this.reorgService?.on(REORG_OUT_OF_RANGE, this.appResetCallback)
       // Subscribe for events
       Object
         .values(this.services)
