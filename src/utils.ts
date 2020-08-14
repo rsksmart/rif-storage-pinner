@@ -35,6 +35,13 @@ export function bnFloor (v: string | number | BigNumber): BigNumber {
   return new BigNumber(v).integerValue(BigNumber.ROUND_FLOOR)
 }
 
+export function bytesToMegabytes (bytes: BigNumber | string | number): BigNumber {
+  const MB = 10 ** 6 // bytes
+  const v = new BigNumber(bytes)
+
+  return v.div(MB)
+}
+
 export function errorHandler (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> {
   return (...args) => {
     return fn(...args).catch(err => logger.error(err))

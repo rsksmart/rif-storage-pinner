@@ -19,6 +19,7 @@ export default class Agreement extends Model {
   @Column({ type: DataType.STRING(64), allowNull: false })
   consumer!: string
 
+  // Size in MB
   @Column({ allowNull: false, ...BigNumberStringType('size') })
   size!: BigNumber
 

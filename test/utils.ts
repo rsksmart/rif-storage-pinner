@@ -19,6 +19,7 @@ import { FakeMarketplaceService } from './fake-marketplace-service'
 import { loggingFactory } from '../src/logger'
 import { initStore } from '../src/store'
 import { sequelizeFactory } from '../src/sequelize'
+import { bytesToMegabytes } from '../src/utils'
 
 export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 
@@ -83,15 +84,28 @@ export interface File {
   cidString: string
 }
 
+function generateRandomData (size: number): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz'.split('')
+  const len = chars.length
+  const randomData = []
+
+  while (size--) {
+    randomData.push(chars[Math.random() * len | 0])
+  }
+
+  return randomData.join('')
+}
+
 export async function uploadRandomData (ipfs: IpfsClient): Promise<File> {
   const [file] = await asyncIterableToArray(ipfs.add([
     {
       path: `${Math.random().toString(36).substring(7)}.txt`,
-      content: `Nice to be on IPFS ${Math.random().toString(36).substring(7)}`
+      content: `Nice to be on IPFS ${generateRandomData(1000 * 1000 * 2)}`
     }
   ]))
   return {
     ...file,
+    size: bytesToMegabytes(file.size).toNumber(),
     fileHash: `/ipfs/${file.cid.toString()}`,
     cidString: file.cid.toString()
   }

@@ -14,14 +14,15 @@ const expect = chai.expect
 async function createAgreement (app: TestingApp, file: File, billingPeriod: number, money: number, size?: number): Promise<string> {
   const encodedFileHash = encodeHash(file.fileHash)
 
+  const agreementSize = Math.ceil(size ?? file.size)
   const agreementGas = await app.contract
     ?.methods
-    .newAgreement(encodedFileHash, app.providerAddress, size ?? file.size, billingPeriod, [])
+    .newAgreement(encodedFileHash, app.providerAddress, agreementSize, billingPeriod, [])
     .estimateGas({ from: app.consumerAddress, value: money })
 
   const receipt = await app.contract
     ?.methods
-    .newAgreement(encodedFileHash, app.providerAddress, size ?? file.size, billingPeriod, [])
+    .newAgreement(encodedFileHash, app.providerAddress, agreementSize, billingPeriod, [])
     .send({ from: app.consumerAddress, gas: agreementGas, value: money })
   logger.info('Agreement created')
 
@@ -69,7 +70,7 @@ describe('Blockchain Strategy', function () {
         expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
         // Creates Agreement with funds only for one period
-        await createAgreement(app, file, 1, file.size * 10)
+        await createAgreement(app, file, 1, Math.ceil(file.size) * 10)
         await sleep(1100) // We will wait until they run out
 
         // Start service with precache
@@ -113,7 +114,6 @@ describe('Blockchain Strategy', function () {
       const file = await uploadRandomData(app.ipfsConsumer!)
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
-
       await createAgreement(app, file, 1, 10000, file.size - 1)
 
       // Wait until we receive Event
@@ -132,9 +132,9 @@ describe('Blockchain Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      const agreementReference = await createAgreement(app, file, 1, 500)
+      const agreementReference = await createAgreement(app, file, 1, 60)
 
-      await sleep(1000)
+      await sleep(2000)
 
       // Should be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
@@ -164,7 +164,7 @@ describe('Blockchain Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      await createAgreement(app, file, 1, 500)
+      await createAgreement(app, file, 1, 60)
       await sleep(500)
 
       // Should be pinned
