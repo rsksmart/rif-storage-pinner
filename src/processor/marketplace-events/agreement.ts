@@ -9,7 +9,7 @@ import type {
 import { buildHandler } from '../../utils'
 import Agreement from '../../models/agreement.model'
 import { EventError } from '../../errors'
-import { channel, MessageCodesEnum } from '../../communication'
+import { broadcast, MessageCodesEnum } from '../../communication'
 
 const logger = loggingFactory('processor:cache:agreement')
 
@@ -22,7 +22,7 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
 
     if (options.manager) {
       await options.manager.pin(newAgreement.dataReference, agreement.size)
-      channel.broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: newAgreement.agreementReference })
+      await broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: newAgreement.agreementReference })
     }
   },
 
@@ -39,7 +39,7 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
 
     if (options.manager) {
       await options.manager.unpin(agreement.dataReference)
-      channel.broadcast(MessageCodesEnum.I_AGREEMENT_STOPPED, { agreementReference: agreement.agreementReference })
+      await broadcast(MessageCodesEnum.I_AGREEMENT_STOPPED, { agreementReference: agreement.agreementReference })
     }
 
     logger.info(`Agreement ${agreementReference} was stopped.`)
