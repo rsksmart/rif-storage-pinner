@@ -9,7 +9,8 @@ import type {
 import { buildHandler } from '../../utils'
 import Agreement from '../../models/agreement.model'
 import { EventError } from '../../errors'
-import { broadcast, MessageCodesEnum } from '../../communication'
+import { MessageCodesEnum } from '../../definitions'
+import { broadcast } from '../../communication'
 
 const logger = loggingFactory('processor:cache:agreement')
 

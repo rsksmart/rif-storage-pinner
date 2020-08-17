@@ -16,7 +16,8 @@ import type {
   BlockchainEventProcessorOptions,
   BlockchainAgreementEvents, HandlersObject
 } from '../../definitions'
-import { broadcast, MessageCodesEnum } from '../../communication'
+import { MessageCodesEnum } from '../../definitions'
+import { broadcast } from '../../communication'
 
 const logger = loggingFactory('processor:blockchain:agreement')
 

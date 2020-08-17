@@ -76,6 +76,10 @@ export interface Config {
   // get replaced with the actual PeerId.
   uiUrl?: string
 
+  comms?: {
+    bootnodes?: string[]
+  }
+
   // What strategy for event listening should be used
   strategy?: Strategy
 
@@ -209,3 +213,55 @@ export interface InitCommandOption {
 }
 
 export type CliInitDbOptions = { sync?: boolean, migrate?: boolean }
+
+/**
+ * Communications
+ */
+
+export enum MessageCodesEnum {
+  I_GENERAL = 0,
+  I_AGREEMENT_NEW = 1,
+  I_AGREEMENT_STOPPED = 2,
+  I_AGREEMENT_EXPIRED = 2,
+  I_HASH_START = 5,
+  I_HASH_PINNED = 6,
+  I_PEERID_ANNOUNCEMENT = 7,
+  I_RESEND_LATEST_MESSAGES = 7,
+  W_GENERAL = 100,
+  W_HASH_RETRY = 101,
+  E_GENERAL = 1000,
+  E_HASH_NOT_FOUND = 1001,
+  E_AGREEMENT_SIZE_LIMIT_EXCEEDED = 1002
+}
+
+export interface RetryPayload {
+  error: string
+  retryNumber: number
+  totalRetries: number
+}
+
+export interface HashInfoPayload {
+  hash: string
+}
+
+export interface AgreementInfoPayload {
+  agreementReference: string
+}
+
+export interface AgreementSizeExceededPayload {
+  hash: string
+  size: number
+  expectedSize: number
+}
+
+export interface PeerIdAnnouncementPayload {
+  offer: string
+  peerId: string
+}
+
+export interface CommsMessage <Payload> {
+  timestamp: number
+  version: number
+  code: number
+  payload: Payload
+}
