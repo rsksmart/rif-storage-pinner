@@ -153,7 +153,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     precacheLogger.info('Pinning valid Agreements')
     for (const agreement of await Agreement.findAll()) {
       if (agreement.hasSufficientFunds) {
-        await this.manager.pin(agreement.dataReference, agreement.size)
+        await this.manager.pin(agreement.dataReference, agreement.size, agreement.consumer)
       }
     }
   }

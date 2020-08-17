@@ -8,19 +8,22 @@ import { loggingFactory } from '../logger'
 import { Job, JobsManager } from '../jobs-manager'
 import { HashExceedsSizeError } from '../errors'
 import { bytesToMegabytes } from '../utils'
+import SwarmModel from '../models/swarm.model'
 
 const logger = loggingFactory('ipfs')
 
 const REQUIRED_IPFS_VERSION = '>=0.5.0'
 
 class PinJob extends Job {
+  private readonly consumerPublicKey: string
   private readonly hash: string
   private readonly ipfs: IpfsClient
   private readonly expectedSize: BigNumber
 
-  constructor (ipfs: IpfsClient, hash: string, expectedSize: BigNumber) {
+  constructor (ipfs: IpfsClient, hash: string, expectedSize: BigNumber, consumer: string) {
     super(hash, 'ipfs - pin')
 
+    this.consumerPublicKey = consumer
     this.expectedSize = expectedSize
     this.ipfs = ipfs
     this.hash = hash
@@ -46,6 +49,7 @@ class PinJob extends Job {
         throw e
       }
     }
+    // TODO Add swarm part here
 
     logger.info(`Pinning hash: ${hash} start`)
     // TODO: For this call there is applied the default 20 minutes timeout. This should be estimated using the size.
@@ -95,8 +99,8 @@ export class IpfsProvider implements Provider {
    * @param hash
    * @param expectedSize
    */
-  pin (hash: string, expectedSize: BigNumber): Promise<void> {
-    const job = new PinJob(this.ipfs, hash, expectedSize)
+  pin (hash: string, expectedSize: BigNumber, consumer: string): Promise<void> {
+    const job = new PinJob(this.ipfs, hash, expectedSize, consumer)
     return this.jobsManager.run(job)
   }
 

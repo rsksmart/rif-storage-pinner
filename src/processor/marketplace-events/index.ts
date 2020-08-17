@@ -117,7 +117,7 @@ export class MarketplaceEventsProcessor extends EventProcessor {
 
         // Pin agreements
         if (agreement.isActive && agreement.hasSufficientFunds) {
-          await this.manager.pin(agreement.dataReference, agreement.size)
+          await this.manager.pin(agreement.dataReference, agreement.size, agreement.consumer)
         }
         await Agreement.upsert(agreement.toJSON())
       }

@@ -56,7 +56,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     logger.info(`Created new Agreement with ID ${agreementReference} for offer ${offerId}`)
 
     if (options.manager) {
-      await options.manager.pin(dataReference, agreement.size)
+      await options.manager.pin(dataReference, agreement.size, consumer)
       await broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: agreementReference })
     }
   },

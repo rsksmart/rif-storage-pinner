@@ -22,7 +22,7 @@ export enum Providers {
 }
 
 export interface Provider {
-  pin (hash: string, expectedSize: BigNumber): Promise<void>
+  pin (hash: string, expectedSize: BigNumber, consumer: string): Promise<void>
   unpin (hash: string): void
 }
 

@@ -130,7 +130,17 @@ declare module 'ipfs-http-client' {
     }
   }
 
-  export type IpfsClient = MiscellaneousCommands & RegularFiles.RegularFilesCommands & PinCommands & ObjectCommands
+  export interface SwarmCommands {
+    swarm: {
+      addrs(options?: Options): Promise<any>
+      connect(addrs: any[] | string, options?: Options): Promise<any>
+      disconnect(addrs: any, options?: Options): Promise<any>
+      localAddrs(options?: Options): Promise<{ id: any, addrs: any }>
+      peers(options?: Options): Promise<{ [key: string]: { peer: string, addr: multiaddr } }>
+    }
+  }
+
+  export type IpfsClient = MiscellaneousCommands & RegularFiles.RegularFilesCommands & PinCommands & ObjectCommands & SwarmCommands
 
   interface Port {
     port: string
