@@ -1,4 +1,4 @@
-import ipfsClient, { CID, ClientOptions, IpfsClient, Version } from 'ipfs-http-client'
+import ipfsClient, { CID, ClientOptions, IpfsClient, multiaddr, Version } from 'ipfs-http-client'
 import * as semver from 'semver'
 import config from 'config'
 import BigNumber from 'bignumber.js'
@@ -49,7 +49,11 @@ class PinJob extends Job {
         throw e
       }
     }
-    // TODO Add swarm part here
+    const swarm = await SwarmModel.findOne({ where: { publicKey: this.consumerPublicKey } })
+
+    if (swarm) {
+      await this.ipfs.swarm.connect(multiaddr(swarm.peerId))
+    }
 
     logger.info(`Pinning hash: ${hash} start`)
     // TODO: For this call there is applied the default 20 minutes timeout. This should be estimated using the size.
@@ -98,6 +102,7 @@ export class IpfsProvider implements Provider {
    * TODO: Error handling
    * @param hash
    * @param expectedSize
+   * @param consumer
    */
   pin (hash: string, expectedSize: BigNumber, consumer: string): Promise<void> {
     const job = new PinJob(this.ipfs, hash, expectedSize, consumer)

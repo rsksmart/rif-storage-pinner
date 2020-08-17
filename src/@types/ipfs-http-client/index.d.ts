@@ -133,10 +133,10 @@ declare module 'ipfs-http-client' {
   export interface SwarmCommands {
     swarm: {
       addrs(options?: Options): Promise<any>
-      connect(addrs: any[] | string, options?: Options): Promise<any>
-      disconnect(addrs: any, options?: Options): Promise<any>
+      connect(addrs: multiaddr, options?: Options): Promise<any>
+      disconnect(addrs: multiaddr, options?: Options): Promise<any>
       localAddrs(options?: Options): Promise<{ id: any, addrs: any }>
-      peers(options?: Options): Promise<{ [key: string]: { peer: string, addr: multiaddr } }>
+      peers(options?: Options & { direction: boolean, verbose: boolean }): Promise<{ addr: multiaddr, [key: string]: any }[]>
     }
   }
 
