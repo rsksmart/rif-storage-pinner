@@ -1,5 +1,8 @@
 {
   uiUrl: 'http://localhost:3000/offer?peerId=<<peerId>>',
+  comms: {
+    bootnodes: ['/ip4/127.0.0.1/tcp/6030/ws/p2p/QmbQJ4FyVBAar7rLwc1jjeJ6Nba6w2ddqczamJL6vTDrwm']
+  },
   blockchain: {
     provider: 'ws://localhost:8545',
     eventsEmitter: {

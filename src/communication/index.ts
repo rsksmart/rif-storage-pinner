@@ -1,47 +1,23 @@
 import PeerId from 'peer-id'
 import type Libp2p from 'libp2p'
 import { Room, createLibP2P } from '@rsksmart/rif-communications-pubsub'
+import type { Message } from '@rsksmart/rif-communications-pubsub'
+
 import { getObject } from 'sequelize-store'
 import config from 'config'
 
-import { loggingFactory } from './logger'
+import { loggingFactory } from '../logger'
+import type {
+  MessageCodesEnum,
+  AgreementInfoPayload,
+  HashInfoPayload,
+  RetryPayload,
+  AgreementSizeExceededPayload
+} from '../definitions'
+import { handle } from './handler'
 
-const logger = loggingFactory('coms')
+const logger = loggingFactory('comms')
 const COMMUNICATION_PROTOCOL_VERSION = 1
-
-export enum MessageCodesEnum {
-  I_GENERAL = 0,
-  I_AGREEMENT_NEW = 1,
-  I_AGREEMENT_STOPPED = 2,
-  I_AGREEMENT_EXPIRED = 2,
-  I_HASH_START = 5,
-  I_HASH_PINNED = 6,
-  W_GENERAL = 100,
-  W_HASH_RETRY = 101,
-  E_GENERAL = 1000,
-  E_HASH_NOT_FOUND = 1001,
-  E_AGREEMENT_SIZE_LIMIT_EXCEEDED = 1002
-}
-
-export interface RetryPayload {
-  error: string
-  retryNumber: number
-  totalRetries: number
-}
-
-export interface HashInfoPayload {
-  hash: string
-}
-
-export interface AgreementInfoPayload {
-  agreementReference: string
-}
-
-export interface AgreementSizeExceededPayload {
-  hash: string
-  size: number
-  expectedSize: number
-}
 
 let room: Room
 let libp2p: Libp2p
@@ -66,8 +42,30 @@ export async function start (): Promise<void> {
     throw new Error('PeerId is not valid!')
   }
 
-  libp2p = await createLibP2P({ peerId })
-  room = new Room(libp2p, getRoomTopic())
+  libp2p = await createLibP2P({
+    peerId,
+    config: {
+      peerDiscovery: {
+        bootstrap: {
+          list: config.get<string[]>('comms.bootnodes')
+        }
+      }
+    }
+  })
+  const topic = getRoomTopic()
+  logger.info(`Joining Room with topic ${topic}`)
+
+  room = new Room(libp2p, topic)
+  room.on('peer:joined', (peer) => logger.verbose(`Peer ${peer} joined.`))
+  room.on('peer:left', (peer) => logger.verbose(`Peer ${peer} left.`))
+  room.on('message', (message: Message): void => {
+    try {
+      const parsedMessage = JSON.parse(message.data.toString())
+      handle(parsedMessage)
+    } catch (e) {
+      logger.error('We received message that is not a JSON!', message)
+    }
+  })
 }
 
 export async function stop (): Promise<void> {
@@ -99,5 +97,6 @@ export async function broadcast (code: MessageCodesEnum, payload?: Record<string
     timestamp: Date.now()
   }
 
+  // TODO: Persist the sent messages for "rebroadcast"
   await room.broadcast(JSON.stringify(msg))
 }

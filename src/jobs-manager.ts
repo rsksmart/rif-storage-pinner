@@ -3,8 +3,8 @@ import { EventEmitter } from 'events'
 import JobModel from './models/job.model'
 import { runAndAwaitFirstEvent, sleep } from './utils'
 import { loggingFactory } from './logger'
-import { JobManagerOptions, JobState } from './definitions'
-import { broadcast, MessageCodesEnum } from './communication'
+import { JobManagerOptions, JobState, MessageCodesEnum } from './definitions'
+import { broadcast } from './communication'
 import { HashExceedsSizeError, JobsError } from './errors'
 
 const logger = loggingFactory('jobs')

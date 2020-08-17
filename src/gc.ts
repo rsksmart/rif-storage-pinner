@@ -5,7 +5,8 @@ import Agreement from './models/agreement.model'
 import { Op } from 'sequelize'
 import { ProviderManager } from './providers'
 import { loggingFactory } from './logger'
-import { broadcast, MessageCodesEnum } from './communication'
+import { broadcast } from './communication'
+import { MessageCodesEnum } from './definitions'
 import { NotPinnedError } from './errors'
 
 const logger = loggingFactory('gc')
