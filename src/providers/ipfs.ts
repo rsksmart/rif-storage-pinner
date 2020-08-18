@@ -52,13 +52,17 @@ class PinJob extends Job {
     const swarm = await SwarmModel.findOne({ where: { publicKey: this.consumerPublicKey } })
 
     if (swarm) {
-      await this.ipfs.swarm.connect(multiaddr(swarm.peerId))
+      await this.ipfs.swarm.connect(multiaddr(swarm.multiaddr))
     }
 
     logger.info(`Pinning hash: ${hash} start`)
     // TODO: For this call there is applied the default 20 minutes timeout. This should be estimated using the size.
     //  https://github.com/ipfs/js-ipfs/blob/master/packages/ipfs-http-client/src/lib/core.js#L113
     await this.ipfs.pin.add(cid) // The data can be big and we don't want to automatically timeout here.
+
+    if (swarm) {
+      await this.ipfs.swarm.disconnect(multiaddr(swarm.multiaddr)).catch(logger.verbose)
+    }
   }
 }
 
