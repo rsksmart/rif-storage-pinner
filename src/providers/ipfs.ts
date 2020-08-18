@@ -15,15 +15,15 @@ const logger = loggingFactory('ipfs')
 const REQUIRED_IPFS_VERSION = '>=0.5.0'
 
 class PinJob extends Job {
-  private readonly consumerPublicKey: string
+  private readonly agreementReference: string
   private readonly hash: string
   private readonly ipfs: IpfsClient
   private readonly expectedSize: BigNumber
 
-  constructor (ipfs: IpfsClient, hash: string, expectedSize: BigNumber, consumer: string) {
+  constructor (ipfs: IpfsClient, hash: string, expectedSize: BigNumber, agreementReference: string) {
     super(hash, 'ipfs - pin')
 
-    this.consumerPublicKey = consumer
+    this.agreementReference = agreementReference
     this.expectedSize = expectedSize
     this.ipfs = ipfs
     this.hash = hash
@@ -49,7 +49,7 @@ class PinJob extends Job {
         throw e
       }
     }
-    const swarm = await SwarmModel.findOne({ where: { publicKey: this.consumerPublicKey } })
+    const swarm = await SwarmModel.findOne({ where: { agreementReference: this.agreementReference } })
 
     if (swarm) {
       await this.ipfs.swarm.connect(multiaddr(swarm.multiaddr))

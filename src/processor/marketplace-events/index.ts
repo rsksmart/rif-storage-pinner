@@ -106,8 +106,8 @@ export class MarketplaceEventsProcessor extends EventProcessor {
 
       const store = getObject()
 
-      if (store.peerId_id !== offer?.peerId) {
-        logger.error(`PeerId assigned to Offer is not matching the locally available PeerId! Local: ${store.peerId_id}; Offer: ${offer?.peerId}`)
+      if (store.peerId !== offer?.peerId) {
+        logger.error(`PeerId assigned to Offer is not matching the locally available PeerId! Local: ${store.peerId}; Offer: ${offer?.peerId}`)
       }
       store.totalCapacity = offer?.totalCapacity
 

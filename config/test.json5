@@ -1,5 +1,8 @@
 {
   db: 'db_test.sqlite',
+  comms: {
+    bootnodes: ['/ip4/127.0.0.1/tcp/6030/ws/p2p/QmbQJ4FyVBAar7rLwc1jjeJ6Nba6w2ddqczamJL6vTDrwm']
+  },
   ipfs: {
     clientOptions: {
       url: 'http://localhost:5003'
@@ -18,5 +21,8 @@
       // Interval in milliseconds, how often is blockchain checked.
       pollingInterval: 200
     }
+  },
+  log: {
+    level: 'info'
   }
 }

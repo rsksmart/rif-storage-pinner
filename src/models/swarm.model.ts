@@ -10,5 +10,5 @@ export default class SwarmModel extends Model {
   multiaddr!: string
 
   @Column({ allowNull: false })
-  publicKey!: number
+  agreementReference!: number
 }

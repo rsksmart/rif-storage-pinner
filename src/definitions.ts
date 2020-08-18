@@ -255,8 +255,8 @@ export interface AgreementSizeExceededPayload {
 }
 
 export interface PeerIdAnnouncementPayload {
-  offer: string
-  peerId: string
+  agreementReference: string
+  multiaddr: string
 }
 
 export interface CommsMessage <Payload> {

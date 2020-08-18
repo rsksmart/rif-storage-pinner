@@ -9,7 +9,8 @@ import { AbiItem, asciiToHex } from 'web3-utils'
 import { promisify } from 'util'
 import type { HttpProvider } from 'web3-core'
 import { Sequelize } from 'sequelize'
-import { reset as resetStore } from 'sequelize-store'
+import { getObject, reset as resetStore } from 'sequelize-store'
+import PeerId from 'peer-id'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
@@ -167,6 +168,18 @@ export class TestingApp {
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
     this.logger.info('IPFS clients created')
+
+    // Populate peerId
+    const testPeerId = (await PeerId.create({
+      keyType: 'RSA',
+      bits: 2048
+    }))
+    const peerIdJson = testPeerId.toJSON()
+
+    const store = getObject()
+    store.peerId = peerIdJson.id
+    store.peerPubKey = peerIdJson.pubKey as string
+    store.peerPrivKey = peerIdJson.privKey
   }
 
   async start (options?: Partial<AppOptions>): Promise<void> {
