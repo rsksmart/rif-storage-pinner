@@ -44,9 +44,11 @@ export async function start (): Promise<void> {
 
   libp2p = await createLibP2P({
     peerId,
+    addresses: { listen: ['/ip4/127.0.0.1/tcp/0'] },
     config: {
       peerDiscovery: {
         bootstrap: {
+          enabled: true,
           list: config.get<string[]>('comms.bootnodes')
         }
       }
