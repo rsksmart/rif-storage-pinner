@@ -71,15 +71,16 @@ export default class InitCommand extends BaseCommand {
       const peerId = (await PeerId.create({
         keyType: this.parsedArgs.flags.keyType,
         bits: this.parsedArgs.flags.keySize
-      })).toJSON()
+      }))
+      const peerIdJson = peerId.toJSON()
 
-      store.peerId = peerId.id
-      store.peerPubKey = peerId.pubKey
-      store.peerPrivKey = peerId.privKey
+      store.peerId = peerIdJson.id
+      store.peerPubKey = peerIdJson.pubKey as string
+      store.peerPrivKey = peerIdJson.privKey
       this.spinner.stop()
 
       const uiUrl = config.get<string>('uiUrl')
-      this.log(`Create Offer here: ${uiUrl.replace(PEER_ID_PLACEHOLDER, peerId.toB58String()}`)
+      this.log(`Create Offer here: ${uiUrl.replace(PEER_ID_PLACEHOLDER, peerId.toB58String())}`)
       this.log(`Or input your PeerId into the form: ${peerId.toB58String()}`)
 
       await forStoreFinish()
