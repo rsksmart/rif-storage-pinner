@@ -27,6 +27,8 @@ export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 export const providerAddress = '0xB22230f21C57f5982c2e7C91162799fABD5733bE'
 export const errorSpy = sinon.spy()
 export const appResetCallbackSpy = sinon.spy()
+export let TEST_PEER_ID: string
+export let TEST_PEER_ID_JSON: Record<any, any>
 
 function errorHandlerStub (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> {
   return (...args) => {
@@ -170,16 +172,19 @@ export class TestingApp {
     this.logger.info('IPFS clients created')
 
     // Populate peerId
-    const testPeerId = (await PeerId.create({
-      keyType: 'RSA',
-      bits: 2048
-    }))
-    const peerIdJson = testPeerId.toJSON()
+    if (!TEST_PEER_ID_JSON) {
+      const peerId = (await PeerId.create({
+        keyType: 'RSA',
+        bits: 2048
+      }))
+      TEST_PEER_ID_JSON = peerId.toJSON()
+    }
 
     const store = getObject()
-    store.peerId = peerIdJson.id
-    store.peerPubKey = peerIdJson.pubKey as string
-    store.peerPrivKey = peerIdJson.privKey
+    store.peerId = TEST_PEER_ID_JSON.id
+    store.peerPubKey = TEST_PEER_ID_JSON.pubKey as string
+    store.peerPrivKey = TEST_PEER_ID_JSON.privKey
+    TEST_PEER_ID = TEST_PEER_ID_JSON.id
   }
 
   async start (options?: Partial<AppOptions>): Promise<void> {
@@ -246,7 +251,7 @@ export class TestingApp {
       throw new Error('Provider should be initialized and has at least 2 accounts and StorageManage contract should be deployed')
     }
 
-    const testPeerId = 'FakePeerId'
+    const testPeerId = TEST_PEER_ID
     const testPeerIdHex = asciiToHex(testPeerId, 32).replace('0x', '')
     const nodeIdFlag = '01'
     const msg = [`0x${nodeIdFlag}${testPeerIdHex}`]
