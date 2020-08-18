@@ -203,7 +203,7 @@ export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEvents
 
 export type StorageEvents = BlockchainEvent | MarketplaceEvent
 
-/**
+/****************************************************************************************
  * CLI
  */
 export interface InitCommandOption {
@@ -214,24 +214,24 @@ export interface InitCommandOption {
 
 export type CliInitDbOptions = { migrate?: boolean }
 
-/**
+/****************************************************************************************
  * Communications
  */
 
 export enum MessageCodesEnum {
-  I_GENERAL = 0,
-  I_AGREEMENT_NEW = 1,
-  I_AGREEMENT_STOPPED = 2,
-  I_AGREEMENT_EXPIRED = 2,
-  I_HASH_START = 5,
-  I_HASH_PINNED = 6,
-  I_PEERID_ANNOUNCEMENT = 7,
-  I_RESEND_LATEST_MESSAGES = 7,
-  W_GENERAL = 100,
-  W_HASH_RETRY = 101,
-  E_GENERAL = 1000,
-  E_HASH_NOT_FOUND = 1001,
-  E_AGREEMENT_SIZE_LIMIT_EXCEEDED = 1002
+  I_GENERAL = 'I_GEN',
+  I_AGREEMENT_NEW = 'I_AGR_NEW',
+  I_AGREEMENT_STOPPED = 'I_AGR_STOP',
+  I_AGREEMENT_EXPIRED = 'I_AGR_EXP',
+  I_HASH_START = 'I_HASH_START',
+  I_HASH_PINNED = 'I_HASH_STOP',
+  I_MULTIADDR_ANNOUNCEMENT = 'I_ADDR_ANNOUNCE',
+  I_RESEND_LATEST_MESSAGES = 'I_RESEND',
+  W_GENERAL = 'W_GEN',
+  W_HASH_RETRY = 'W_HASH_RETRY',
+  E_GENERAL = 'E_GEN',
+  E_HASH_NOT_FOUND = 'E_HASH_404',
+  E_AGREEMENT_SIZE_LIMIT_EXCEEDED = 'E_AGR_SIZE_OVERFLOW'
 }
 
 export interface RetryPayload {
@@ -254,14 +254,14 @@ export interface AgreementSizeExceededPayload {
   expectedSize: number
 }
 
-export interface PeerIdAnnouncementPayload {
-  offer: string
-  peerId: string
+export interface MultiaddrAnnouncementPayload {
+  agreementReference: string
+  multiaddr: string
 }
 
 export interface CommsMessage <Payload> {
   timestamp: number
   version: number
-  code: number
+  code: string
   payload: Payload
 }

@@ -1,13 +1,13 @@
 import { CommsMessage, MessageCodesEnum } from '../definitions'
 import type {
-  PeerIdAnnouncementPayload
+  MultiaddrAnnouncementPayload
 } from '../definitions'
 import { loggingFactory } from '../logger'
 
 const logger = loggingFactory('comms:handler')
 
 // eslint-disable-next-line require-await
-async function handlePeerIdAnnouncement (message: CommsMessage<PeerIdAnnouncementPayload>): Promise<void> {
+async function handlePeerIdAnnouncement (message: CommsMessage<MultiaddrAnnouncementPayload>): Promise<void> {
   // TODO: Implement this
   throw new Error('Not implemented')
 }
@@ -20,8 +20,8 @@ async function handleResendLatestMessages (message: CommsMessage<null>): Promise
 
 export async function handle (message: CommsMessage<any>): Promise<void> {
   switch (message.code) {
-    case MessageCodesEnum.I_PEERID_ANNOUNCEMENT:
-      await handlePeerIdAnnouncement(message as CommsMessage<PeerIdAnnouncementPayload>)
+    case MessageCodesEnum.I_MULTIADDR_ANNOUNCEMENT:
+      await handlePeerIdAnnouncement(message as CommsMessage<MultiaddrAnnouncementPayload>)
       break
     case MessageCodesEnum.I_RESEND_LATEST_MESSAGES:
       await handleResendLatestMessages(message as CommsMessage<null>)
