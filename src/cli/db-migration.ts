@@ -7,7 +7,7 @@ import { loggingFactory } from '../logger'
 import BaseCommand from '../utils'
 import DbMigration from '../../migrations'
 
-const logger = loggingFactory('cli:db')
+const logger = loggingFactory('cli:db-migration')
 
 const MigrationTemplate = `import { QueryInterface } from 'sequelize'
 import { Sequelize } from 'sequelize-typescript'
@@ -57,12 +57,12 @@ export default class DbCommand extends BaseCommand {
   static description = 'DB migration'
 
   static examples = [
-    '$ rif-pinning db --up',
-    '$ rif-pinning db --down',
-    '$ rif-pinning db --up --to 0-test',
-    '$ rif-pinning db --up --migration 01-test --migration 02-test',
-    '$ rif-pinning db --up --db ./test.sqlite --to 09-test',
-    '$ rif-pinning db --down --db ./test.sqlite --to 09-test'
+    '$ rif-pinning db-migration --up',
+    '$ rif-pinning db-migration --down',
+    '$ rif-pinning db-migration --up --to 0-test',
+    '$ rif-pinning db-migration --up --migration 01-test --migration 02-test',
+    '$ rif-pinning db-migration --up --db ./test.sqlite --to 09-test',
+    '$ rif-pinning db-migration --down --db ./test.sqlite --to 09-test'
   ]
 
   async migrate (migrations?: string[], options?: { to: string }): Promise<void> {

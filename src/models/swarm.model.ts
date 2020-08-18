@@ -7,7 +7,7 @@ import { Table, Column, Model } from 'sequelize-typescript'
 })
 export default class SwarmModel extends Model {
   @Column({ allowNull: false })
-  multiaddr!: string
+  peerId!: string
 
   @Column({ allowNull: false })
   agreementReference!: number

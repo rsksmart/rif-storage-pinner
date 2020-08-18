@@ -15,15 +15,13 @@ const logger = loggingFactory('ipfs')
 const REQUIRED_IPFS_VERSION = '>=0.5.0'
 
 class PinJob extends Job {
-  private readonly agreementReference: string
   private readonly hash: string
   private readonly ipfs: IpfsClient
   private readonly expectedSize: BigNumber
 
-  constructor (ipfs: IpfsClient, hash: string, expectedSize: BigNumber, agreementReference: string) {
+  constructor (ipfs: IpfsClient, hash: string, expectedSize: BigNumber) {
     super(hash, 'ipfs - pin')
 
-    this.agreementReference = agreementReference
     this.expectedSize = expectedSize
     this.ipfs = ipfs
     this.hash = hash
@@ -49,20 +47,11 @@ class PinJob extends Job {
         throw e
       }
     }
-    const swarm = await SwarmModel.findOne({ where: { agreementReference: this.agreementReference } })
-
-    if (swarm) {
-      await this.ipfs.swarm.connect(multiaddr(swarm.multiaddr))
-    }
 
     logger.info(`Pinning hash: ${hash} start`)
     // TODO: For this call there is applied the default 20 minutes timeout. This should be estimated using the size.
     //  https://github.com/ipfs/js-ipfs/blob/master/packages/ipfs-http-client/src/lib/core.js#L113
     await this.ipfs.pin.add(cid) // The data can be big and we don't want to automatically timeout here.
-
-    if (swarm) {
-      await this.ipfs.swarm.disconnect(multiaddr(swarm.multiaddr)).catch(logger.verbose)
-    }
   }
 }
 
@@ -106,11 +95,20 @@ export class IpfsProvider implements Provider {
    * TODO: Error handling
    * @param hash
    * @param expectedSize
-   * @param consumer
+   * @param agreementReference
    */
-  pin (hash: string, expectedSize: BigNumber, consumer: string): Promise<void> {
-    const job = new PinJob(this.ipfs, hash, expectedSize, consumer)
-    return this.jobsManager.run(job)
+  async pin (hash: string, expectedSize: BigNumber, agreementReference: string): Promise<void> {
+    const swarm = await SwarmModel.findOne({ where: { agreementReference: agreementReference } }) || { peerId: 'QmVTJjgiG1MKzm6F5d1VXE8s6SAWWC5hN7xVWLxCbmbBHo' }
+    const peer = await this.getPeer(swarm.peerId)
+
+    // Connect to peer if exist
+    if (peer) await this.ipfs.swarm.connect(peer.addresses)
+
+    const job = new PinJob(this.ipfs, hash, expectedSize)
+    await this.jobsManager.run(job)
+
+    // Disconnect from peer
+    if (peer) await this.ipfs.swarm.disconnect(peer.addresses)
   }
 
   async unpin (hash: string): Promise<void> {
@@ -118,5 +116,15 @@ export class IpfsProvider implements Provider {
     hash = hash.replace('/ipfs/', '')
     const cid = new CID(hash)
     await this.ipfs.pin.rm(cid)
+  }
+
+  async getPeer (peerId: string): Promise<{ id: string, addresses: multiaddr[] } | undefined> {
+    const peer = await this.ipfs.dht.findPeer(new CID(peerId))
+
+    if (!peer) return undefined
+    return {
+      ...peer,
+      addresses: peer.addrs.map(addr => multiaddr(`${addr.toString()}/p2p/${peer.id}`))
+    }
   }
 }
