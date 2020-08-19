@@ -33,6 +33,16 @@ export abstract class Job extends EventEmitter {
     return this.entity.state
   }
 
+  // eslint-disable-next-line require-await
+  async pre () {
+    return Promise.resolve()
+  }
+
+  // eslint-disable-next-line require-await
+  async after () {
+    return Promise.resolve()
+  }
+
   public run (): void {
     (async () => {
       try {
@@ -40,7 +50,9 @@ export abstract class Job extends EventEmitter {
         this.entity.start = new Date(Date.now())
         await this.entity.save()
 
+        await this.pre()
         await this._run()
+        await this.after()
 
         this.entity.state = JobState.FINISHED
         this.entity.finish = new Date(Date.now())
