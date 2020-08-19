@@ -22,7 +22,7 @@ export enum Providers {
 }
 
 export interface Provider {
-  pin (hash: string, expectedSize: BigNumber, consumer: string): Promise<void>
+  pin (hash: string, expectedSize: BigNumber, agreementReference: string): Promise<void>
   unpin (hash: string): void
 }
 
@@ -256,7 +256,7 @@ export interface AgreementSizeExceededPayload {
 
 export interface PeerIdAnnouncementPayload {
   agreementReference: string
-  multiaddr: string
+  peerId: string
 }
 
 export interface CommsMessage <Payload> {

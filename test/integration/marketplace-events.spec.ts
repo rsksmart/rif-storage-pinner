@@ -189,6 +189,7 @@ describe('Marketplace Strategy', function () {
       const ipfs = await initIpfsClient(consumerIpfsUrl)
       file = await uploadRandomData(ipfs)
 
+      await TestingApp.generatePeerId()
       const offer = mockOffer()
       const agreements = [
         mockAgreement(),

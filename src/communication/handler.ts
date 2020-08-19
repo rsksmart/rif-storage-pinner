@@ -9,8 +9,8 @@ const logger = loggingFactory('comms:handler')
 
 // eslint-disable-next-line require-await
 async function handlePeerIdAnnouncement (message: CommsMessage<PeerIdAnnouncementPayload>): Promise<void> {
-  const { payload: { multiaddr, agreementReference } } = message
-  await SwarmModel.create({ multiaddr, agreementReference })
+  const { payload: { peerId, agreementReference } } = message
+  await SwarmModel.create({ peerId, agreementReference })
 
   throw new Error('Not implemented')
 }

@@ -9,7 +9,7 @@ import { AbiItem, asciiToHex } from 'web3-utils'
 import { promisify } from 'util'
 import type { HttpProvider } from 'web3-core'
 import { Sequelize } from 'sequelize'
-import { getObject, reset as resetStore } from 'sequelize-store'
+import { getObject, reset as resetStore, getEndPromise } from 'sequelize-store'
 import PeerId from 'peer-id'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
@@ -137,27 +137,19 @@ export class TestingApp {
     return TestingApp.app
   }
 
-  async init (): Promise<void> {
-    const strategy = config.get<string>('strategy')
-
-    switch (strategy) {
-      case Strategy.Blockchain:
-        // Init Blockchain Provider
-        await this.initBlockchainProvider()
-        // Deploy StorageManager for provider
-        await this.deployStorageManager()
-        // Create an Offer for provider account
-        await this.createOffer()
-        break
-      case Strategy.Marketplace:
-        // Run fake marketplace service
-        await this.initCacheProvider()
-        break
-      default:
-        break
+  static async generatePeerId () {
+    // Populate peerId
+    if (!TEST_PEER_ID_JSON) {
+      const peerId = (await PeerId.create({
+        keyType: 'RSA',
+        bits: 2048
+      }))
+      TEST_PEER_ID_JSON = peerId.toJSON()
+      TEST_PEER_ID = TEST_PEER_ID_JSON.id
     }
-    this.logger.info('Strategy deps initialized')
+  }
 
+  async init (): Promise<void> {
     // Remove current testing db
     await this.purgeDb()
     this.logger.info('Database removed')
@@ -185,6 +177,27 @@ export class TestingApp {
     store.peerPubKey = TEST_PEER_ID_JSON.pubKey as string
     store.peerPrivKey = TEST_PEER_ID_JSON.privKey
     TEST_PEER_ID = TEST_PEER_ID_JSON.id
+    await getEndPromise()
+
+    const strategy = config.get<string>('strategy')
+
+    switch (strategy) {
+      case Strategy.Blockchain:
+        // Init Blockchain Provider
+        await this.initBlockchainProvider()
+        // Deploy StorageManager for provider
+        await this.deployStorageManager()
+        // Create an Offer for provider account
+        await this.createOffer()
+        break
+      case Strategy.Marketplace:
+        // Run fake marketplace service
+        await this.initCacheProvider()
+        break
+      default:
+        break
+    }
+    this.logger.info('Strategy deps initialized')
   }
 
   async start (options?: Partial<AppOptions>): Promise<void> {
@@ -251,7 +264,7 @@ export class TestingApp {
       throw new Error('Provider should be initialized and has at least 2 accounts and StorageManage contract should be deployed')
     }
 
-    const testPeerId = TEST_PEER_ID
+    const testPeerId = 'testPeerID'
     const testPeerIdHex = asciiToHex(testPeerId, 32).replace('0x', '')
     const nodeIdFlag = '01'
     const msg = [`0x${nodeIdFlag}${testPeerIdHex}`]

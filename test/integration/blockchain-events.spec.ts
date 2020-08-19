@@ -165,7 +165,7 @@ describe('Blockchain Strategy', function () {
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
       await createAgreement(app, file, 1, 60)
-      await sleep(500)
+      await sleep(1000)
 
       // Should be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
