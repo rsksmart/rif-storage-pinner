@@ -10,11 +10,11 @@ import { Sequelize } from 'sequelize-typescript'
 import { sequelizeFactory } from '../../src/sequelize'
 import { FINISHED_EVENT_NAME, Job, JobsManager } from '../../src/jobs-manager'
 import { randomHex } from 'web3-utils'
-import { JobState } from '../../src/definitions'
+import { JobState, MessageCodesEnum } from '../../src/definitions'
 import JobModel from '../../src/models/job.model'
 import { runAndAwaitFirstEvent } from '../../src/utils'
 import { HashExceedsSizeError } from '../../src/errors'
-import { channel, MessageCodesEnum } from '../../src/communication'
+import * as channel from '../../src/communication'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)

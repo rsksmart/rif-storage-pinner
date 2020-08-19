@@ -40,7 +40,7 @@ class PinJob extends Job {
     }
   }
 
-  async pre (): Promise<void> {
+  async swarmConnect (): Promise<void> {
     logger.debug('In Pinning Job pre hook')
     const swarm = await SwarmModel.findOne({ where: { agreementReference: this.agreementReference } })
 
@@ -52,7 +52,7 @@ class PinJob extends Job {
     }
   }
 
-  async after (): Promise<void> {
+  async swarmDisconnect (): Promise<void> {
     logger.debug('In Pinning Job after hook')
 
     // Disconnect from peer
@@ -82,10 +82,14 @@ class PinJob extends Job {
       }
     }
 
+    await this.swarmConnect().catch(logger.warn)
+
     logger.info(`Pinning hash: ${hash} start`)
     // TODO: For this call there is applied the default 20 minutes timeout. This should be estimated using the size.
     //  https://github.com/ipfs/js-ipfs/blob/master/packages/ipfs-http-client/src/lib/core.js#L113
     await this.ipfs.pin.add(cid) // The data can be big and we don't want to automatically timeout here.
+
+    await this.swarmDisconnect().catch(logger.warn)
   }
 }
 
@@ -131,9 +135,9 @@ export class IpfsProvider implements Provider {
    * @param expectedSize
    * @param agreementReference
    */
-  async pin (hash: string, expectedSize: BigNumber, agreementReference: string): Promise<void> {
+  pin (hash: string, expectedSize: BigNumber, agreementReference: string): Promise<void> {
     const job = new PinJob(this.ipfs, hash, expectedSize, agreementReference)
-    await this.jobsManager.run(job)
+    return this.jobsManager.run(job)
   }
 
   async unpin (hash: string): Promise<void> {

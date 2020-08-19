@@ -10,11 +10,12 @@ import { Op } from 'sequelize'
 import config from 'config'
 import type Sinon from 'sinon'
 
+import { MessageCodesEnum } from '../../src/definitions'
 import { sequelizeFactory } from '../../src/sequelize'
 import Agreement from '../../src/models/agreement.model'
 import { ProviderManager } from '../../src/providers'
 import { collectPinsClosure } from '../../src/gc'
-import { channel, MessageCodesEnum } from '../../src/communication'
+import * as channel from '../../src/communication'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
