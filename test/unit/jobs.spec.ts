@@ -5,6 +5,7 @@ import chaiAsPromised from 'chai-as-promised'
 import sinonChai from 'sinon-chai'
 import sinon from 'sinon'
 import type Sinon from 'sinon'
+import config from 'config'
 import { Sequelize } from 'sequelize-typescript'
 
 import { sequelizeFactory } from '../../src/sequelize'
@@ -15,6 +16,9 @@ import JobModel from '../../src/models/job.model'
 import { runAndAwaitFirstEvent } from '../../src/utils'
 import { HashExceedsSizeError } from '../../src/errors'
 import * as channel from '../../src/communication'
+import SwarmModel from '../../src/models/swarm.model'
+import { CID, IpfsClient, multiaddr } from 'ipfs-http-client'
+import { PinJob } from '../../src/providers/ipfs'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
@@ -238,6 +242,69 @@ describe('Jobs', function () {
         size: new BigNumber(10),
         expectedSize: new BigNumber(9)
       })
+    })
+  })
+
+  describe('Pinning Job', function () {
+    const fakeAgreementReference = 'fakeReference'
+    const fakePeerId = 'QmV52RowihjoLGa4bAbYfFSMaXB6neuqCPZsZtvZjZ7xL7'
+    const fakeHash = '/ipfs/QmV52RowihjoLGa4bAbYfFSMaXB6neuqCPZsZtvZjZ7xL7'
+    const fakeSize = new BigNumber(10)
+    const fakeNodeAddress = '/ip4/127.0.0.1/tcp/4002'
+    const fakeAddresses = [multiaddr(fakeNodeAddress + '/p2p/' + fakePeerId)]
+    const ipfsStub = {
+      object: { stat: sinon.stub() },
+      pin: { add: sinon.stub() },
+      dht: { findPeer: sinon.stub() },
+      swarm: {
+        connect: sinon.stub(),
+        disconnect: sinon.stub()
+      }
+    }
+
+    beforeEach(async () => {
+      await sequelize.sync({ force: true })
+      channelSpy.resetHistory()
+      ipfsStub.object.stat.returns({ CumulativeSize: 1 })
+      ipfsStub.pin.add.returns(Promise.resolve())
+      ipfsStub.dht.findPeer.returns({ id: fakePeerId, addrs: [multiaddr(fakeNodeAddress)] })
+      ipfsStub.swarm.connect.returns(Promise.resolve())
+      ipfsStub.swarm.disconnect.returns(Promise.resolve())
+    })
+    afterEach(() => {
+      ipfsStub.object.stat.reset()
+      ipfsStub.pin.add.reset()
+      ipfsStub.dht.findPeer.reset()
+      ipfsStub.swarm.connect.reset()
+      ipfsStub.swarm.disconnect.reset()
+    })
+
+    it('call swarm connect -> pin -> swarm disconnect', async () => {
+      const hash = fakeHash.replace('/ipfs/', '')
+      await SwarmModel.create({ agreementReference: fakeAgreementReference, peerId: fakePeerId })
+
+      const job = new PinJob(ipfsStub as unknown as IpfsClient, fakeHash, fakeSize, fakeAgreementReference)
+      await job._run()
+
+      expect(ipfsStub.object.stat.calledWith(new CID(hash), { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })).to.be.true()
+      expect(ipfsStub.dht.findPeer.calledWith(new CID(fakePeerId))).to.be.true()
+      expect(ipfsStub.swarm.connect.calledWith(fakeAddresses)).to.be.true()
+      expect(ipfsStub.pin.add.calledWith(new CID(hash))).to.be.true()
+      expect(ipfsStub.swarm.connect.calledWith(fakeAddresses)).to.be.true()
+    })
+    it('size exceed error', async () => {
+      ipfsStub.object.stat.returns({ CumulativeSize: 10000000000000 })
+
+      const job = new PinJob(ipfsStub as unknown as IpfsClient, fakeHash, fakeSize, fakeAgreementReference)
+
+      await expect(job._run()).eventually.be.rejectedWith(
+        HashExceedsSizeError,
+        'The hash exceeds payed size!'
+      )
+      expect(ipfsStub.pin.add.called).to.be.false()
+      expect(ipfsStub.dht.findPeer.called).to.be.false()
+      expect(ipfsStub.swarm.connect.called).to.be.false()
+      expect(ipfsStub.swarm.disconnect.called).to.be.false()
     })
   })
 })

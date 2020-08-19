@@ -14,7 +14,7 @@ const logger = loggingFactory('ipfs')
 
 const REQUIRED_IPFS_VERSION = '>=0.5.0'
 
-class PinJob extends Job {
+export class PinJob extends Job {
   private readonly hash: string
   private readonly agreementReference: string
   private readonly ipfs: IpfsClient
