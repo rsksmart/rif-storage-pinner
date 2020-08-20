@@ -13,7 +13,7 @@ import path from 'path'
 import BaseCommand, { sleep } from '../../src/utils'
 import * as sequalize from '../../src/sequelize'
 import * as store from '../../src/store'
-import * as Migration from '../../migrations'
+import * as Migration from '../../src/migrations'
 import { AppOptions, InitCommandOption } from '../../src/definitions'
 import DaemonCommand from '../../src/cli/daemon'
 import { sequelizeFactory } from '../../src/sequelize'
@@ -21,6 +21,7 @@ import { initStore } from '../../src/store'
 import * as initAppModule from '../../src/index'
 import Agreement from '../../src/models/agreement.model'
 import { mockAgreement } from '../fake-marketplace-service'
+import DbMigration from '../../src/migrations'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
@@ -252,7 +253,8 @@ describe('CLI', function () {
 
       // Init the DB
       const sequelize = sequelizeFactory(dbPath)
-      await sequelize.sync({ force: true })
+      const migration = await DbMigration.getInstance(sequelize)
+      await migration.up()
       await initStore(sequelize)
       let store = getStore()
       store.offerId = '0x123'
