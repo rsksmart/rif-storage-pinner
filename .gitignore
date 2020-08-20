@@ -36,5 +36,6 @@ node_modules
 
 db_test.sqlite
 
+oclif.manifest.json
 .eslintrc.js
 .tsconfig.json
