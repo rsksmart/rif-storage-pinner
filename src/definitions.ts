@@ -14,6 +14,7 @@ import type {
 } from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
 import type { Eth } from 'web3-eth'
 import type { ClientOptions as IpfsOptions } from 'ipfs-http-client'
+import type { Options as Libp2pOptions } from 'libp2p'
 
 import type { ProviderManager } from './providers'
 
@@ -77,7 +78,7 @@ export interface Config {
   uiUrl?: string
 
   comms?: {
-    bootnodes?: string[]
+    libp2p?: Libp2pOptions
   }
 
   // What strategy for event listening should be used
@@ -259,7 +260,7 @@ export interface MultiaddrAnnouncementPayload {
   multiaddr: string
 }
 
-export interface CommsMessage <Payload> {
+export interface CommsMessage<Payload> {
   timestamp: number
   version: number
   code: string

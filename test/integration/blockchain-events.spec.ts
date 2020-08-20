@@ -2,9 +2,9 @@ import chai from 'chai'
 import dirtyChai from 'dirty-chai'
 import config from 'config'
 
-import { TestingApp, encodeHash, errorSpy, File, uploadRandomData, isPinned } from '../utils'
+import { encodeHash, errorSpy, File, isPinned, TestingApp, uploadRandomData } from '../utils'
 import { loggingFactory } from '../../src/logger'
-import { Strategy } from '../../src/definitions'
+import { MessageCodesEnum, Strategy } from '../../src/definitions'
 import { sleep } from '../../src/utils'
 
 chai.use(dirtyChai)
@@ -102,12 +102,19 @@ describe('Blockchain Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      await createAgreement(app, file, 1, 10000)
+      const newAgreementMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_NEW)
+      const hashStartMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_START)
+      const hashPinnedMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_PINNED)
+
+      const agreementReference = await createAgreement(app, file, 1, 10000)
 
       // Wait until we receive Event
       await sleep(1000)
 
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
+      expect(await newAgreementMsgPromise).to.deep.include({ payload: { agreementReference: agreementReference } })
+      expect(await hashStartMsgPromise).to.deep.include({ payload: { hash: file.cidString } })
+      expect(await hashPinnedMsgPromise).to.deep.include({ payload: { hash: file.cidString } })
     })
 
     it('should reject if size limit exceed', async () => {

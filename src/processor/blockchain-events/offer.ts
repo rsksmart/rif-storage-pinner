@@ -40,7 +40,7 @@ const handlers: HandlersObject<BlockchainOfferEvents, BlockchainEventProcessorOp
 
       // We don' update PeerId as it is already stored locally, but will Error if they don't match
       if (store.peerId !== offersPeerId) {
-        logger.error(`PeerId assigned to Offer is not matching the locally available PeerId! Local: ${store.peerId_id}; Offer: ${offersPeerId}`)
+        logger.error(`PeerId assigned to Offer is not matching the locally available PeerId! Local: ${store.peerId}; Offer: ${offersPeerId}`)
       }
     } else {
       logger.error(`Unknown message flag ${flag}!`)

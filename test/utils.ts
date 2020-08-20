@@ -9,12 +9,13 @@ import { AbiItem, asciiToHex } from 'web3-utils'
 import { promisify } from 'util'
 import type { HttpProvider } from 'web3-core'
 import { Sequelize } from 'sequelize'
-import { reset as resetStore } from 'sequelize-store'
-
+import { reset as resetStore, getObject } from 'sequelize-store'
+import { createLibP2P, Message, Room } from '@rsksmart/rif-communications-pubsub'
+import PeerId from 'peer-id'
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
 import { initApp } from '../src'
-import { AppOptions, Logger, Strategy } from '../src/definitions'
+import { AppOptions, CommsMessage, Logger, MessageCodesEnum, Strategy } from '../src/definitions'
 import { FakeMarketplaceService } from './fake-marketplace-service'
 import { loggingFactory } from '../src/logger'
 import { initStore } from '../src/store'
@@ -122,6 +123,7 @@ export class TestingApp {
   public ipfsConsumer: IpfsClient | undefined
   public ipfsProvider: IpfsClient | undefined
   public sequelize: Sequelize | undefined
+  public pubsub: Room | undefined
   public consumerAddress = ''
   public providerAddress = ''
 
@@ -167,6 +169,28 @@ export class TestingApp {
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
     this.logger.info('IPFS clients created')
+
+    // Create PeerId for the Pinner
+    const store = getObject()
+    const peerIdJson = (await PeerId.create()).toJSON()
+    store.peerId = peerIdJson.id
+    store.peerPubKey = peerIdJson.pubKey as string
+    store.peerPrivKey = peerIdJson.privKey
+
+    // Create PubSub room to listen on events
+    const roomName = `*:${this.contract?.options.address}:${this.providerAddress}`
+    const libp2p = await createLibP2P({
+      addresses: { listen: ['/ip4/127.0.0.1/tcp/0'] },
+      config: {
+        peerDiscovery: {
+          bootstrap: {
+            enabled: false
+          }
+        }
+      }
+    })
+    await libp2p.start()
+    this.pubsub = new Room(libp2p, roomName, { pollInterval: 100 })
   }
 
   async start (options?: Partial<AppOptions>): Promise<void> {
@@ -261,6 +285,18 @@ export class TestingApp {
       method: 'evm_mine',
       params: [],
       id: new Date().getTime()
+    })
+  }
+
+  public awaitForMessage<T> (code: MessageCodesEnum): Promise<CommsMessage<T>> {
+    return new Promise(resolve => {
+      this.pubsub!.on('message', (msg: Message) => {
+        const parsedMsg = msg as unknown as Message<CommsMessage<T>>
+
+        if (parsedMsg.data.code === code) {
+          resolve(parsedMsg.data)
+        }
+      })
     })
   }
 }

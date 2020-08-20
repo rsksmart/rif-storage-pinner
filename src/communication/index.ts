@@ -1,7 +1,7 @@
 import PeerId from 'peer-id'
 import type Libp2p from 'libp2p'
-import { Room, createLibP2P } from '@rsksmart/rif-communications-pubsub'
-import type { Message } from '@rsksmart/rif-communications-pubsub'
+import { Room, createLibP2P, DirectChat } from '@rsksmart/rif-communications-pubsub'
+import { MessageDirect } from '@rsksmart/rif-communications-pubsub/types/definitions'
 
 import { getObject } from 'sequelize-store'
 import config from 'config'
@@ -12,7 +12,7 @@ import type {
   AgreementInfoPayload,
   HashInfoPayload,
   RetryPayload,
-  AgreementSizeExceededPayload
+  AgreementSizeExceededPayload, CommsMessage
 } from '../definitions'
 import { handle } from './handler'
 
@@ -20,6 +20,7 @@ const logger = loggingFactory('comms')
 const COMMUNICATION_PROTOCOL_VERSION = 1
 
 let room: Room
+let direct: DirectChat
 let libp2p: Libp2p
 
 function getRoomTopic (): string {
@@ -42,31 +43,26 @@ export async function start (): Promise<void> {
     throw new Error('PeerId is not valid!')
   }
 
-  libp2p = await createLibP2P({
-    peerId,
-    addresses: { listen: ['/ip4/127.0.0.1/tcp/0'] },
-    config: {
-      peerDiscovery: {
-        bootstrap: {
-          enabled: true,
-          list: config.get<string[]>('comms.bootnodes')
-        }
-      }
-    }
-  })
+  const libp2pConf = {
+    ...config.get<object>('comms.libp2p'),
+    peerId
+  }
+  console.log('Libp2pConf: ', libp2pConf)
+  libp2p = await createLibP2P(libp2pConf)
+
+  await libp2p.start()
   const topic = getRoomTopic()
   logger.info(`Joining Room with topic ${topic}`)
 
   room = new Room(libp2p, topic)
   room.on('peer:joined', (peer) => logger.verbose(`Peer ${peer} joined.`))
   room.on('peer:left', (peer) => logger.verbose(`Peer ${peer} left.`))
-  room.on('message', (message: Message): void => {
-    try {
-      const parsedMessage = JSON.parse(message.data.toString())
-      handle(parsedMessage)
-    } catch (e) {
-      logger.error('We received message that is not a JSON!', message)
-    }
+  room.on('error', (e) => logger.error(e))
+
+  direct = DirectChat.getDirectChat(libp2p)
+  direct.on('error', (e) => logger.error(e))
+  direct.on('message', (message: MessageDirect): Promise<void> => {
+    return handle((message.data as unknown) as CommsMessage<any>)
   })
 }
 
@@ -75,7 +71,12 @@ export async function stop (): Promise<void> {
     throw new Error('Communication was not started yet!')
   }
 
+  room.leave()
   await libp2p.stop()
+}
+
+export function sendTo (toPeerId: string, msg: any): Promise<void> {
+  return direct.sendTo(toPeerId, msg)
 }
 
 export async function broadcast (code: MessageCodesEnum.I_AGREEMENT_NEW, payload: AgreementInfoPayload): Promise<void>

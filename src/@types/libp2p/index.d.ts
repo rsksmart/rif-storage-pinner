@@ -1,18 +1,26 @@
 declare module 'libp2p' {
   import { EventEmitter } from 'events'
 
-  interface Options {
-    peerId: any
-    addresses: {
-      listen: string[]
+  export interface Options {
+    peerId?: any
+    addresses?: {
+      listen?: string[]
     }
-    modules: {
-      transport: any[]
-      streamMuxer: any[]
-      connEncryption: any[]
-      peerDiscovery: any[]
-      dht: any
-      pubsub: any
+    config?: {
+      peerDiscovery?: {
+        bootstrap?: {
+          enabled?: boolean
+          list?: string[]
+        }
+      }
+    }
+    modules?: {
+      transport?: any[]
+      streamMuxer?: any[]
+      connEncryption?: any[]
+      peerDiscovery?: any[]
+      dht?: any
+      pubsub?: any
     }
   }
 
