@@ -23,7 +23,7 @@
     "lib",
     "types"
   ],
-  "main": "src/index.ts",
+  "main": "lib/index.js",
   "bin": {
     "rif-pinning": "./bin/run"
   },
