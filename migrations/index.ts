@@ -40,7 +40,7 @@ export class Migration {
   async pending (): Promise<Umzug.Migration[]> {
     return this.umzugIns.pending().catch(e => {
       if (e.code === 'ENOENT') return []
-      throw e
+      return Promise.reject(e)
     })
   }
 

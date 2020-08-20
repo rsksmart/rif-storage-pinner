@@ -40,7 +40,7 @@ export default class DbCommand extends BaseCommand {
     }),
     generate: flags.string({
       char: 'd',
-      description: 'Generate migration',
+      description: 'Generate migrations using template [--generate=migration_name]',
       exclusive: ['up', 'down']
     }),
     to: flags.string({
@@ -62,16 +62,27 @@ export default class DbCommand extends BaseCommand {
     '$ rif-pinning db --up --to 0-test',
     '$ rif-pinning db --up --migration 01-test --migration 02-test',
     '$ rif-pinning db --up --db ./test.sqlite --to 09-test',
-    '$ rif-pinning db --down --db ./test.sqlite --to 09-test'
+    '$ rif-pinning db --down --db ./test.sqlite --to 09-test',
+    '$ rif-pinning db --generate my_first_migration'
   ]
 
   async migrate (migrations?: string[], options?: { to: string }): Promise<void> {
+    if (!(await DbMigration.getInstance().pending()).length) {
+      this.log('No pending migrations found')
+      this.exit()
+    }
+
     this.spinner.start('DB migration')
     await DbMigration.getInstance().up(options)
     this.spinner.stop()
   }
 
   async undo (migrations?: string[], options?: { to: string }): Promise<void> {
+    if (!(await DbMigration.getInstance().executed()).length) {
+      this.log('No executed migrations found')
+      this.exit()
+    }
+
     this.spinner.start('Undo DB migration')
     await DbMigration.getInstance().down(options)
     this.spinner.stop()
