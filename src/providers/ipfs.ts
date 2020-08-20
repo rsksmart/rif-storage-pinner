@@ -6,12 +6,13 @@ import BigNumber from 'bignumber.js'
 import type { Provider } from '../definitions'
 import { loggingFactory } from '../logger'
 import { Job, JobsManager } from '../jobs-manager'
-import { HashExceedsSizeError } from '../errors'
+import { HashExceedsSizeError, NotPinnedError } from '../errors'
 import { bytesToMegabytes } from '../utils'
 
 const logger = loggingFactory('ipfs')
 
 const REQUIRED_IPFS_VERSION = '>=0.5.0'
+const NOT_PINNED_ERROR_MSG = 'not pinned or pinned indirectly'
 
 class PinJob extends Job {
   private readonly hash: string
@@ -104,6 +105,15 @@ export class IpfsProvider implements Provider {
     logger.info(`Unpinning hash: ${hash}`)
     hash = hash.replace('/ipfs/', '')
     const cid = new CID(hash)
-    await this.ipfs.pin.rm(cid)
+
+    try {
+      await this.ipfs.pin.rm(cid)
+    } catch (e) {
+      if (e.message === NOT_PINNED_ERROR_MSG) {
+        throw new NotPinnedError(`${hash} is not pinned or pinned indirectly`)
+      } else {
+        throw e
+      }
+    }
   }
 }
