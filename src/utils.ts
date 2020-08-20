@@ -11,7 +11,7 @@ import { OutputFlags } from '@oclif/parser'
 import { getObject } from 'sequelize-store'
 import type { EventEmitter } from 'events'
 
-import DbMigration from '../migrations/index'
+import DbMigration from './migrations/index'
 import type {
   BlockchainEvent,
   BlockchainEventsWithProvider,

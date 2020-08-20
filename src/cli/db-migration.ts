@@ -5,7 +5,7 @@ import { OutputFlags } from '@oclif/parser'
 
 import { loggingFactory } from '../logger'
 import BaseCommand from '../utils'
-import DbMigration from '../../migrations'
+import DbMigration from '../migrations'
 
 const logger = loggingFactory('cli:db')
 
