@@ -151,7 +151,7 @@ USAGE
 OPTIONS
   -d, --db=db                          Name or path to DB file
   -d, --down                           Undo db migration
-  -d, --generate=generate              Generate migration
+  -d, --generate=generate              Generate migrations using template [--generate=migration_name]
   -m, --migration=migration            Migration file
   -t, --to=to                          Migrate to
   -u, --up                             Migrate DB
@@ -168,6 +168,7 @@ EXAMPLES
   $ rif-pinning db --up --migration 01-test --migration 02-test
   $ rif-pinning db --up --db ./test.sqlite --to 09-test
   $ rif-pinning db --down --db ./test.sqlite --to 09-test
+  $ rif-pinning db --generate my_first_migration
 ```
 
 ### `rif-pinning help [COMMAND]`
