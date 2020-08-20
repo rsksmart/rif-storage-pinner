@@ -1,4 +1,5 @@
 import type BigNumber from 'bignumber.js'
+
 /**
  * Error for problems during processing of received events
  */
@@ -14,6 +15,34 @@ export class EventError extends Error {
     super(message)
     this.name = 'EventError'
     this.code = EventError.code
+  }
+}
+
+/**
+ * Error for problems related to providers
+ */
+export class ProviderError extends Error {
+  static code = 'PROVIDER_ERR'
+  public code: string
+
+  constructor (message: string) {
+    super(message)
+    this.name = 'ProviderError'
+    this.code = ProviderError.code
+  }
+}
+
+/**
+ * Error for problems related to providers
+ */
+export class NotPinnedError extends ProviderError {
+  static code = 'NOT_PINNED_ERR'
+  public code: string
+
+  constructor (message: string) {
+    super(message)
+    this.name = 'NotPinnedError'
+    this.code = NotPinnedError.code
   }
 }
 
