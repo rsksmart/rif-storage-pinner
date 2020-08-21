@@ -17,6 +17,7 @@
     "email": "adam@uhlir.dev"
   },
   "files": [
+    "/config",
     "/bin",
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json",
