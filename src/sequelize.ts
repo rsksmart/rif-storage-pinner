@@ -22,6 +22,7 @@ function formatLogs (msg: string): string {
 
 export function sequelizeFactory (dbPath?: string): Sequelize {
   dbPath = dbPath ?? config.get<string>('db')
+  logger.verbose(`Using DB path: ${dbPath}`)
 
   fs.mkdirSync(path.dirname(dbPath), { recursive: true })
   const dbSettings: SequelizeOptions = {

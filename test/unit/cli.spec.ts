@@ -9,11 +9,12 @@ import chaiAsPromised from 'chai-as-promised'
 import sinonChai from 'sinon-chai'
 import { getObject as getStore, getEndPromise } from 'sequelize-store'
 import path from 'path'
+import { Substitute } from '@fluffy-spoon/substitute'
+import Umzug from 'umzug'
 
 import BaseCommand, { sleep } from '../../src/utils'
-import * as sequalize from '../../src/sequelize'
 import * as store from '../../src/store'
-import * as Migration from '../../src/migrations'
+import { Migration } from '../../src/migrations'
 import { AppOptions, InitCommandOption } from '../../src/definitions'
 import DaemonCommand from '../../src/cli/daemon'
 import { sequelizeFactory } from '../../src/sequelize'
@@ -21,7 +22,7 @@ import { initStore } from '../../src/store'
 import * as initAppModule from '../../src/index'
 import Agreement from '../../src/models/agreement.model'
 import { mockAgreement } from '../fake-marketplace-service'
-import DbMigration from '../../src/migrations'
+import type { Sequelize } from 'sequelize'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
@@ -35,7 +36,7 @@ class BaseCommandMock extends BaseCommand {
 
   setInitOptions (options: InitCommandOption) { this.initOptions = { ...this.defaultInitOptions, ...options } }
 
-  get getIsDbInitialized (): boolean { return this.isDbInitialized }
+  get getSequelize (): Sequelize | undefined { return this.sequelize }
 
   get getInitDB () { return this.initDB }
 
@@ -60,55 +61,30 @@ describe('CLI', function () {
     })
 
     describe('initDB', () => {
-      const upSpy: sinon.SinonSpy = sinon.spy()
-      const syncSpy: sinon.SinonSpy = sinon.spy()
-      let sequalizeStub: any
-      let sequelizeFactoryStub: sinon.SinonStub
+      let upStub: sinon.SinonSpy
       let initStoreStub: sinon.SinonStub
-      let migrationStub: any
+
+      before(() => {
+        baseCommand = getBaseCommandMock()
+        initStoreStub = sinon.stub(store, 'initStore')
+        initStoreStub.returns(Promise.resolve())
+        upStub = sinon.stub(Migration.prototype, 'up')
+        sinon.stub(Migration.prototype, 'pending').returns(Promise.resolve([Substitute.for<Umzug.Migration>()]))
+      })
 
       beforeEach(() => {
-        baseCommand = getBaseCommandMock()
-        sequalizeStub = { sync: syncSpy } as any
-        sequelizeFactoryStub = sinon.stub(sequalize, 'sequelizeFactory').returns(sequalizeStub)
-        initStoreStub = sinon.stub(store, 'initStore').returns(Promise.resolve())
-        migrationStub = sinon.stub(Migration.default, 'getInstance').returns({ up: () => upSpy(), pending: () => Promise.resolve(['01.js']) } as any)
+        initStoreStub.resetHistory()
+        upStub.resetHistory()
       })
-      afterEach(() => {
-        syncSpy.resetHistory()
-        sequelizeFactoryStub.restore()
-        initStoreStub.restore()
-        upSpy.resetHistory()
-        migrationStub.restore()
+
+      after(() => {
+        sinon.restore()
       })
 
       it('should run migrations', async () => {
-        expect(baseCommand.getIsDbInitialized).to.be.false()
+        expect(baseCommand.getSequelize).to.be.undefined()
         await baseCommand.getInitDB('path3', { migrate: true, skipPrompt: true })
-
-        expect(upSpy.called).to.be.true()
-      })
-
-      it('should init DB: sync true', async () => {
-        expect(baseCommand.getIsDbInitialized).to.be.false()
-        await baseCommand.getInitDB('path1', { sync: true })
-
-        expect(sequelizeFactoryStub.calledOnce).to.be.true()
-        expect(sequelizeFactoryStub.calledOnceWith('path1')).to.be.true()
-        expect(initStoreStub.calledOnceWith(sequalizeStub)).to.be.true()
-        expect(syncSpy.calledOnce).to.be.true()
-        expect(baseCommand.getIsDbInitialized).to.be.true()
-      })
-      it('should init DB: sync false', async () => {
-        expect(baseCommand.getIsDbInitialized).to.be.false()
-
-        await baseCommand.getInitDB('path', { sync: false })
-
-        expect(sequelizeFactoryStub.calledOnce).to.be.true()
-        expect(sequelizeFactoryStub.calledOnceWith('path')).to.be.true()
-        expect(initStoreStub.calledOnceWith(sequalizeStub)).to.be.true()
-        expect(syncSpy.calledOnce).to.be.false()
-        expect(baseCommand.getIsDbInitialized).to.be.true()
+        expect(upStub).to.be.calledOnce()
       })
     })
 
@@ -143,7 +119,6 @@ describe('CLI', function () {
       const db = 'test'
       const flags = { db }
       const dbPath = 'testPath'
-      const fakeCommand = 'FakeCommand'
 
       const initDbStub: sinon.SinonStub = sinon.stub()
       const parseWithPromptStub: sinon.SinonStub = sinon.stub()
@@ -182,7 +157,7 @@ describe('CLI', function () {
 
         expect(baseConfigStub.calledOnceWith(flags)).to.be.true()
         expect(fsExistStub.calledOnce).to.be.true()
-        expect(initDbStub.calledOnceWith(dbPath, { migrate: false, sync: false, skipPrompt: false })).to.be.true()
+        expect(initDbStub.calledOnceWith(dbPath, { migrate: false, skipPrompt: false })).to.be.true()
       })
 
       it('init command: { db: false }', async () => {
@@ -253,7 +228,7 @@ describe('CLI', function () {
 
       // Init the DB
       const sequelize = sequelizeFactory(dbPath)
-      const migration = await DbMigration.getInstance(sequelize)
+      const migration = new Migration(sequelize)
       await migration.up()
       await initStore(sequelize)
       let store = getStore()
@@ -288,7 +263,7 @@ describe('CLI', function () {
 
       appResetCallback() // Trigger reset
 
-      await sleep(100)
+      await sleep(1000)
       agreements = await Agreement.findAll()
       expect(agreements).to.have.length(0)
       store = getStore() // fetch the new store object

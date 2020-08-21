@@ -11,7 +11,6 @@ import { OutputFlags } from '@oclif/parser'
 import { getObject } from 'sequelize-store'
 import type { EventEmitter } from 'events'
 
-import DbMigration from './migrations/index'
 import type {
   BlockchainEvent,
   BlockchainEventsWithProvider,
@@ -30,6 +29,8 @@ import { ProviderManager } from './providers'
 import { CliInitDbOptions, JobManagerOptions } from './definitions'
 import { JobsManager } from './jobs-manager'
 import { IpfsProvider } from './providers/ipfs'
+import { Migration } from './migrations/index'
+import { Sequelize } from 'sequelize'
 
 export function bnFloor (v: string | number | BigNumber): BigNumber {
   return new BigNumber(v).integerValue(BigNumber.ROUND_FLOOR)
@@ -130,11 +131,11 @@ export function promptForFlag (flag: IOptionFlag<any>): IOptionFlag<any> {
  */
 export default abstract class BaseCommand extends Command {
   protected initOptions: InitCommandOption
-  protected defaultInitOptions: InitCommandOption = { baseConfig: true, db: { sync: false, migrate: false }, serviceRequired: true }
+  protected defaultInitOptions: InitCommandOption = { baseConfig: true, db: { migrate: false }, serviceRequired: true }
   protected configuration: Record<string, any> = {}
   protected parsedArgs: any
-  protected dbPath: string | undefined
-  protected isDbInitialized = false
+  protected dbPath?: string
+  protected sequelize?: Sequelize
   static flags = {
     db: flags.string({
       char: 'd',
@@ -191,7 +192,7 @@ export default abstract class BaseCommand extends Command {
   }
 
   protected get offerId (): string {
-    if (!this.isDbInitialized) throw new Error('DB is not initialized')
+    if (!this.sequelize) throw new Error('DB is not initialized')
     const store = getObject()
 
     if (!store.offerId) throw new Error('Offer Id is not found in DB')
@@ -260,13 +261,9 @@ export default abstract class BaseCommand extends Command {
     return parsed
   }
 
-  protected async initDB (path: string, options?: CliInitDbOptions & { skipPrompt?: boolean }): Promise<void> {
+  protected async initDB (path: string, options?: CliInitDbOptions & { skipPrompt?: boolean }): Promise<Sequelize> {
     const sequelize = await sequelizeFactory(path)
-    const migrator = DbMigration.getInstance(sequelize)
-
-    if (options?.sync) {
-      await sequelize.sync({ force: true })
-    }
+    const migrator = new Migration(sequelize)
 
     // Init store
     await initStore(sequelize)
@@ -282,7 +279,8 @@ export default abstract class BaseCommand extends Command {
       }
     }
 
-    this.isDbInitialized = true
+    this.sequelize = sequelize
+    return sequelize
   }
 
   protected parseWithPrompt (command: any): Promise<Record<string, any>> {

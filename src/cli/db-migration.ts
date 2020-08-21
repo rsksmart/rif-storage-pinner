@@ -5,7 +5,7 @@ import { OutputFlags } from '@oclif/parser'
 
 import { loggingFactory } from '../logger'
 import BaseCommand from '../utils'
-import DbMigration from '../migrations'
+import { Migration } from '../migrations'
 
 const logger = loggingFactory('cli:db')
 
@@ -25,7 +25,7 @@ export default {
 `
 
 export default class DbCommand extends BaseCommand {
-  static hidden: boolean;
+  static hidden: boolean
   static flags = {
     ...BaseCommand.flags,
     up: flags.boolean({
@@ -66,25 +66,25 @@ export default class DbCommand extends BaseCommand {
     '$ rif-pinning db --generate my_first_migration'
   ]
 
-  async migrate (migrations?: string[], options?: { to: string }): Promise<void> {
-    if (!(await DbMigration.getInstance().pending()).length) {
+  async migrate (migrator: Migration, migrations?: string[], options?: { to: string }): Promise<void> {
+    if (!(await migrator.pending()).length) {
       this.log('No pending migrations found')
       this.exit()
     }
 
     this.spinner.start('DB migration')
-    await DbMigration.getInstance().up(options)
+    await migrator.up(options)
     this.spinner.stop()
   }
 
-  async undo (migrations?: string[], options?: { to: string }): Promise<void> {
-    if (!(await DbMigration.getInstance().executed()).length) {
+  async undo (migrator: Migration, migrations?: string[], options?: { to: string }): Promise<void> {
+    if (!(await migrator.executed()).length) {
       this.log('No executed migrations found')
       this.exit()
     }
 
     this.spinner.start('Undo DB migration')
-    await DbMigration.getInstance().down(options)
+    await migrator.down(options)
     this.spinner.stop()
   }
 
@@ -114,9 +114,15 @@ export default class DbCommand extends BaseCommand {
 
     if (!flags.up && !flags.down && !flags.generate) throw new Error('One of \'--generate, --up, --down\'  required')
 
-    if (flags.up) await this.migrate(flags.migration, flags)
+    if (!this.sequelize) {
+      throw new Error('DB not instantiated!')
+    }
 
-    if (flags.down) await this.undo(flags.migration, flags)
+    const migrator = new Migration(this.sequelize)
+
+    if (flags.up) await this.migrate(migrator, flags.migration, flags)
+
+    if (flags.down) await this.undo(migrator, flags.migration, flags)
 
     if (flags.generate) this.generateMigration(flags.generate)
 

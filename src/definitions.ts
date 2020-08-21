@@ -204,4 +204,4 @@ export interface InitCommandOption {
   serviceRequired?: boolean
 }
 
-export type CliInitDbOptions = { sync?: boolean, migrate?: boolean }
+export type CliInitDbOptions = { migrate?: boolean }

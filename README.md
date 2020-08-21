@@ -27,8 +27,6 @@
 > npm install @rsksmart/rif-storage-pinning
 ```
 
-**WARNING: This package still have not been released!**
-
 ## Usage
 
 Example of usage:
