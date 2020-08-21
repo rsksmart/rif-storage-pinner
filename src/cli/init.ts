@@ -33,15 +33,17 @@ export default class InitCommand extends BaseCommand {
     if (!isAddress(offerId)) throw new Error('Invalid Offer Address')
 
     if (fs.existsSync(this.dbPath as string)) {
-      if (!this.parsedArgs.flags.skipPrompt && !(await this.confirm('Are you sure you want to overwrite your current DB? (y/n)'))) {
+      if (!this.parsedArgs.flags.skipPrompt && !(await this.confirm('Are you sure you want to overwrite your current DB? All data will be erased! (y/n)'))) {
         this.exit()
+      } else {
+        fs.unlinkSync(this.dbPath as string)
       }
     }
 
     try {
       // Init DB
       this.spinner.start('Init DB')
-      await this.initDB(this.dbPath as string, { sync: true, migrate: true, skipPrompt: true })
+      await this.initDB(this.dbPath as string, { migrate: true, skipPrompt: true })
       this.spinner.stop()
 
       // Store offerId

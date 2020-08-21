@@ -54,7 +54,7 @@ export default class AgreementsCommand extends BaseCommand {
   ]
 
   constructor (argv: string[], config: IConfig) {
-    super(argv, config, { db: { sync: false, migrate: true } })
+    super(argv, config, { db: { migrate: true } })
   }
 
   static getStatus (agreement: Agreement): string {

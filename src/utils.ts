@@ -30,6 +30,7 @@ import { ProviderManager } from './providers'
 import { CliInitDbOptions, JobManagerOptions } from './definitions'
 import { JobsManager } from './jobs-manager'
 import { IpfsProvider } from './providers/ipfs'
+import { Sequelize } from 'sequelize'
 
 export function bnFloor (v: string | number | BigNumber): BigNumber {
   return new BigNumber(v).integerValue(BigNumber.ROUND_FLOOR)
@@ -130,7 +131,7 @@ export function promptForFlag (flag: IOptionFlag<any>): IOptionFlag<any> {
  */
 export default abstract class BaseCommand extends Command {
   protected initOptions: InitCommandOption
-  protected defaultInitOptions: InitCommandOption = { baseConfig: true, db: { sync: false, migrate: false }, serviceRequired: true }
+  protected defaultInitOptions: InitCommandOption = { baseConfig: true, db: { migrate: false }, serviceRequired: true }
   protected configuration: Record<string, any> = {}
   protected parsedArgs: any
   protected dbPath: string | undefined
@@ -260,13 +261,9 @@ export default abstract class BaseCommand extends Command {
     return parsed
   }
 
-  protected async initDB (path: string, options?: CliInitDbOptions & { skipPrompt?: boolean }): Promise<void> {
+  protected async initDB (path: string, options?: CliInitDbOptions & { skipPrompt?: boolean }): Promise<Sequelize> {
     const sequelize = await sequelizeFactory(path)
     const migrator = DbMigration.getInstance(sequelize)
-
-    if (options?.sync) {
-      await sequelize.sync({ force: true })
-    }
 
     // Init store
     await initStore(sequelize)
@@ -283,6 +280,7 @@ export default abstract class BaseCommand extends Command {
     }
 
     this.isDbInitialized = true
+    return sequelize
   }
 
   protected parseWithPrompt (command: any): Promise<Record<string, any>> {

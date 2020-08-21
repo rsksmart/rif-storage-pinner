@@ -46,7 +46,7 @@ export default class DaemonCommand extends BaseCommand {
   }
 
   constructor (argv: string[], config: IConfig) {
-    super(argv, config, { db: { sync: false, migrate: true } })
+    super(argv, config, { db: { migrate: true } })
   }
 
   protected baseConfig (flags: OutputFlags<typeof DaemonCommand.flags>): void {
@@ -114,7 +114,7 @@ export default class DaemonCommand extends BaseCommand {
       fs.unlinkSync(this.dbPath as string)
       this.isDbInitialized = false
       resetStore() // We need to reset the store object so it gets re-initted
-      await this.initDB(this.dbPath as string, { sync: true, migrate: true, skipPrompt: true })
+      await this.initDB(this.dbPath as string, { migrate: true, skipPrompt: true })
       this.offerId = offerId // Lets reset the offerId so the DB is properly configured
 
       logger.info('Restarting the app')
