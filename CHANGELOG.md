@@ -1,3 +1,13 @@
+<a name="0.1.0-pre.2"></a>
+# [0.1.0-pre.2](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.1...v0.1.0-pre.2) (2020-08-21)
+
+
+### Bug Fixes
+
+* migrate also js migrations ([553560b](https://github.com/rsksmart/rds-ipfs/commit/553560b))
+
+
+
 <a name="0.1.0-pre.1"></a>
 # [0.1.0-pre.1](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.0...v0.1.0-pre.1) (2020-08-21)
 
