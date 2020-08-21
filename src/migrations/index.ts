@@ -2,7 +2,7 @@ import path from 'path'
 import Umzug from 'umzug'
 
 import { loggingFactory } from '../logger'
-import { Sequelize } from 'sequelize-typescript'
+import { Sequelize } from 'sequelize'
 
 const logger = loggingFactory('db:migration')
 
@@ -47,18 +47,5 @@ export class Migration {
   // eslint-disable-next-line require-await
   async executed (): Promise<Umzug.Migration[]> {
     return this.umzugIns.executed()
-  }
-}
-
-export default class DbMigration {
-  private static ins: Migration | undefined
-
-  static getInstance (sequelize?: Sequelize): Migration {
-    if (!DbMigration.ins) {
-      if (!sequelize) throw new Error('You need to provide Sequelize instance')
-      DbMigration.ins = new Migration(sequelize)
-    }
-
-    return DbMigration.ins
   }
 }

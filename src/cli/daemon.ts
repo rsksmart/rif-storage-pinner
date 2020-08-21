@@ -112,7 +112,7 @@ export default class DaemonCommand extends BaseCommand {
 
       logger.info('Removing current DB')
       fs.unlinkSync(this.dbPath as string)
-      this.isDbInitialized = false
+      this.sequelize = undefined
       resetStore() // We need to reset the store object so it gets re-initted
       await this.initDB(this.dbPath as string, { migrate: true, skipPrompt: true })
       this.offerId = offerId // Lets reset the offerId so the DB is properly configured

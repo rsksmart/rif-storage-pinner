@@ -9,10 +9,12 @@ import chaiAsPromised from 'chai-as-promised'
 import sinonChai from 'sinon-chai'
 import { getObject as getStore, getEndPromise } from 'sequelize-store'
 import path from 'path'
+import { Substitute } from '@fluffy-spoon/substitute'
+import Umzug from 'umzug'
 
 import BaseCommand, { sleep } from '../../src/utils'
 import * as store from '../../src/store'
-import * as Migration from '../../src/migrations'
+import { Migration } from '../../src/migrations'
 import { AppOptions, InitCommandOption } from '../../src/definitions'
 import DaemonCommand from '../../src/cli/daemon'
 import { sequelizeFactory } from '../../src/sequelize'
@@ -20,7 +22,6 @@ import { initStore } from '../../src/store'
 import * as initAppModule from '../../src/index'
 import Agreement from '../../src/models/agreement.model'
 import { mockAgreement } from '../fake-marketplace-service'
-import DbMigration from '../../src/migrations'
 import type { Sequelize } from 'sequelize'
 
 chai.use(sinonChai)
@@ -60,29 +61,30 @@ describe('CLI', function () {
     })
 
     describe('initDB', () => {
-      const upSpy: sinon.SinonSpy = sinon.spy()
+      let upStub: sinon.SinonSpy
       let initStoreStub: sinon.SinonStub
-      let migrationStub: any
+
+      before(() => {
+        baseCommand = getBaseCommandMock()
+        initStoreStub = sinon.stub(store, 'initStore')
+        initStoreStub.returns(Promise.resolve())
+        upStub = sinon.stub(Migration.prototype, 'up')
+        sinon.stub(Migration.prototype, 'pending').returns(Promise.resolve([Substitute.for<Umzug.Migration>()]))
+      })
 
       beforeEach(() => {
-        baseCommand = getBaseCommandMock()
-        initStoreStub = sinon.stub(store, 'initStore').returns(Promise.resolve())
-        migrationStub = sinon.stub(Migration.default, 'getInstance').returns({
-          up: () => upSpy(),
-          pending: () => Promise.resolve(['01.js'])
-        } as any)
+        initStoreStub.resetHistory()
+        upStub.resetHistory()
       })
-      afterEach(() => {
-        initStoreStub.restore()
-        upSpy.resetHistory()
-        migrationStub.restore()
+
+      after(() => {
+        sinon.restore()
       })
 
       it('should run migrations', async () => {
         expect(baseCommand.getSequelize).to.be.undefined()
         await baseCommand.getInitDB('path3', { migrate: true, skipPrompt: true })
-
-        expect(upSpy.called).to.be.true()
+        expect(upStub).to.be.calledOnce()
       })
     })
 
@@ -226,7 +228,7 @@ describe('CLI', function () {
 
       // Init the DB
       const sequelize = sequelizeFactory(dbPath)
-      const migration = await DbMigration.getInstance(sequelize)
+      const migration = new Migration(sequelize)
       await migration.up()
       await initStore(sequelize)
       let store = getStore()
