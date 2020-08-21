@@ -19,7 +19,7 @@ export default class DaemonCommand extends BaseCommand {
   static examples = [
     '$ rif-pinning daemon --strategy=blockchain --provider \'ws://localhost:8546\' --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet',
     '',
-    '$ rif-pinning daemon --strategy=marketplace --ipfs \'/ip4/127.0.0.1/tcp/5001\' --network testnet'
+    '$ rif-pinning daemon --strategy=marketplace --ipfs \'http://localhost:5001\' --network testnet'
   ]
 
   static flags = {
