@@ -1,3 +1,8 @@
+<a name="0.1.0-pre.1"></a>
+# [0.1.0-pre.1](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.0...v0.1.0-pre.1) (2020-08-21)
+
+
+
 <a name="0.1.0-pre.0"></a>
 # [0.1.0-pre.0](https://github.com/rsksmart/rds-ipfs/compare/v0.0.1...v0.1.0-pre.0) (2020-08-21)
 
