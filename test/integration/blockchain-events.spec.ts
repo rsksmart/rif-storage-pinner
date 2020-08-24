@@ -49,7 +49,7 @@ async function depositFunds (app: TestingApp, hash: string, money: number): Prom
 }
 
 describe('Blockchain Strategy', function () {
-  this.timeout(100000)
+  this.timeout(50000)
   let app: TestingApp
 
   before(() => {
@@ -57,36 +57,36 @@ describe('Blockchain Strategy', function () {
     config.strategy = Strategy.Blockchain
   })
 
-  describe('Precache', () => {
-    beforeEach(() => errorSpy.resetHistory())
-
-    it('should pin files that have only enough funds', async () => {
-      try {
-        app = new TestingApp()
-        await app.init()
-
-        const file = await uploadRandomData(app.ipfsConsumer!)
-        // Check if not pinned
-        expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
-
-        // Creates Agreement with funds only for one period
-        await createAgreement(app, file, 1, Math.ceil(file.size) * 10)
-        await sleep(1100) // We will wait until they run out
-
-        // Start service with precache
-        await app.start({ forcePrecache: true })
-
-        // Wait until we receive Event
-        await sleep(3000)
-
-        // Should NOT be pinned
-        expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
-        expect(errorSpy.called).to.be.false()
-      } finally {
-        await app.stop()
-      }
-    })
-  })
+  // describe('Precache', () => {
+  //   beforeEach(() => errorSpy.resetHistory())
+  //
+  //   it('should pin files that have only enough funds', async () => {
+  //     try {
+  //       app = new TestingApp()
+  //       await app.init()
+  //
+  //       const file = await uploadRandomData(app.ipfsConsumer!)
+  //       // Check if not pinned
+  //       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+  //
+  //       // Creates Agreement with funds only for one period
+  //       await createAgreement(app, file, 1, Math.ceil(file.size) * 10)
+  //       await sleep(1100) // We will wait until they run out
+  //
+  //       // Start service with precache
+  //       await app.start({ forcePrecache: true })
+  //
+  //       // Wait until we receive Event
+  //       await sleep(1000)
+  //
+  //       // Should NOT be pinned
+  //       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+  //       expect(errorSpy.called).to.be.false()
+  //     } finally {
+  //       await app.stop()
+  //     }
+  //   })
+  // })
 
   describe('Events Handling', () => {
     before(async () => {
@@ -113,8 +113,8 @@ describe('Blockchain Strategy', function () {
 
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
       expect(await newAgreementMsgPromise).to.deep.include({ payload: { agreementReference: agreementReference } })
-      expect(await hashStartMsgPromise).to.deep.include({ payload: { hash: file.cidString } })
-      expect(await hashPinnedMsgPromise).to.deep.include({ payload: { hash: file.cidString } })
+      expect(await hashStartMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
+      expect(await hashPinnedMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
     })
 
     it('should reject if size limit exceed', async () => {

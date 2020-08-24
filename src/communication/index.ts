@@ -23,13 +23,13 @@ let room: Room
 let direct: DirectChat
 let libp2p: Libp2p
 
-function getRoomTopic (): string {
+function getRoomTopic (offerId?: string, contractAddress?: string): string {
   const store = getObject()
 
-  return `${config.get<string>('blockchain.networkId')}:${config.get<string>('blockchain.contractAddress')}:${store.offerId}`
+  return `${config.get<string>('blockchain.networkId')}:${contractAddress ?? config.get<string>('blockchain.contractAddress')}:${offerId ?? store.offerId}`
 }
 
-export async function start (): Promise<void> {
+export async function start (offerId?: string, contractAddress?: string): Promise<void> {
   const store = getObject()
 
   const peerId = await PeerId.createFromJSON({
@@ -47,11 +47,10 @@ export async function start (): Promise<void> {
     ...config.get<object>('comms.libp2p'),
     peerId
   }
-  console.log('Libp2pConf: ', libp2pConf)
   libp2p = await createLibP2P(libp2pConf)
 
   await libp2p.start()
-  const topic = getRoomTopic()
+  const topic = getRoomTopic(offerId, contractAddress)
   logger.info(`Joining Room with topic ${topic}`)
 
   room = new Room(libp2p, topic)
@@ -87,8 +86,8 @@ export async function broadcast (code: MessageCodesEnum.I_HASH_START, payload: H
 export async function broadcast (code: MessageCodesEnum.W_HASH_RETRY, payload: RetryPayload): Promise<void>
 export async function broadcast (code: MessageCodesEnum.E_HASH_NOT_FOUND, payload: HashInfoPayload): Promise<void>
 export async function broadcast (code: MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED, payload: AgreementSizeExceededPayload): Promise<void>
-export async function broadcast (code: MessageCodesEnum, payload?: Record<string, any>): Promise<void>
-export async function broadcast (code: MessageCodesEnum, payload?: Record<string, any>): Promise<void> {
+export async function broadcast (code: MessageCodesEnum, payload: Record<string, any>): Promise<void>
+export async function broadcast (code: MessageCodesEnum, payload: Record<string, any>): Promise<void> {
   if (!room) {
     throw new Error('Communication was not started yet!')
   }
@@ -101,5 +100,5 @@ export async function broadcast (code: MessageCodesEnum, payload?: Record<string
   }
 
   // TODO: Persist the sent messages for "rebroadcast"
-  await room.broadcast(JSON.stringify(msg))
+  await room.broadcast(msg)
 }

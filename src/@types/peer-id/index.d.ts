@@ -1,100 +1,37 @@
 import { PrivateKey, PublicKey, KeyType } from 'libp2p-crypto'
 import CID from 'cids'
 
-declare namespace PeerId {
+/**
+ * Options for PeerId creation.
+ */
+type CreateOptions = {
   /**
-   * Options for PeerId creation.
+   * The number of bits to use.
    */
-  type CreateOptions = {
-    /**
-     * The number of bits to use.
-     */
-    bits?: number
-    /**
-     * The type of key to use.
-     */
-    keyType?: KeyType
-  };
+  bits?: number
+  /**
+   * The type of key to use.
+   */
+  keyType?: KeyType
+};
 
+/**
+ * PeerId JSON format.
+ */
+type JSONPeerId = {
   /**
-   * PeerId JSON format.
+   * String representation of PeerId.
    */
-  type JSONPeerId = {
-    /**
-     * String representation of PeerId.
-     */
-    id: string
-    /**
-     * Public key.
-     */
-    pubKey?: string
-    /**
-     * Private key.
-     */
-    privKey: string
-  };
-
+  id: string
   /**
-   * Checks if a value is an instance of PeerId.
-   * @param id The value to check.
+   * Public key.
    */
-  function isPeerId(id: any): id is PeerId
-
+  pubKey?: string
   /**
-   * Create a new PeerId.
-   * @param opts Options.
+   * Private key.
    */
-  function create(opts?: PeerId.CreateOptions): Promise<PeerId>;
-
-  /**
-   * Create PeerId from hex string.
-   * @param str The input hex string.
-   */
-  function createFromHexString(str: string): PeerId;
-
-  /**
-   * Create PeerId from raw bytes.
-   * @param buf The raw bytes.
-   */
-  function createFromBytes(buf: Uint8Array): PeerId;
-
-  /**
-   * Create PeerId from base58-encoded string.
-   * @param str The base58-encoded string.
-   */
-  function createFromB58String(str: string): PeerId;
-
-  /**
-   * Create PeerId from CID.
-   * @param cid The CID.
-   */
-  function createFromCID(cid: CID | Uint8Array | string | object): PeerId;
-
-  /**
-   * Create PeerId from public key.
-   * @param key Public key, as Uint8Array or base64-encoded string.
-   */
-  function createFromPubKey(key: Uint8Array | string): Promise<PeerId>;
-
-  /**
-   * Create PeerId from private key.
-   * @param key Private key, as Uint8Array or base64-encoded string.
-   */
-  function createFromPrivKey(key: Uint8Array | string): Promise<PeerId>;
-
-  /**
-   * Create PeerId from PeerId JSON formatted object.
-   * @see {@link PeerId#toJSON}
-   * @param json PeerId in JSON format.
-   */
-  function createFromJSON(json: JSONPeerId): Promise<PeerId>;
-
-  /**
-   * Create PeerId from Protobuf bytes.
-   * @param buf Protobuf bytes, as Uint8Array or hex-encoded string.
-   */
-  function createFromProtobuf(buf: Uint8Array | string): Promise<PeerId>;
-}
+  privKey: string
+};
 
 /**
  * PeerId is an object representation of a peer identifier.
@@ -102,6 +39,66 @@ declare namespace PeerId {
 declare class PeerId {
   constructor(id: Uint8Array | string, privKey?: PrivateKey, pubKey?: PublicKey);
 
+  /**
+   * Checks if a value is an instance of PeerId.
+   * @param id The value to check.
+   */
+  static isPeerId(id: any): id is PeerId
+
+  /**
+   * Create a new PeerId.
+   * @param opts Options.
+   */
+  static create(opts?: CreateOptions): Promise<PeerId>;
+
+  /**
+   * Create PeerId from hex string.
+   * @param str The input hex string.
+   */
+  static createFromHexString(str: string): PeerId;
+
+  /**
+   * Create PeerId from raw bytes.
+   * @param buf The raw bytes.
+   */
+  static createFromBytes(buf: Uint8Array): PeerId;
+
+  /**
+   * Create PeerId from base58-encoded string.
+   * @param str The base58-encoded string.
+   */
+  static createFromB58String(str: string): PeerId;
+
+  /**
+   * Create PeerId from CID.
+   * @param cid The CID.
+   */
+  static createFromCID(cid: CID | Uint8Array | string | object): PeerId;
+
+  /**
+   * Create PeerId from public key.
+   * @param key Public key, as Uint8Array or base64-encoded string.
+   */
+  static createFromPubKey(key: Uint8Array | string): Promise<PeerId>;
+
+  /**
+   * Create PeerId from private key.
+   * @param key Private key, as Uint8Array or base64-encoded string.
+   */
+  static createFromPrivKey(key: Uint8Array | string): Promise<PeerId>;
+
+  /**
+   * Create PeerId from PeerId JSON formatted object.
+   * @see {@link PeerId#toJSON}
+   * @param json PeerId in JSON format.
+   */
+  static createFromJSON(json: JSONPeerId): Promise<PeerId>;
+
+  /**
+   * Create PeerId from Protobuf bytes.
+   * @param buf Protobuf bytes, as Uint8Array or hex-encoded string.
+   */
+  static createFromProtobuf(buf: Uint8Array | string): Promise<PeerId>;
   /**
    * Raw id.
    */
@@ -143,7 +140,7 @@ declare class PeerId {
    * Matches the formatting of go-ipfs for its config file.
    * @see {@link PeerId.createFromJSON}
    */
-  toJSON(): PeerId.JSONPeerId;
+  toJSON(): JSONPeerId;
 
   /**
    * Encode to hex.

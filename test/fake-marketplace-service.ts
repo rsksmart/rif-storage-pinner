@@ -6,7 +6,7 @@ import socketio from '@feathersjs/socketio'
 import { Server } from 'http'
 
 import { loggingFactory } from '../src/logger'
-import { providerAddress } from './utils'
+import { providerAddress, peerId } from './utils'
 
 const logger = loggingFactory('test:fake-cache')
 
@@ -15,7 +15,10 @@ interface StubService {
 }
 
 const serviceFunctions = ['get', 'find', 'create', 'remove', 'update', 'patch']
-const createStubService = (service: Record<string, any> = {}) => serviceFunctions.reduce((acc, key) => ({ ...acc, [key]: sinon.stub() }), service)
+const createStubService = (service: Record<string, any> = {}) => serviceFunctions.reduce((acc, key) => ({
+  ...acc,
+  [key]: sinon.stub()
+}), service)
 
 export function stubResetFunctions (obj: Record<string, sinon.SinonStub>): void {
   Object.keys(obj).forEach(key => obj[key].reset())
@@ -27,7 +30,7 @@ export const stubNewBlock: StubService = createStubService({ events: ['newBlock'
 
 export function mockOffer (offer: Record<string, any> = {}): Record<string, any> {
   return Object.assign({
-    peerId: 'testPeerId',
+    peerId,
     totalCapacity: '999999',
     address: providerAddress
   }, offer)

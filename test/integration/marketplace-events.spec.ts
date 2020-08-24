@@ -199,6 +199,7 @@ describe('Marketplace Strategy', function () {
       stubAgreement.find.resolves(agreements)
 
       app = await TestingApp.getApp()
+      await sleep(100)
 
       const store = getObject()
       expect(store.peerId).to.be.eql(offer.peerId)
