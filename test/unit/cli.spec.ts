@@ -89,12 +89,24 @@ describe('CLI', function () {
     })
 
     describe('resolvePath', () => {
+      let configDb: string
+      before(() => {
+        configDb = config.get('db')
+        // @ts-ignore
+        config.db = 'asd.sqlite'
+      })
+
+      after(() => {
+        // @ts-ignore
+        config.db = configDb
+      })
+
       const TEST_CASES = [
         // File name
         { db: 'someDbName', resolved: `${process.cwd()}/${DATA_DIR}/someDbName.sqlite` },
         { db: 'someDbName.sqlite', resolved: `${process.cwd()}/${DATA_DIR}/someDbName.sqlite` },
         // Get from config
-        { db: '', resolved: `${process.cwd()}/${DATA_DIR}/${config.get('db')}` },
+        { db: '', resolved: `${process.cwd()}/${DATA_DIR}/asd.sqlite` },
         // Absolute or relative path
         { db: './someFolder/test', resolved: `${process.cwd()}/someFolder/test.sqlite` },
         { db: './someFolder/test.sqlite', resolved: `${process.cwd()}/someFolder/test.sqlite` },
