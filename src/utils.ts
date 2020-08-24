@@ -29,7 +29,7 @@ import { ProviderManager } from './providers'
 import { CliInitDbOptions, JobManagerOptions } from './definitions'
 import { JobsManager } from './jobs-manager'
 import { IpfsProvider } from './providers/ipfs'
-import { Migration } from './migrations/index'
+import { Migration } from './migrations'
 import { Sequelize } from 'sequelize'
 
 export function bnFloor (v: string | number | BigNumber): BigNumber {
@@ -211,11 +211,19 @@ export default abstract class BaseCommand extends Command {
 
   protected baseConfig (flags: OutputFlags<typeof BaseCommand.flags>): void {
     const configObject: Config = {
-      log: {
-        level: flags.log,
-        filter: flags['log-filter'] || null,
-        path: flags['log-path'] || null
-      }
+      log: {}
+    }
+
+    if (flags.log) {
+      configObject.log!.level = flags.log
+    }
+
+    if (flags['log-filter']) {
+      configObject.log!.filter = flags['log-filter']
+    }
+
+    if (flags['log-path']) {
+      configObject.log!.path = flags['log-path']
     }
 
     let userConfig: Config = {}
