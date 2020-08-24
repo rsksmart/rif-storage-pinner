@@ -248,6 +248,8 @@ Please on how to set up the development environment see [Development guide](./DE
  - Using the `npm run ipfs:consumer` and `npm run ipfs:provider` you can interact with
  each IPFS node using the standard commands that IPFS supports.
  - You can interact with the CLI using `npm run bin` script from the local folder.
+ - Use [RIF Communication PubSub Node](https://github.com/rsksmart/rif-communications-pubsub-node) to listen on
+ the broadcast events! Only configure the correct Room's name!
 
 ## License
 
