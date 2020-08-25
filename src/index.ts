@@ -30,6 +30,8 @@ function getEventProcessor (offerId: string, manager: ProviderManager, options: 
 }
 
 export async function initApp (offerId: string, options: AppOptions): Promise<{ stop: () => void }> {
+  logger.verbose('Current config:', config)
+
   const jobsOptions = config.get<JobManagerOptions>('jobs')
   const jobsManager = new JobsManager(jobsOptions)
 
