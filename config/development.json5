@@ -6,7 +6,7 @@
         peerDiscovery: {
           bootstrap: {
             enabled: true,
-            list: ['/ip4/127.0.0.1/tcp/6030/ws/p2p/QmbQJ4FyVBAar7rLwc1jjeJ6Nba6w2ddqczamJL6vTDrwm']
+            list: ['/ip4/127.0.0.1/tcp/6030/p2p/QmbQJ4FyVBAar7rLwc1jjeJ6Nba6w2ddqczamJL6vTDrwm']
           }
         }
       }
