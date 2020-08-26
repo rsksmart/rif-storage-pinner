@@ -23,13 +23,12 @@ let room: Room
 let direct: DirectChat
 let libp2p: Libp2p
 
-function getRoomTopic (offerId?: string, contractAddress?: string): string {
+function getRoomTopic (offerId?: string): string {
   const store = getObject()
-
-  return `${config.get<string>('blockchain.networkId')}:${contractAddress ?? config.get<string>('blockchain.contractAddress')}:${offerId ?? store.offerId}`
+  return `${config.get<string>('blockchain.networkId')}:${offerId ?? store.offerId}`
 }
 
-export async function start (offerId?: string, contractAddress?: string): Promise<void> {
+export async function start (offerId?: string): Promise<void> {
   const store = getObject()
 
   const peerId = await PeerId.createFromJSON({
@@ -49,8 +48,7 @@ export async function start (offerId?: string, contractAddress?: string): Promis
   }
   libp2p = await createLibP2P(libp2pConf)
 
-  await libp2p.start()
-  const topic = getRoomTopic(offerId, contractAddress)
+  const topic = getRoomTopic(offerId)
   logger.info(`Joining Room with topic ${topic}`)
 
   room = new Room(libp2p, topic)
@@ -98,6 +96,8 @@ export async function broadcast (code: MessageCodesEnum, payload: Record<string,
     version: COMMUNICATION_PROTOCOL_VERSION,
     timestamp: Date.now()
   }
+
+  logger.verbose(`Broadcasting message with code: ${code}`)
 
   // TODO: Persist the sent messages for "rebroadcast"
   await room.broadcast(msg)

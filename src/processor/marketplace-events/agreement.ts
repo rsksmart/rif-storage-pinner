@@ -8,7 +8,7 @@ import type {
 } from '../../definitions'
 import { buildHandler } from '../../utils'
 import Agreement from '../../models/agreement.model'
-import { EventError } from '../../errors'
+import { EventError, NotPinnedError } from '../../errors'
 import { MessageCodesEnum } from '../../definitions'
 import { broadcast } from '../../communication'
 
@@ -39,7 +39,14 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
     await agreement.save()
 
     if (options.manager) {
-      await options.manager.unpin(agreement.dataReference)
+      try {
+        await options.manager.unpin(agreement.dataReference)
+      } catch (e) {
+        // We ignore not-pinned errors because the files might be already GCed
+        if (e.code !== NotPinnedError.code) {
+          throw e
+        }
+      }
       await broadcast(MessageCodesEnum.I_AGREEMENT_STOPPED, { agreementReference: agreement.agreementReference })
     }
 

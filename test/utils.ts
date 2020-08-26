@@ -21,10 +21,8 @@ import { initStore } from '../src/store'
 import { sequelizeFactory } from '../src/sequelize'
 import { bytesToMegabytes, sleep } from '../src/utils'
 import Libp2p from 'libp2p'
+import PeerId from 'peer-id'
 
-export const peerId = 'QmT6rWbq94PtDj9QQmovoivvaRqkZiMJagkJfWQACwCabm'
-export const peerPub = 'CAASpgIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSNAz/NNJXTULmmwoMDGN34u55ZvUYvCmZIBRZxNMdD2aSVbffCroSNyHuMPtSOd6R87oHnD4Zutry3yAN863y1mdzl3Ynm3FOmwRwc/ifdsaa4yS9PwHp/KF1onMNJr/E14sVwvws1FPM7Cir4IXAwX0/uElw26fwTVEXbHboBK8mklPLm8VMuseS78Rf6v/IpvC72RZOBu875QAONh40v1B2T4sJe1h0cl+Oz7jLbi7bnLI8dJt9ybxr1LB8KIWbAMB1L5+c+Q0x2b8pf8/KviEAC+afEEeUXB0nwPU4O6zVsd6rH8TaUXOzHK5ubRF522zy9SkF2Bfve9AWva+xAgMBAAE='
-export const peerPriv = 'CAASqAkwggSkAgEAAoIBAQDSNAz/NNJXTULmmwoMDGN34u55ZvUYvCmZIBRZxNMdD2aSVbffCroSNyHuMPtSOd6R87oHnD4Zutry3yAN863y1mdzl3Ynm3FOmwRwc/ifdsaa4yS9PwHp/KF1onMNJr/E14sVwvws1FPM7Cir4IXAwX0/uElw26fwTVEXbHboBK8mklPLm8VMuseS78Rf6v/IpvC72RZOBu875QAONh40v1B2T4sJe1h0cl+Oz7jLbi7bnLI8dJt9ybxr1LB8KIWbAMB1L5+c+Q0x2b8pf8/KviEAC+afEEeUXB0nwPU4O6zVsd6rH8TaUXOzHK5ubRF522zy9SkF2Bfve9AWva+xAgMBAAECggEAEwNySYNVo1/xtTpA5mYYeTelqoWNlfcvLBKixJvxHKfP91yZjStDOXKTNyBnG0DwyPLq2NVhKKKmO2HDXH+2NEkAgowou9xrm1iaRjG3Q3VS8Z+qKxQP8EJRuHpBPedLYVq90fIZLVTnX5nc8+8TKiRWV/Urb3Hu9uWHeD7vYn0f71nkwBE1efRJWgUOBgTgWgO7emjI04omoEHs7NlRYNRoKzGA8xgcZz8+WnfBkuU4J3WN5WNIHbHAPLYr/YTf3y/HfGV/9D0lrSVXM+HOoFFyAjU7Uhq5slUsN4Vb3YEY48oDo+0UTeXz8xgQxGIz708QBXRYaDJ8q9ENgEo6IQKBgQD2lgRDl9OmnZD02ize6Evfx/EoQ1a1ujPk648tVDYAinIdtJ3txygXZsdR55EwmD+Si0/yJSoMim5lNjmYuqHUFOcttwSkMQTEoGSF1+svwBb66fUyhZmok8TuBLQi/xovZqUWFK3tVc2iTjg2fO82gP06y0aLLa7CbHn0iLKQkwKBgQDaOnOhOAP+awch6NoKpXHwB3F8i6wKXc0S2MaSLMZ/V9PkWaHjicsoNOUyi7AFJhshz+FrqsKMJQZxL80oLfgfjmgN5gc1u4ojgL6fhxYSTaw7ALOoYcC8JkvurNQEMalVJa7WfuvJOXLPRqmSAfJEn5rbPqP/w6c5QXbrCx5dKwKBgEVvHKhD2k8yUxz/Sl9CHgtXa6qgu4vUcMRnKBvleIdSdKu0rjvENp/QSxPfFt0OIeiL3ekbWenKGSfaywEcnHDxqd8Ph/kL7IHJgETH9euuNUpWErs1L31ujqdPH8Iy/xaV2qqLDCamYI7xY5bEOz+ntqaVkrmiFXGdxgF7dHyNAoGBAIoxK5nzG+xXoEuj5beKL02dmQsSc56Y6c0+gvh77DMlzeOzsuWhE4phfKZ2eL+58sKFnq0MlGgk5iB08ci424A4MMJkYTpwiTiURaJF6/8pOqCegCZnyKIc6ka5IQWK4T0vQLlJ5Ewn2gFSMP1pyB4Wp/ygfT/wiQuj3gdXoiHDAoGBAKr3eb8hE88jUlGko+bsCeGsEQSYl5IBfRxxWxO7+l1f9zDVM/xPE+YfN7oEmLfl6hiMKsxQX+xDCjnVtUPP5pfgHZR3jzLNd2i1WQELB0CklSrEv2cJ4KIGMCf3X/1o9aojuZCsC7wLefopbMpOw7PRKGmwsXR4ur15EN0oQRWE'
 export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 export const providerAddress = '0xB22230f21C57f5982c2e7C91162799fABD5733bE'
 export const errorSpy = sinon.spy()
@@ -115,8 +113,6 @@ export async function uploadRandomData (ipfs: IpfsClient): Promise<File> {
 }
 
 export class TestingApp {
-  static app: TestingApp | undefined
-
   private logger = loggingFactory('test:test-app')
   private commsLogger = loggingFactory('test:test-app:comms')
   private app: { stop: () => void } | undefined
@@ -126,22 +122,21 @@ export class TestingApp {
   public ipfsConsumer: IpfsClient | undefined
   public ipfsProvider: IpfsClient | undefined
   public sequelize: Sequelize | undefined
+  public peerId: PeerId.JSONPeerId | undefined
   public libp2p: Libp2p | undefined
   public pubsub: Room | undefined
   public consumerAddress = ''
   public providerAddress = ''
 
-  static async getApp (): Promise<TestingApp> {
-    if (!TestingApp.app) {
-      TestingApp.app = new TestingApp()
-      await TestingApp.app.init()
-      await TestingApp.app.start()
-    }
-    return TestingApp.app
+  async initAndStart (options?: Partial<AppOptions>, awaitComms = true): Promise<void> {
+    await this.init()
+    await this.start(options, awaitComms)
   }
 
   async init (): Promise<void> {
     const strategy = config.get<string>('strategy')
+
+    this.peerId = (await PeerId.create()).toJSON()
 
     switch (strategy) {
       case Strategy.Blockchain:
@@ -177,12 +172,12 @@ export class TestingApp {
     this.logger.info('IPFS clients created')
 
     // Create PeerId for the Pinner
-    store.peerId = peerId
-    store.peerPubKey = peerPub
-    store.peerPrivKey = peerPriv
+    store.peerId = this.peerId.id
+    store.peerPubKey = this.peerId.pubKey!
+    store.peerPrivKey = this.peerId.privKey
 
     // Create PubSub room to listen on events
-    const roomName = `*:${this.contract?.options.address}:${this.providerAddress}`
+    const roomName = `*:${this.providerAddress}`
     this.libp2p = await createLibP2P({
       addresses: { listen: ['/ip4/127.0.0.1/tcp/0'] },
       config: {
@@ -204,14 +199,34 @@ export class TestingApp {
     })
   }
 
-  async start (options?: Partial<AppOptions>): Promise<void> {
+  async start (options?: Partial<AppOptions>, awaitComms = true): Promise<void> {
+    if (!this.pubsub) {
+      throw new Error('You have to invoke init() before start()!')
+    }
+    let commsHaveConnectionPromise
+
+    if (awaitComms) {
+      commsHaveConnectionPromise = new Promise(resolve => {
+        this.pubsub!.on('peer:joined', (peer) => {
+          if (peer === this.peerId!.id) {
+            this.logger.info('Pinning service joined PubSub. Lets start tests!')
+            resolve()
+          }
+        })
+      })
+    }
+
     // Run Pinning service
     const appOptions = Object.assign({
       errorHandler: errorHandlerStub,
       appResetCallback: appResetCallbackSpy
     }, options, { contractAddress: this.contract?.options.address }) as AppOptions
     this.app = await initApp(this.providerAddress, appOptions)
-    this.logger.info('Pinning service started')
+    this.logger.info('Pinning service started, waiting for joing comms')
+
+    if (awaitComms) {
+      await commsHaveConnectionPromise
+    }
   }
 
   async stop (): Promise<void> {
@@ -225,7 +240,6 @@ export class TestingApp {
 
     this.sequelize = undefined
     this.app = undefined
-    TestingApp.app = undefined
     this.eth = undefined
     this.ipfsConsumer = undefined
     this.contract = undefined
@@ -275,7 +289,7 @@ export class TestingApp {
 
     // TODO: This is not correct! The 0x01 byte will get encoded as well, we need to shift it by the prefix,
     //  but I dont see any easy way how to do it.
-    const msg = encodeHash(`0x01${peerId}`)
+    const msg = encodeHash(`0x01${this.peerId!.id}`)
 
     const offerCall = this.contract
       .methods

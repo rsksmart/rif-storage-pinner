@@ -36,7 +36,7 @@ export async function initApp (offerId: string, options: AppOptions): Promise<{ 
   const jobsManager = new JobsManager(jobsOptions)
 
   // Initialize Communication channel
-  await startCommunication(offerId, options.contractAddress)
+  await startCommunication(offerId)
 
   // Initialize Provider Manager
   const providerManager = new ProviderManager()

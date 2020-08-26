@@ -31,7 +31,7 @@ const expect = chai.expect
 
 function createAgreement (app: TestingApp, file: File, agreementObj: Record<string, any> = {}) {
   const agreement = mockAgreement({
-    size: file.size,
+    size: Math.ceil(file.size),
     dataReference: file.fileHash,
     availableFunds: 9999999999999,
     agreementReference: `0x${Math.random().toString(36).substring(7)}`,
@@ -68,16 +68,21 @@ describe('Marketplace Strategy', function () {
 
   describe('Events handling', () => {
     before(async () => {
-      const offer = mockOffer()
+      app = new TestingApp()
+      await app.init()
+
+      const offer = mockOffer({ peerId: app.peerId?.id })
       const agreements: Record<string, any>[] = []
       stubOffer.get.onFirstCall().resolves(offer)
       stubAgreement.find.onFirstCall().resolves(agreements)
 
-      app = await TestingApp.getApp()
+      await app.start()
     })
 
     after(async () => {
-      await app.stop()
+      if (app) {
+        await app.stop()
+      }
       stubResetFunctions(stubAgreement)
       stubResetFunctions(stubOffer)
     })
@@ -110,7 +115,7 @@ describe('Marketplace Strategy', function () {
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
       const agreementRejectedMsgPromise = app.awaitForMessage(MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED)
 
-      createAgreement(app, file, { billingPeriod: 1, size: file.size - 1 })
+      createAgreement(app, file, { billingPeriod: 1, size: Math.ceil(file.size - 1) })
 
       await sleep(1000)
 
@@ -161,7 +166,6 @@ describe('Marketplace Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      const agreementExpiredMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_EXPIRED)
       const newAgreementMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_NEW)
       const hashStartMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_START)
       const hashPinnedMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_PINNED)
@@ -184,17 +188,19 @@ describe('Marketplace Strategy', function () {
       expect(await hashPinnedMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
 
       // First lets the time fast forward so the Agreement runs out of funds
-      await sleep(3000)
+      await sleep(2000)
+      const agreementExpiredMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_EXPIRED)
 
       // Create new block to
       emitBlock(app, { number: 10 })
-      await sleep(3000)
+      await sleep(500)
       emitBlock(app, { number: 11 })
 
-      await sleep(1500)
+      await sleep(500)
 
       // Should not be be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+      expect(await agreementExpiredMsgPromise).to.deep.include({ payload: { agreementReference: agreement.agreementReference } })
     })
   })
 
@@ -211,10 +217,13 @@ describe('Marketplace Strategy', function () {
     })
 
     it('should precache correctly', async () => {
+      app = new TestingApp()
+      await app.init()
+
       const ipfs = await initIpfsClient(consumerIpfsUrl)
       file = await uploadRandomData(ipfs)
 
-      const offer = mockOffer()
+      const offer = mockOffer({ peerId: app.peerId?.id })
       const agreements = [
         mockAgreement(),
         mockAgreement({ agreementReference: '0x9991', offerId: 'test', billingPeriod: 2 }),
@@ -223,7 +232,7 @@ describe('Marketplace Strategy', function () {
       stubOffer.get.onFirstCall().resolves(offer)
       stubAgreement.find.resolves(agreements)
 
-      app = await TestingApp.getApp()
+      await app.start(undefined, false)
       await sleep(100)
 
       const store = getObject()

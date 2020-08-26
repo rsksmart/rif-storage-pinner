@@ -6,7 +6,7 @@ import socketio from '@feathersjs/socketio'
 import { Server } from 'http'
 
 import { loggingFactory } from '../src/logger'
-import { providerAddress, peerId } from './utils'
+import { providerAddress } from './utils'
 
 const logger = loggingFactory('test:fake-cache')
 
@@ -30,7 +30,6 @@ export const stubNewBlock: StubService = createStubService({ events: ['newBlock'
 
 export function mockOffer (offer: Record<string, any> = {}): Record<string, any> {
   return Object.assign({
-    peerId,
     totalCapacity: '999999',
     address: providerAddress
   }, offer)
