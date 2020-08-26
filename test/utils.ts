@@ -19,7 +19,7 @@ import { FakeMarketplaceService } from './fake-marketplace-service'
 import { loggingFactory } from '../src/logger'
 import { initStore } from '../src/store'
 import { sequelizeFactory } from '../src/sequelize'
-import { bytesToMegabytes } from '../src/utils'
+import { bytesToMegabytes, sleep } from '../src/utils'
 import Libp2p from 'libp2p'
 
 export const peerId = 'QmT6rWbq94PtDj9QQmovoivvaRqkZiMJagkJfWQACwCabm'
@@ -303,17 +303,20 @@ export class TestingApp {
     })
   }
 
-  public awaitForMessage<T> (code: MessageCodesEnum): Promise<CommsMessage<T>> {
-    return new Promise(resolve => {
-      const handler = (msg: Message) => {
-        const parsedMsg = msg as unknown as Message<CommsMessage<T>>
+  public awaitForMessage<T> (code: MessageCodesEnum, timeout = 3000): Promise<CommsMessage<T>> {
+    return Promise.race<CommsMessage<T>>([
+      new Promise<CommsMessage<T>>(resolve => {
+        const handler = (msg: Message) => {
+          const parsedMsg = msg as unknown as Message<CommsMessage<T>>
 
-        if (parsedMsg.data.code === code) {
-          resolve(parsedMsg.data)
+          if (parsedMsg.data.code === code) {
+            resolve(parsedMsg.data)
           this.pubsub!.off('message', handler)
+          }
         }
-      }
       this.pubsub!.on('message', handler)
-    })
+      }),
+      sleep<CommsMessage<T>>(timeout, Promise.reject(new Error(`Waiting for message with code ${code} timed out!`)) as unknown as CommsMessage<T>)
+    ])
   }
 }

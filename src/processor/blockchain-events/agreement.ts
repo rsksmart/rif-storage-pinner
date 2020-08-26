@@ -8,7 +8,7 @@ import {
 } from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
 
 import { loggingFactory } from '../../logger'
-import { EventError } from '../../errors'
+import { EventError, NotPinnedError } from '../../errors'
 import { buildHandler, decodeByteArray } from '../../utils'
 import { getBlockDate } from '../../blockchain/utils'
 import Agreement from '../../models/agreement.model'
@@ -73,7 +73,14 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     await agreement.save()
 
     if (options.manager) {
-      await options.manager.unpin(agreement.dataReference)
+      try {
+        await options.manager.unpin(agreement.dataReference)
+      } catch (e) {
+        // We ignore not-pinned errors because the files might be already GCed
+        if (e.code !== NotPinnedError.code) {
+          throw e
+        }
+      }
       await broadcast(MessageCodesEnum.I_AGREEMENT_STOPPED, { agreementReference: agreement.agreementReference })
     }
 
