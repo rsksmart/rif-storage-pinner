@@ -179,7 +179,6 @@ describe('Blockchain Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      const agreementExpiredMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_EXPIRED)
       const newAgreementMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_NEW)
       const hashStartMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_START)
       const hashPinnedMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_PINNED)
@@ -196,12 +195,14 @@ describe('Blockchain Strategy', function () {
       // First lets the time fast forward so the Agreement runs out of funds
       await sleep(3000)
 
+      const agreementExpiredMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_EXPIRED)
+
       // Create new block to
       await app.advanceBlock()
       await sleep(200)
       await app.advanceBlock()
 
-      await sleep(1500)
+      await sleep(500)
 
       // Should not be be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()

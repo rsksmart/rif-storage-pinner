@@ -311,12 +311,15 @@ export class TestingApp {
 
           if (parsedMsg.data.code === code) {
             resolve(parsedMsg.data)
-          this.pubsub!.off('message', handler)
+            this.pubsub!.off('message', handler)
           }
         }
-      this.pubsub!.on('message', handler)
+        this.pubsub!.on('message', handler)
       }),
-      sleep<CommsMessage<T>>(timeout, Promise.reject(new Error(`Waiting for message with code ${code} timed out!`)) as unknown as CommsMessage<T>)
+      (async (): Promise<never> => {
+        await sleep(timeout)
+        throw new Error(`Waiting for message with code ${code} timed out!`)
+      })()
     ])
   }
 }
