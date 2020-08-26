@@ -37,7 +37,7 @@ class PinJob extends Job {
 
       if (bytesToMegabytes(stats.CumulativeSize).gt(this.expectedSize)) {
         logger.error(`The hash ${hash} has cumulative size of ${bytesToMegabytes(stats.CumulativeSize)} megabytes while it was expected to have ${this.expectedSize} megabytes.`)
-        throw new HashExceedsSizeError('The hash exceeds payed size!', new BigNumber(stats.CumulativeSize), this.expectedSize)
+        throw new HashExceedsSizeError('The hash exceeds payed size!', bytesToMegabytes(stats.CumulativeSize), this.expectedSize)
       }
     } catch (e) {
       if (e.name === 'TimeoutError') {
@@ -92,7 +92,6 @@ export class IpfsProvider implements Provider {
 
   /**
    *
-   * TODO: Error handling
    * @param hash
    * @param expectedSize
    */

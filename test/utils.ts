@@ -198,6 +198,10 @@ export class TestingApp {
     this.pubsub = new Room(this.libp2p, roomName, { pollInterval: 100 })
     this.pubsub.on('peer:joined', (peer) => this.commsLogger.verbose(`${roomName}: peer ${peer} joined`))
     this.pubsub.on('peer:left', (peer) => this.commsLogger.verbose(`${roomName}: peer ${peer} left`))
+    this.pubsub.on('message', (msg: Message) => {
+      const parsedMsg = msg as unknown as Message<CommsMessage<unknown>>
+      this.commsLogger.debug(`Message ${parsedMsg.data.code}:`, msg.data)
+    })
   }
 
   async start (options?: Partial<AppOptions>): Promise<void> {
@@ -213,24 +217,25 @@ export class TestingApp {
   async stop (): Promise<void> {
     if (this.app) {
       await this.app.stop()
-      this.fakeCacheServer?.stop()
-      await this.sequelize?.close()
-      resetStore()
-
-      this.sequelize = undefined
-      this.app = undefined
-      TestingApp.app = undefined
-      this.eth = undefined
-      this.ipfsConsumer = undefined
-      this.contract = undefined
-      this.ipfsProvider = undefined
-      this.consumerAddress = ''
-      this.providerAddress = ''
-      this.pubsub?.leave()
-      this.pubsub = undefined
-      await this.libp2p?.stop()
-      this.libp2p = undefined
     }
+
+    this.fakeCacheServer?.stop()
+    await this.sequelize?.close()
+    resetStore()
+
+    this.sequelize = undefined
+    this.app = undefined
+    TestingApp.app = undefined
+    this.eth = undefined
+    this.ipfsConsumer = undefined
+    this.contract = undefined
+    this.ipfsProvider = undefined
+    this.consumerAddress = ''
+    this.providerAddress = ''
+    this.pubsub?.leave()
+    this.pubsub = undefined
+    await this.libp2p?.stop()
+    this.libp2p = undefined
   }
 
   private async purgeDb (): Promise<void> {
@@ -300,16 +305,15 @@ export class TestingApp {
 
   public awaitForMessage<T> (code: MessageCodesEnum): Promise<CommsMessage<T>> {
     return new Promise(resolve => {
-      // TODO: This should listen only `once` but problem is that we listen for specific code hence
-      //  we should unsubscribe once we get what we were waiting for.
-      this.pubsub!.on('message', (msg: Message) => {
+      const handler = (msg: Message) => {
         const parsedMsg = msg as unknown as Message<CommsMessage<T>>
-        this.commsLogger.debug(`Message ${parsedMsg.data.code}:\n`, msg.data)
 
         if (parsedMsg.data.code === code) {
           resolve(parsedMsg.data)
+          this.pubsub!.off('message', handler)
         }
-      })
+      }
+      this.pubsub!.on('message', handler)
     })
   }
 }

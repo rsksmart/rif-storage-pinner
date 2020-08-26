@@ -57,6 +57,7 @@ describe('Blockchain Strategy', function () {
     config.strategy = Strategy.Blockchain
   })
 
+  // TODO: This makes tests fails for the communication
   // describe('Precache', () => {
   //   beforeEach(() => errorSpy.resetHistory())
   //
@@ -121,6 +122,7 @@ describe('Blockchain Strategy', function () {
       const file = await uploadRandomData(app.ipfsConsumer!)
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+      const agreementRejectedMsgPromise = app.awaitForMessage(MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED)
       await createAgreement(app, file, 1, 10000, file.size - 1)
 
       // Wait until we receive Event
@@ -132,6 +134,10 @@ describe('Blockchain Strategy', function () {
       const [error] = errorSpy.lastCall.args
       expect(error).to.be.instanceOf(Error)
       expect(error.message).to.be.eql('The hash exceeds payed size!')
+      expect((await agreementRejectedMsgPromise).payload).to.include({
+        expectedSize: Math.floor(file.size).toString(),
+        hash: `/ipfs/${file.cidString}`
+      })
     })
 
     it('should unpin when agreement is stopped', async () => {
@@ -139,6 +145,7 @@ describe('Blockchain Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
+      const agreementStoppedMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_STOPPED)
       const agreementReference = await createAgreement(app, file, 1, 60)
 
       await sleep(2000)
@@ -164,6 +171,7 @@ describe('Blockchain Strategy', function () {
 
       // Should not be be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+      expect(await agreementStoppedMsgPromise).to.deep.include({ payload: { agreementReference: agreementReference } })
     })
 
     it('should unpin when agreement run out of funds', async () => {
@@ -171,11 +179,19 @@ describe('Blockchain Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      await createAgreement(app, file, 1, 60)
+      const agreementExpiredMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_EXPIRED)
+      const newAgreementMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_NEW)
+      const hashStartMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_START)
+      const hashPinnedMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_PINNED)
+
+      const agreementReference = await createAgreement(app, file, 1, 60)
       await sleep(500)
 
       // Should be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
+      expect(await newAgreementMsgPromise).to.deep.include({ payload: { agreementReference: agreementReference } })
+      expect(await hashStartMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
+      expect(await hashPinnedMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
 
       // First lets the time fast forward so the Agreement runs out of funds
       await sleep(3000)
@@ -189,6 +205,7 @@ describe('Blockchain Strategy', function () {
 
       // Should not be be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+      expect(await agreementExpiredMsgPromise).to.deep.include({ payload: { agreementReference: agreementReference } })
     })
   })
 })

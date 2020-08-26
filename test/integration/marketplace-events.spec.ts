@@ -13,7 +13,7 @@ import {
   isPinned,
   errorSpy
 } from '../utils'
-import { Strategy } from '../../src/definitions'
+import { MessageCodesEnum, Strategy } from '../../src/definitions'
 import {
   mockAgreement,
   mockOffer,
@@ -52,7 +52,7 @@ function emitBlock (app: TestingApp, block: Record<string, any> = {}) {
 }
 
 describe('Marketplace Strategy', function () {
-  this.timeout(20000)
+  this.timeout(5000)
   let app: TestingApp
 
   before(() => {
@@ -89,17 +89,26 @@ describe('Marketplace Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      createAgreement(app, file)
+      const newAgreementMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_NEW)
+      const hashStartMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_START)
+      const hashPinnedMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_PINNED)
+
+      const agreementReference = createAgreement(app, file).agreementReference
 
       await sleep(1000)
 
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
+
+      expect(await newAgreementMsgPromise).to.deep.include({ payload: { agreementReference: agreementReference } })
+      expect(await hashStartMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
+      expect(await hashPinnedMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
     })
 
     it('should reject if size limit exceed', async () => {
       const file = await uploadRandomData(app.ipfsConsumer!)
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+      const agreementRejectedMsgPromise = app.awaitForMessage(MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED)
 
       createAgreement(app, file, { billingPeriod: 1, size: file.size - 1 })
 
@@ -111,6 +120,11 @@ describe('Marketplace Strategy', function () {
       const [error] = errorSpy.lastCall.args
       expect(error).to.be.instanceOf(Error)
       expect(error.message).to.be.eql('The hash exceeds payed size!')
+
+      expect((await agreementRejectedMsgPromise).payload).to.include({
+        expectedSize: Math.floor(file.size).toString(),
+        hash: `/ipfs/${file.cidString}`
+      })
     })
 
     it('should unpin when agreement is stopped', async () => {
@@ -118,6 +132,7 @@ describe('Marketplace Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
+      const agreementStoppedMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_STOPPED)
       const agreement = createAgreement(app, file, { billingPeriod: 1, availableFunds: 500 })
 
       await sleep(1000)
@@ -138,6 +153,7 @@ describe('Marketplace Strategy', function () {
 
       // Should not be be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
+      expect(await agreementStoppedMsgPromise).to.deep.include({ payload: { agreementReference: agreement.agreementReference } })
     })
 
     it('should unpin when agreement run out of funds', async () => {
@@ -145,7 +161,12 @@ describe('Marketplace Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      await createAgreement(app, file, {
+      const agreementExpiredMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_EXPIRED)
+      const newAgreementMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_NEW)
+      const hashStartMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_START)
+      const hashPinnedMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_PINNED)
+
+      const agreement = await createAgreement(app, file, {
         billingPeriod: 10,
         billingPrice: 10,
         size: 100,
@@ -157,6 +178,10 @@ describe('Marketplace Strategy', function () {
 
       // Should be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
+
+      expect(await newAgreementMsgPromise).to.deep.include({ payload: { agreementReference: agreement.agreementReference } })
+      expect(await hashStartMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
+      expect(await hashPinnedMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
 
       // First lets the time fast forward so the Agreement runs out of funds
       await sleep(3000)
