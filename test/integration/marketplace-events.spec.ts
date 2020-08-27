@@ -11,7 +11,8 @@ import {
   uploadRandomData,
   File,
   isPinned,
-  errorSpy
+  errorSpy,
+  appResetCallbackSpy
 } from '../utils'
 import { MessageCodesEnum, Strategy } from '../../src/definitions'
 import {
@@ -23,6 +24,7 @@ import {
 } from '../fake-marketplace-service'
 import Agreement from '../../src/models/agreement.model'
 import { sleep } from '../../src/utils'
+import { REORG_OUT_OF_RANGE_EVENT } from '../../src/processor/marketplace-events'
 
 chai.use(chaiAsPromised)
 chai.use(dirtyChai)
@@ -49,6 +51,11 @@ function emitBlock (app: TestingApp, block: Record<string, any> = {}) {
   const agreementService = app.fakeCacheServer?.newBlockService
   agreementService.emit('newBlock', block)
   return block
+}
+
+function emitReorg (app: TestingApp) {
+  const reorgService = app.fakeCacheServer?.reorgService
+  reorgService.emit(REORG_OUT_OF_RANGE_EVENT, { contracts: ['storage'] })
 }
 
 describe('Marketplace Strategy', function () {
@@ -201,6 +208,13 @@ describe('Marketplace Strategy', function () {
       // Should not be be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
       expect(await agreementExpiredMsgPromise).to.deep.include({ payload: { agreementReference: agreement.agreementReference } })
+    })
+    it('Handle reorg', async () => {
+      emitReorg(app)
+
+      await sleep(1000)
+
+      expect(appResetCallbackSpy.called).to.be.true()
     })
   })
 

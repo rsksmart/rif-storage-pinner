@@ -111,6 +111,9 @@ export interface Config {
     // Agreement service path
     agreement?: string
 
+    // Reorg service path
+    reorg?: string
+
     // Cache service url
     provider?: string
   }

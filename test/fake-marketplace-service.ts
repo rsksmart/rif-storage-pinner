@@ -7,6 +7,7 @@ import { Server } from 'http'
 
 import { loggingFactory } from '../src/logger'
 import { providerAddress } from './utils'
+import { REORG_OUT_OF_RANGE_EVENT } from '../src/processor/marketplace-events'
 
 const logger = loggingFactory('test:fake-cache')
 
@@ -27,6 +28,7 @@ export function stubResetFunctions (obj: Record<string, sinon.SinonStub>): void 
 export const stubOffer: StubService = createStubService()
 export const stubAgreement: StubService = createStubService()
 export const stubNewBlock: StubService = createStubService({ events: ['newBlock'] })
+export const stubReorg: StubService = createStubService({ events: [REORG_OUT_OF_RANGE_EVENT] })
 
 export function mockOffer (offer: Record<string, any> = {}): Record<string, any> {
   return Object.assign({
@@ -57,10 +59,12 @@ function storageChannels (app: any): void {
     app.channel('storage_agreements').join(connection)
     app.channel('storage_offers').join(connection)
     app.channel('blockchain').join(connection)
+    app.channel('reorg').join(connection)
   })
   app.service(config.get<string>('marketplace.offers')).publish(() => app.channel('storage_offers'))
   app.service(config.get<string>('marketplace.agreements')).publish(() => app.channel('storage_agreements'))
   app.service(config.get<string>('marketplace.newBlock')).publish(() => app.channel('blockchain'))
+  app.service(config.get<string>('marketplace.reorg')).publish(() => app.channel('reorg'))
 }
 
 export class FakeMarketplaceService {
@@ -71,6 +75,7 @@ export class FakeMarketplaceService {
   public offerPath = config.get<string>('marketplace.offers')
   public agreementPath = config.get<string>('marketplace.agreements')
   public newBlockPath = config.get<string>('marketplace.newBlock')
+  public reorgPath = config.get<string>('marketplace.reorg')
 
   constructor (port?: number) {
     this.port = port ?? 3030
@@ -86,6 +91,10 @@ export class FakeMarketplaceService {
 
   get newBlockService () {
     return this.app.service(this.newBlockPath)
+  }
+
+  get reorgService () {
+    return this.app.service(this.reorgPath)
   }
 
   run (): Promise<void> {
@@ -107,6 +116,10 @@ export class FakeMarketplaceService {
     // Init new block service
     app.use(this.newBlockPath, stubNewBlock)
     app.service(this.newBlockPath)
+
+    // Init reorg service
+    app.use(this.reorgPath, stubReorg)
+    app.service(this.reorgPath)
 
     app.configure(storageChannels)
 
