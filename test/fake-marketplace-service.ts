@@ -117,7 +117,7 @@ export class FakeMarketplaceService {
 
     // Init reorg service
     app.use(this.reorgPath, stubReorg)
-    app.service(this.newBlockPath)
+    app.service(this.reorgPath)
 
     app.configure(storageChannels)
 
