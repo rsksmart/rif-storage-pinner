@@ -31,6 +31,7 @@ import { JobsManager } from './jobs-manager'
 import { IpfsProvider } from './providers/ipfs'
 import { Migration } from './migrations'
 import { Sequelize } from 'sequelize'
+import DirectAddressModel from './models/direct-address.model'
 
 export function bnFloor (v: string | number | BigNumber): BigNumber {
   return new BigNumber(v).integerValue(BigNumber.ROUND_FLOOR)
@@ -311,4 +312,9 @@ export default abstract class BaseCommand extends Command {
       await this.initDB(this.dbPath, { ...db, skipPrompt: Boolean(this.parsedArgs.flags.skipPrompt) })
     }
   }
+}
+
+export async function getPeerIdByAgreement (agreementReference: string): Promise<string | undefined> {
+  const directAddress = await DirectAddressModel.findOne({ where: { agreementReference } })
+  return directAddress?.peerId
 }

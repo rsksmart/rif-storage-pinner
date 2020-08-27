@@ -9,7 +9,7 @@ import {
 
 import { loggingFactory } from '../../logger'
 import { EventError, NotPinnedError } from '../../errors'
-import { buildHandler, decodeByteArray } from '../../utils'
+import { buildHandler, decodeByteArray, getPeerIdByAgreement } from '../../utils'
 import { getBlockDate } from '../../blockchain/utils'
 import Agreement from '../../models/agreement.model'
 import type {
@@ -56,7 +56,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     logger.info(`Created new Agreement with ID ${agreementReference} for offer ${offerId}`)
 
     if (options.manager) {
-      await options.manager.pin(dataReference, agreement.size)
+      await options.manager.pin(dataReference, agreement.size, await getPeerIdByAgreement(agreement.agreementReference))
       await broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: agreementReference })
     }
   },
