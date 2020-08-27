@@ -24,6 +24,7 @@ import {
 } from '../fake-marketplace-service'
 import Agreement from '../../src/models/agreement.model'
 import { sleep } from '../../src/utils'
+import { REORG_EVENT } from '../../src/processor/marketplace-events'
 
 chai.use(chaiAsPromised)
 chai.use(dirtyChai)
@@ -54,7 +55,7 @@ function emitBlock (app: TestingApp, block: Record<string, any> = {}) {
 
 function emitReorg (app: TestingApp) {
   const reorgService = app.fakeCacheServer?.reorgService
-  reorgService.emit('reorgOutOfRange', true)
+  reorgService.emit(REORG_EVENT, { contracts: ['storage'] })
 }
 
 describe('Marketplace Strategy', function () {
