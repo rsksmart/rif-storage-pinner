@@ -316,5 +316,6 @@ export default abstract class BaseCommand extends Command {
 
 export async function getPeerIdByAgreement (agreementReference: string): Promise<string | undefined> {
   const directAddress = await DirectAddressModel.findOne({ where: { agreementReference } })
+  await DirectAddressModel.destroy({ where: { agreementReference } })
   return directAddress?.peerId
 }
