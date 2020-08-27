@@ -60,7 +60,7 @@ export function getNewBlockEmitter (eth: Eth): AutoStartStopEventEmitter {
 export function getEventsEmitter (eth: Eth, contractAbi: AbiItem[], options?: EventsEmitterOptions & { contractAddress?: string }): BaseEventsEmitter {
   const contractAddresses = options?.contractAddress || config.get<string>('blockchain.contractAddress')
   const contract = new eth.Contract(contractAbi, contractAddresses)
-  const logger = loggingFactory('blockchain:')
+  const logger = loggingFactory('blockchain')
 
   const eventsToListen = config.has('blockchain.events') ? config.get<string[]>('blockchain.events') : undefined
   const topicsToListen = config.has('blockchain.topics') ? config.get<string[]>('blockchain.topics') : undefined

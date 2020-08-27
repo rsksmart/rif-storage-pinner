@@ -8,7 +8,9 @@ export function initStore (sequelize: Sequelize): Promise<void> {
     lastProcessedBlockNumber: 'int',
     lastProcessedBlockHash: 'string',
     totalCapacity: 'string',
+    offerId: 'string',
     peerId: 'string',
-    offerId: 'string'
+    peerPrivKey: 'string',
+    peerPubKey: 'string'
   })
 }

@@ -8,7 +8,7 @@ import {
 } from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
 
 import { loggingFactory } from '../../logger'
-import { EventError } from '../../errors'
+import { EventError, NotPinnedError } from '../../errors'
 import { buildHandler, decodeByteArray } from '../../utils'
 import { getBlockDate } from '../../blockchain/utils'
 import Agreement from '../../models/agreement.model'
@@ -16,7 +16,8 @@ import type {
   BlockchainEventProcessorOptions,
   BlockchainAgreementEvents, HandlersObject
 } from '../../definitions'
-import { channel, MessageCodesEnum } from '../../communication'
+import { MessageCodesEnum } from '../../definitions'
+import { broadcast } from '../../communication'
 
 const logger = loggingFactory('processor:blockchain:agreement')
 
@@ -56,7 +57,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
 
     if (options.manager) {
       await options.manager.pin(dataReference, agreement.size)
-      channel.broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: agreementReference })
+      await broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: agreementReference })
     }
   },
 
@@ -72,8 +73,15 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     await agreement.save()
 
     if (options.manager) {
-      await options.manager.unpin(agreement.dataReference)
-      channel.broadcast(MessageCodesEnum.I_AGREEMENT_STOPPED, { agreementReference: agreement.agreementReference })
+      try {
+        await options.manager.unpin(agreement.dataReference)
+      } catch (e) {
+        // We ignore not-pinned errors because the files might be already GCed
+        if (e.code !== NotPinnedError.code) {
+          throw e
+        }
+      }
+      await broadcast(MessageCodesEnum.I_AGREEMENT_STOPPED, { agreementReference: agreement.agreementReference })
     }
 
     logger.info(`Agreement ${id} was stopped.`)

@@ -9,20 +9,21 @@ import { AbiItem, asciiToHex } from 'web3-utils'
 import { promisify } from 'util'
 import type { HttpProvider } from 'web3-core'
 import { Sequelize } from 'sequelize'
-import { reset as resetStore } from 'sequelize-store'
-
+import { reset as resetStore, getObject } from 'sequelize-store'
+import { createLibP2P, Message, Room } from '@rsksmart/rif-communications-pubsub'
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
 import { initApp } from '../src'
-import { AppOptions, Logger, Strategy } from '../src/definitions'
+import { AppOptions, CommsMessage, Logger, MessageCodesEnum, Strategy } from '../src/definitions'
 import { FakeMarketplaceService } from './fake-marketplace-service'
 import { loggingFactory } from '../src/logger'
 import { initStore } from '../src/store'
 import { sequelizeFactory } from '../src/sequelize'
-import { bytesToMegabytes } from '../src/utils'
+import { bytesToMegabytes, sleep } from '../src/utils'
+import Libp2p from 'libp2p'
+import PeerId from 'peer-id'
 
 export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
-
 export const providerAddress = '0xB22230f21C57f5982c2e7C91162799fABD5733bE'
 export const errorSpy = sinon.spy()
 export const appResetCallbackSpy = sinon.spy()
@@ -112,9 +113,8 @@ export async function uploadRandomData (ipfs: IpfsClient): Promise<File> {
 }
 
 export class TestingApp {
-  static app: TestingApp | undefined
-
   private logger = loggingFactory('test:test-app')
+  private commsLogger = loggingFactory('test:test-app:comms')
   private app: { stop: () => void } | undefined
   public fakeCacheServer: FakeMarketplaceService | undefined
   public contract: Contract | undefined
@@ -122,20 +122,21 @@ export class TestingApp {
   public ipfsConsumer: IpfsClient | undefined
   public ipfsProvider: IpfsClient | undefined
   public sequelize: Sequelize | undefined
+  public peerId: PeerId.JSONPeerId | undefined
+  public libp2p: Libp2p | undefined
+  public pubsub: Room | undefined
   public consumerAddress = ''
   public providerAddress = ''
 
-  static async getApp (): Promise<TestingApp> {
-    if (!TestingApp.app) {
-      TestingApp.app = new TestingApp()
-      await TestingApp.app.init()
-      await TestingApp.app.start()
-    }
-    return TestingApp.app
+  async initAndStart (options?: Partial<AppOptions>, awaitComms = true): Promise<void> {
+    await this.init()
+    await this.start(options, awaitComms)
   }
 
   async init (): Promise<void> {
     const strategy = config.get<string>('strategy')
+
+    this.peerId = (await PeerId.create()).toJSON()
 
     switch (strategy) {
       case Strategy.Blockchain:
@@ -163,39 +164,92 @@ export class TestingApp {
     const sequelize = await sequelizeFactory(config.get<string>('db'))
     await sequelize.sync({ force: true })
     await initStore(sequelize)
+    const store = getObject()
+    store.offerId = this.providerAddress
 
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
     this.logger.info('IPFS clients created')
+
+    // Create PeerId for the Pinner
+    store.peerId = this.peerId.id
+    store.peerPubKey = this.peerId.pubKey!
+    store.peerPrivKey = this.peerId.privKey
+
+    // Create PubSub room to listen on events
+    const roomName = `*:${this.providerAddress}`
+    this.libp2p = await createLibP2P({
+      addresses: { listen: ['/ip4/127.0.0.1/tcp/0'] },
+      config: {
+        peerDiscovery: {
+          bootstrap: {
+            enabled: false
+          }
+        }
+      }
+    })
+
+    this.commsLogger.info(`Listening on room ${roomName}`)
+    this.pubsub = new Room(this.libp2p, roomName, { pollInterval: 100 })
+    this.pubsub.on('peer:joined', (peer) => this.commsLogger.verbose(`${roomName}: peer ${peer} joined`))
+    this.pubsub.on('peer:left', (peer) => this.commsLogger.verbose(`${roomName}: peer ${peer} left`))
+    this.pubsub.on('message', (msg: Message) => {
+      const parsedMsg = msg as unknown as Message<CommsMessage<unknown>>
+      this.commsLogger.debug(`Message ${parsedMsg.data.code}:`, msg.data)
+    })
   }
 
-  async start (options?: Partial<AppOptions>): Promise<void> {
+  async start (options?: Partial<AppOptions>, awaitComms = true): Promise<void> {
+    if (!this.pubsub) {
+      throw new Error('You have to invoke init() before start()!')
+    }
+    let commsHaveConnectionPromise
+
+    if (awaitComms) {
+      commsHaveConnectionPromise = new Promise(resolve => {
+        this.pubsub!.on('peer:joined', (peer) => {
+          if (peer === this.peerId!.id) {
+            this.logger.info('Pinning service joined PubSub. Lets start tests!')
+            resolve()
+          }
+        })
+      })
+    }
+
     // Run Pinning service
     const appOptions = Object.assign({
       errorHandler: errorHandlerStub,
       appResetCallback: appResetCallbackSpy
     }, options, { contractAddress: this.contract?.options.address }) as AppOptions
     this.app = await initApp(this.providerAddress, appOptions)
-    this.logger.info('Pinning service started')
+    this.logger.info('Pinning service started, waiting for joing comms')
+
+    if (awaitComms) {
+      await commsHaveConnectionPromise
+    }
   }
 
   async stop (): Promise<void> {
     if (this.app) {
       await this.app.stop()
-      this.fakeCacheServer?.stop()
-      await this.sequelize?.close()
-      resetStore()
-
-      this.sequelize = undefined
-      this.app = undefined
-      TestingApp.app = undefined
-      this.eth = undefined
-      this.ipfsConsumer = undefined
-      this.contract = undefined
-      this.ipfsProvider = undefined
-      this.consumerAddress = ''
-      this.providerAddress = ''
     }
+
+    this.fakeCacheServer?.stop()
+    await this.sequelize?.close()
+    resetStore()
+
+    this.sequelize = undefined
+    this.app = undefined
+    this.eth = undefined
+    this.ipfsConsumer = undefined
+    this.contract = undefined
+    this.ipfsProvider = undefined
+    this.consumerAddress = ''
+    this.providerAddress = ''
+    this.pubsub?.leave()
+    this.pubsub = undefined
+    await this.libp2p?.stop()
+    this.libp2p = undefined
   }
 
   private async purgeDb (): Promise<void> {
@@ -233,10 +287,9 @@ export class TestingApp {
       throw new Error('Provider should be initialized and has at least 2 accounts and StorageManage contract should be deployed')
     }
 
-    const testPeerId = 'FakePeerId'
-    const testPeerIdHex = asciiToHex(testPeerId, 32).replace('0x', '')
-    const nodeIdFlag = '01'
-    const msg = [`0x${nodeIdFlag}${testPeerIdHex}`]
+    // TODO: This is not correct! The 0x01 byte will get encoded as well, we need to shift it by the prefix,
+    //  but I dont see any easy way how to do it.
+    const msg = encodeHash(`0x01${this.peerId!.id}`)
 
     const offerCall = this.contract
       .methods
@@ -262,5 +315,25 @@ export class TestingApp {
       params: [],
       id: new Date().getTime()
     })
+  }
+
+  public awaitForMessage<T> (code: MessageCodesEnum, timeout = 3000): Promise<CommsMessage<T>> {
+    return Promise.race<CommsMessage<T>>([
+      new Promise<CommsMessage<T>>(resolve => {
+        const handler = (msg: Message) => {
+          const parsedMsg = msg as unknown as Message<CommsMessage<T>>
+
+          if (parsedMsg.data.code === code) {
+            resolve(parsedMsg.data)
+            this.pubsub!.off('message', handler)
+          }
+        }
+        this.pubsub!.on('message', handler)
+      }),
+      (async (): Promise<never> => {
+        await sleep(timeout)
+        throw new Error(`Waiting for message with code ${code} timed out!`)
+      })()
+    ])
   }
 }

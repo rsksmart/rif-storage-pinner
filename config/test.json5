@@ -1,5 +1,16 @@
 {
   db: 'db_test.sqlite',
+  comms: {
+    libp2p: {
+      config: {
+        peerDiscovery: {
+          bootstrap: {
+            enabled: false
+          }
+        }
+      }
+    }
+  },
   ipfs: {
     clientOptions: {
       url: 'http://localhost:5003'

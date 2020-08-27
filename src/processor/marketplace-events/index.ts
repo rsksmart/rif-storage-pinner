@@ -78,7 +78,8 @@ export class MarketplaceEventsProcessor extends EventProcessor {
     async run (): Promise<void> {
       if (!this.initialized) await this.initialize()
 
-      // Run precache
+      // We run precache on every startup to fetch the latest Agreements state
+      // The current Agreements get updated thanks to the "upsert" call
       await this.precache()
 
       // Subscribe for new blocks
@@ -104,7 +105,10 @@ export class MarketplaceEventsProcessor extends EventProcessor {
       }
 
       const store = getObject()
-      store.peerId = offer?.peerId
+
+      if (store.peerId !== offer?.peerId) {
+        logger.error(`PeerId assigned to Offer is not matching the locally available PeerId! Local: ${store.peerId}; Offer: ${offer?.peerId}`)
+      }
       store.totalCapacity = offer?.totalCapacity
 
       const agreements = await this.services.agreement.find({ query: { offerId: this.offerId }, paginate: false })

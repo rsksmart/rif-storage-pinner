@@ -14,7 +14,8 @@ import { sequelizeFactory } from '../../src/sequelize'
 import Agreement from '../../src/models/agreement.model'
 import { ProviderManager } from '../../src/providers'
 import { collectPinsClosure } from '../../src/gc'
-import { channel, MessageCodesEnum } from '../../src/communication'
+import { MessageCodesEnum } from '../../src/definitions'
+import * as channel from '../../src/communication'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)

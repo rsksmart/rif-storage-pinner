@@ -3,6 +3,12 @@
 
   strategy: 'blockchain',
 
+  comms: {
+    libp2p: {
+      addresses: { listen: ['/ip4/127.0.0.1/tcp/0', '/ip4/127.0.0.1/tcp/0/ws'] }
+    }
+  },
+
   ipfs: {
     clientOptions: {
       // The default value for go-ipfs
@@ -14,9 +20,6 @@
   },
 
   blockchain: {
-    // Events that will be listened to
-    events: ['TotalCapacitySet', 'MessageEmitted', 'NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped'],
-
     // Topics that will be listened to
     topics: [
       'TotalCapacitySet(address,uin64)',

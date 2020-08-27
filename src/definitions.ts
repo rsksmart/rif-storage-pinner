@@ -14,6 +14,7 @@ import type {
 } from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
 import type { Eth } from 'web3-eth'
 import type { ClientOptions as IpfsOptions } from 'ipfs-http-client'
+import type { Options as Libp2pOptions } from 'libp2p'
 
 import type { ProviderManager } from './providers'
 
@@ -72,6 +73,14 @@ export interface EventsEmitterOptions {
 }
 
 export interface Config {
+  // URL to the UI that should be passed PeerId upon initialization. Use <<peerId>> as placeholder that will
+  // get replaced with the actual PeerId.
+  uiUrl?: string
+
+  comms?: {
+    libp2p?: Libp2pOptions
+  }
+
   // What strategy for event listening should be used
   strategy?: Strategy
 
@@ -195,7 +204,7 @@ export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEvents
 
 export type StorageEvents = BlockchainEvent | MarketplaceEvent
 
-/**
+/****************************************************************************************
  * CLI
  */
 export interface InitCommandOption {
@@ -205,3 +214,55 @@ export interface InitCommandOption {
 }
 
 export type CliInitDbOptions = { migrate?: boolean }
+
+/****************************************************************************************
+ * Communications
+ */
+
+export enum MessageCodesEnum {
+  I_GENERAL = 'I_GEN',
+  I_AGREEMENT_NEW = 'I_AGR_NEW',
+  I_AGREEMENT_STOPPED = 'I_AGR_STOP',
+  I_AGREEMENT_EXPIRED = 'I_AGR_EXP',
+  I_HASH_START = 'I_HASH_START',
+  I_HASH_PINNED = 'I_HASH_STOP',
+  I_MULTIADDR_ANNOUNCEMENT = 'I_ADDR_ANNOUNCE',
+  I_RESEND_LATEST_MESSAGES = 'I_RESEND',
+  W_GENERAL = 'W_GEN',
+  W_HASH_RETRY = 'W_HASH_RETRY',
+  E_GENERAL = 'E_GEN',
+  E_HASH_NOT_FOUND = 'E_HASH_404',
+  E_AGREEMENT_SIZE_LIMIT_EXCEEDED = 'E_AGR_SIZE_OVERFLOW'
+}
+
+export interface RetryPayload {
+  error: string
+  retryNumber: number
+  totalRetries: number
+}
+
+export interface HashInfoPayload {
+  hash: string
+}
+
+export interface AgreementInfoPayload {
+  agreementReference: string
+}
+
+export interface AgreementSizeExceededPayload {
+  hash: string
+  size: number
+  expectedSize: number
+}
+
+export interface MultiaddrAnnouncementPayload {
+  agreementReference: string
+  multiaddr: string
+}
+
+export interface CommsMessage<Payload> {
+  timestamp: number
+  version: number
+  code: string
+  payload: Payload
+}

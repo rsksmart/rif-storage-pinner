@@ -7,6 +7,7 @@ import { ProviderManager } from './providers'
 import { IpfsProvider } from './providers/ipfs'
 import { duplicateObject } from './utils'
 import { JobsManager } from './jobs-manager'
+import { start as startCommunication, stop as stopCommunication } from './communication'
 import { Strategy } from './definitions'
 import type { AppOptions, JobManagerOptions } from './definitions'
 
@@ -29,8 +30,13 @@ function getEventProcessor (offerId: string, manager: ProviderManager, options: 
 }
 
 export async function initApp (offerId: string, options: AppOptions): Promise<{ stop: () => void }> {
+  logger.verbose('Current config:', config)
+
   const jobsOptions = config.get<JobManagerOptions>('jobs')
   const jobsManager = new JobsManager(jobsOptions)
+
+  // Initialize Communication channel
+  await startCommunication(offerId)
 
   // Initialize Provider Manager
   const providerManager = new ProviderManager()
@@ -44,5 +50,10 @@ export async function initApp (offerId: string, options: AppOptions): Promise<{ 
   await eventProcessor.run()
   logger.info('Event processor initialized')
 
-  return { stop: (): Promise<void> => eventProcessor.stop() }
+  return {
+    stop: async (): Promise<void> => {
+      await eventProcessor.stop()
+      await stopCommunication()
+    }
+  }
 }

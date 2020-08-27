@@ -5,7 +5,8 @@ import Agreement from './models/agreement.model'
 import { Op } from 'sequelize'
 import { ProviderManager } from './providers'
 import { loggingFactory } from './logger'
-import { channel, MessageCodesEnum } from './communication'
+import { broadcast } from './communication'
+import { MessageCodesEnum } from './definitions'
 import { NotPinnedError } from './errors'
 
 const logger = loggingFactory('gc')
@@ -56,7 +57,7 @@ export function collectPinsClosure (manager: ProviderManager) {
             throw e
           }
         }
-        channel.broadcast(MessageCodesEnum.I_AGREEMENT_EXPIRED, { agreementReference: agreement.agreementReference })
+        await broadcast(MessageCodesEnum.I_AGREEMENT_EXPIRED, { agreementReference: agreement.agreementReference })
         agreement.isActive = false
       }
       await agreement.save()
