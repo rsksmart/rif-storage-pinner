@@ -24,7 +24,7 @@ import { errorHandler as originalErrorHandler } from '../../utils'
 
 const logger: Logger = loggingFactory('processor:cache')
 const NEW_BLOCK_EVENT = 'newBlock'
-export const REORG_EVENT = 'reorg-event'
+export const REORG_OUT_OF_RANGE_EVENT = 'reorgOutOfRange'
 
 // TODO remove after cache service will be able to filter events for us
 function filterCacheEvents (offerId: string, callback: Processor<MarketplaceEvent>): Processor<MarketplaceEvent> {
@@ -89,7 +89,7 @@ export class MarketplaceEventsProcessor extends EventProcessor {
       // Subscribe for new blocks
       this.newBlockService?.on(NEW_BLOCK_EVENT, this.gcHandler)
       // Subscribe for reorgs
-      this.reorgService?.on(REORG_EVENT, (reorgData: { contracts: string[] }) => {
+      this.reorgService?.on(REORG_OUT_OF_RANGE_EVENT, (reorgData: { contracts: string[] }) => {
         if (reorgData.contracts.includes('storage')) {
           this.appResetCallback()
         }
@@ -135,7 +135,7 @@ export class MarketplaceEventsProcessor extends EventProcessor {
       // Unsubscribe from new blocks event
       this.newBlockService?.removeListener(NEW_BLOCK_EVENT, this.gcHandler)
       // Unsubscribe from reorg event
-      this.reorgService?.removeListener(REORG_EVENT, this.appResetCallback)
+      this.reorgService?.removeListener(REORG_OUT_OF_RANGE_EVENT, this.appResetCallback)
       // Unsubscribe from events
       Object
         .values(this.services)

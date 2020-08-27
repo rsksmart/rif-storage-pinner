@@ -7,7 +7,7 @@ import { Server } from 'http'
 
 import { loggingFactory } from '../src/logger'
 import { providerAddress } from './utils'
-import { REORG_EVENT } from '../src/processor/marketplace-events'
+import { REORG_OUT_OF_RANGE_EVENT } from '../src/processor/marketplace-events'
 
 const logger = loggingFactory('test:fake-cache')
 
@@ -25,7 +25,7 @@ export function stubResetFunctions (obj: Record<string, sinon.SinonStub>): void 
 export const stubOffer: StubService = createStubService()
 export const stubAgreement: StubService = createStubService()
 export const stubNewBlock: StubService = createStubService({ events: ['newBlock'] })
-export const stubReorg: StubService = createStubService({ events: [REORG_EVENT] })
+export const stubReorg: StubService = createStubService({ events: [REORG_OUT_OF_RANGE_EVENT] })
 
 export function mockOffer (offer: Record<string, any> = {}): Record<string, any> {
   return Object.assign({
