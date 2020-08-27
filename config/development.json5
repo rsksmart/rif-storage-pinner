@@ -1,9 +1,13 @@
 {
   blockchain: {
+    contractAddress: '0x5Ebbf329a6AACEdC2C78A6424E02524c436B8825',
     provider: 'ws://localhost:8545',
     eventsEmitter: {
       confirmations: 1
     }
+  },
+  marketplace: {
+    provider: 'http://localhost:3030'
   },
   ipfs: {
     sizeFetchTimeout: '30s',
