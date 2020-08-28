@@ -20,7 +20,7 @@ import type {
   Processor
 } from '../../definitions'
 import type { ProviderManager } from '../../providers'
-import { errorHandler as originalErrorHandler, getPeerIdByAgreement, composeGc } from '../../utils'
+import { errorHandler as originalErrorHandler, getPeerIdByAgreement } from '../../utils'
 
 const logger: Logger = loggingFactory('processor:cache')
 const NEW_BLOCK_EVENT = 'newBlock'
