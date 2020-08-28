@@ -102,7 +102,7 @@ describe('GC', function () {
       block.number.returns!(10)
 
       const manager = Substitute.for<ProviderManager>()
-      await collectPinsClosure(manager)(block)
+      await collectPinsClosure({ manager })(block)
 
       const markedAgreements = await Agreement.findAll({
         where: {
@@ -136,7 +136,7 @@ describe('GC', function () {
       block.number.returns!(15) // So 5 confirmations is passed
 
       const manager = Substitute.for<ProviderManager>()
-      await collectPinsClosure(manager)(block)
+      await collectPinsClosure({ manager })(block)
 
       const markedAgreements = await Agreement.findAll()
       expect(markedAgreements.length).to.eql(1)
@@ -188,7 +188,7 @@ describe('GC', function () {
       block.number.returns!(20)
 
       const manager = Substitute.for<ProviderManager>()
-      await collectPinsClosure(manager)(block)
+      await collectPinsClosure({ manager })(block)
 
       manager.received(1).unpin('222')
       manager.received(1).unpin('111')

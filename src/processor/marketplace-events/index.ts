@@ -8,7 +8,7 @@ import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
 import Agreement from '../../models/agreement.model'
-import { collectDirectAddresses, collectPinsClosure } from '../../gc'
+import gcHandler from '../../gc'
 import { loggingFactory } from '../../logger'
 import type {
   AppOptions,
@@ -56,10 +56,7 @@ export class MarketplaceEventsProcessor extends EventProcessor {
       )
 
       this.manager = manager
-      this.gcHandler = composeGc([
-        errorHandler(collectPinsClosure(this.manager), loggingFactory('gc:pin')),
-        errorHandler(collectDirectAddresses(), loggingFactory('gc:direct-address'))
-      ])
+      this.gcHandler = errorHandler(gcHandler({ manager: this.manager }), loggingFactory('gc'))
     }
 
     // eslint-disable-next-line require-await

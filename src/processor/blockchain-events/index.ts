@@ -8,11 +8,11 @@ import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/c
 import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
-import { composeGc, errorHandler as originalErrorHandler, getPeerIdByAgreement, isEventWithProvider } from '../../utils'
+import { errorHandler as originalErrorHandler, getPeerIdByAgreement, isEventWithProvider } from '../../utils'
 import { ethFactory, getEventsEmitter, getNewBlockEmitter } from '../../blockchain/utils'
 import { loggingFactory } from '../../logger'
 import Agreement from '../../models/agreement.model'
-import { collectDirectAddresses, collectPinsClosure } from '../../gc'
+import gcHanlder from '../../gc'
 import type { BaseEventsEmitter } from '../../blockchain/events'
 import type { AutoStartStopEventEmitter } from '../../blockchain/new-block-emitters'
 
@@ -115,10 +115,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     this.eventsEmitter?.on('reorgOutOfRange', this.appResetCallback)
 
     // Pinning Garbage Collecting
-    this.newBlockEmitter?.on('newBlock', composeGc([
-      this.errorHandler(collectPinsClosure(this.manager), loggingFactory('gc:pin')),
-      this.errorHandler(collectDirectAddresses(), loggingFactory('gc:direct-address'))
-    ]))
+    this.newBlockEmitter?.on('newBlock', this.errorHandler(gcHanlder({ manager: this.manager }), loggingFactory('gc')))
   }
 
   async precache (): Promise<void> {

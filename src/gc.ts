@@ -9,8 +9,12 @@ import { broadcast } from './communication'
 import { MessageCodesEnum } from './definitions'
 import { NotPinnedError } from './errors'
 import DirectAddressModel from './models/direct-address.model'
+import { composeGc } from './utils'
 
 const logger = loggingFactory('gc')
+
+type GcHandlerOptions = { manager?: ProviderManager }
+
 /**
  * This is a closure that garbage-collects pins of expired Agreements.
  *
@@ -20,9 +24,10 @@ const logger = loggingFactory('gc')
  * This is in order to handle case when reorg happens and the DepositFunds event is emitted in the
  * confirmation range.
  *
- * @param manager
+ * @param options
  */
-export function collectPinsClosure (manager: ProviderManager) {
+
+export function collectPinsClosure (options?: GcHandlerOptions) {
   return async (block: BlockHeader): Promise<void> => {
     logger.verbose('Running pinning GC')
 
@@ -49,7 +54,7 @@ export function collectPinsClosure (manager: ProviderManager) {
       } else { // Agreement is still without funds!
         logger.info(`Unpinning agreement ${agreement.agreementReference}.`)
         try {
-          await manager.unpin(agreement.dataReference)
+          await options?.manager?.unpin(agreement.dataReference)
         } catch (e) {
           if (e.code === NotPinnedError.code) {
             logger.info(`Data reference ${agreement.dataReference} was already removed prior our GC run!`)
@@ -82,4 +87,11 @@ export function collectDirectAddresses () {
       }
     })
   }
+}
+
+export default function (options?: GcHandlerOptions) {
+  return composeGc([
+    collectPinsClosure(options),
+    collectDirectAddresses()
+  ])
 }
