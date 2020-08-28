@@ -4,6 +4,7 @@
     networkId: 31,
     eventsEmitter: {
       startingBlock: 1131351
+      confirmations: 3
     }
   },
   marketplace: {
