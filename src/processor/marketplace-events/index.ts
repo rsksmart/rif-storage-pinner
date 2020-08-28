@@ -8,7 +8,7 @@ import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
 import Agreement from '../../models/agreement.model'
-import { collectPinsClosure } from '../../gc'
+import { collectDirectAddresses, collectPinsClosure } from '../../gc'
 import { loggingFactory } from '../../logger'
 import type {
   AppOptions,
@@ -20,7 +20,7 @@ import type {
   Processor
 } from '../../definitions'
 import type { ProviderManager } from '../../providers'
-import { errorHandler as originalErrorHandler, getPeerIdByAgreement } from '../../utils'
+import { errorHandler as originalErrorHandler, getPeerIdByAgreement, composeGc } from '../../utils'
 
 const logger: Logger = loggingFactory('processor:cache')
 const NEW_BLOCK_EVENT = 'newBlock'
@@ -56,7 +56,10 @@ export class MarketplaceEventsProcessor extends EventProcessor {
       )
 
       this.manager = manager
-      this.gcHandler = errorHandler(collectPinsClosure(this.manager), loggingFactory('gc'))
+      this.gcHandler = composeGc([
+        errorHandler(collectPinsClosure(this.manager), loggingFactory('gc:pin')),
+        errorHandler(collectDirectAddresses(), loggingFactory('gc:direct-address'))
+      ])
     }
 
     // eslint-disable-next-line require-await

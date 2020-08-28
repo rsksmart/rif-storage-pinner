@@ -2,8 +2,8 @@ import { Table, Column, Model } from 'sequelize-typescript'
 
 @Table({
   freezeTableName: true,
-  tableName: 'swarm',
-  timestamps: false
+  tableName: 'direct-address',
+  timestamps: true
 })
 export default class DirectAddressModel extends Model {
   @Column({ allowNull: false })

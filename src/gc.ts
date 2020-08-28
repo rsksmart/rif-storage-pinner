@@ -8,9 +8,9 @@ import { loggingFactory } from './logger'
 import { broadcast } from './communication'
 import { MessageCodesEnum } from './definitions'
 import { NotPinnedError } from './errors'
+import DirectAddressModel from './models/direct-address.model'
 
 const logger = loggingFactory('gc')
-
 /**
  * This is a closure that garbage-collects pins of expired Agreements.
  *
@@ -62,5 +62,24 @@ export function collectPinsClosure (manager: ProviderManager) {
       }
       await agreement.save()
     }
+  }
+}
+
+export function collectDirectAddresses () {
+  return async (): Promise<void> => {
+    logger.info('In collect Direct Addresses')
+
+    if (!config.has('directAddress.ttl')) {
+      logger.error('ttl for "directAddress" not provided')
+    }
+    const ttl = config.get<number>('directAddress.ttl')
+
+    await DirectAddressModel.destroy({
+      where: {
+        createdAt: {
+          [Op.lte]: new Date(Date.now() - ttl)
+        }
+      }
+    })
   }
 }

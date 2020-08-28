@@ -19,6 +19,10 @@
     sizeFetchTimeout: '4m'
   },
 
+  directAddress: {
+    ttl: 3600000 // 1000, * 60 * 60 = 1 hour
+  },
+
   blockchain: {
     // Topics that will be listened to
     topics: [

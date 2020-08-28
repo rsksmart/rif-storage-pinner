@@ -81,6 +81,10 @@ export interface Config {
     libp2p?: Libp2pOptions
   }
 
+  directAddress?: {
+    ttl?: number
+  }
+
   // What strategy for event listening should be used
   strategy?: Strategy
 

@@ -1,4 +1,5 @@
 import { hexToAscii } from 'web3-utils'
+import { BlockHeader } from 'web3-eth'
 import fs from 'fs'
 import BigNumber from 'bignumber.js'
 import config from 'config'
@@ -318,4 +319,12 @@ export async function getPeerIdByAgreement (agreementReference: string): Promise
   const directAddress = await DirectAddressModel.findOne({ where: { agreementReference } })
   await DirectAddressModel.destroy({ where: { agreementReference } })
   return directAddress?.peerId
+}
+
+export function composeGc (fns: Array<(block: BlockHeader) => Promise<void>>): (block: BlockHeader) => Promise<void> {
+  return async function (blockHeader: BlockHeader): Promise<void> {
+    for (const gc of fns) {
+      await gc(blockHeader)
+    }
+  }
 }

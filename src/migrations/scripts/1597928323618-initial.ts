@@ -86,6 +86,44 @@ function migrationCommands (transaction: any): Commands {
     {
       fn: 'createTable',
       params: [
+        'direct-address',
+        {
+          id: {
+            type: Sequelize.INTEGER,
+            field: 'id',
+            autoIncrement: true,
+            primaryKey: true,
+            allowNull: false
+          },
+          peerId: {
+            type: Sequelize.TEXT,
+            field: 'peerId',
+            allowNull: false
+          },
+          agreementReference: {
+            type: Sequelize.TEXT,
+            field: 'agreementReference',
+            allowNull: false
+          },
+          createdAt: {
+            type: Sequelize.DATE,
+            field: 'createdAt',
+            allowNull: false
+          },
+          updatedAt: {
+            type: Sequelize.DATE,
+            field: 'updatedAt',
+            allowNull: false
+          }
+        },
+        {
+          transaction: transaction
+        }
+      ]
+    },
+    {
+      fn: 'createTable',
+      params: [
         'storage_agreement',
         {
           agreementReference: {
@@ -238,6 +276,14 @@ function rollbackCommands (transaction: any): Commands {
       fn: 'dropTable',
       params: [
         'jobs', {
+          transaction: transaction
+        }
+      ]
+    },
+    {
+      fn: 'dropTable',
+      params: [
+        'direct-address', {
           transaction: transaction
         }
       ]
