@@ -1,3 +1,15 @@
+<a name="0.1.0-pre.3"></a>
+# [0.1.0-pre.3](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.2...v0.1.0-pre.3) (2020-08-28)
+
+
+### Features
+
+* communication integration ([#159](https://github.com/rsksmart/rds-ipfs/issues/159)) ([8635d09](https://github.com/rsksmart/rds-ipfs/commit/8635d09))
+* direct swarming ([#185](https://github.com/rsksmart/rds-ipfs/issues/185)) ([5590697](https://github.com/rsksmart/rds-ipfs/commit/5590697))
+* marketplace strategy reorgs handling ([#162](https://github.com/rsksmart/rds-ipfs/issues/162)) ([9002fc4](https://github.com/rsksmart/rds-ipfs/commit/9002fc4))
+
+
+
 <a name="0.1.0-pre.2"></a>
 # [0.1.0-pre.2](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.1...v0.1.0-pre.2) (2020-08-21)
 
