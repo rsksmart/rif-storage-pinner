@@ -20,6 +20,9 @@ declare module 'ipfs-http-client' {
     path: string
     size: number
     hash: string
+    cid: CID
+    mode: number
+    mtime: { secs: number, nsecs: number }
   }
 
   export interface IpfsObject<T> {
@@ -65,7 +68,7 @@ declare module 'ipfs-http-client' {
     }
 
     export interface RegularFilesCommands {
-      add (data: Buffer | File | Readable | Array<IpfsObject<Buffer | File | Readable | string>>, options?: AddOptions): Promise<Array<IpfsResult>>
+      add (data: Buffer | File | Readable | IpfsObject<Buffer | File | Readable | string>, options?: AddOptions): Promise<IpfsResult>
       // addFromFs
       // addFromStream
       // addFromUrl
@@ -109,9 +112,9 @@ declare module 'ipfs-http-client' {
 
   export interface PinCommands {
     pin: {
-      add(cid: CID, options?: {recursive?: boolean} & Options): Promise<Array<{cid: CID}>>
-      ls(cid?: CID, options?: Options): AsyncIterable<{ cid: CID, type: string }>
-      rm(cid: CID, options?: {recursive?: boolean} & Options): Promise<Array<{cid: CID}>>
+      add (cid: CID, options?: { recursive?: boolean } & Options): Promise<Array<{ cid: CID }>>
+      ls (options?: Options & { paths?: CID | string }): AsyncIterable<{ cid: CID, type: string }>
+      rm (cid: CID, options?: { recursive?: boolean } & Options): Promise<Array<{ cid: CID }>>
     }
   }
 
@@ -126,7 +129,7 @@ declare module 'ipfs-http-client' {
 
   export interface ObjectCommands {
     object: {
-      stat(cid: CID, options?: Options): Promise<StatObject>
+      stat (cid: CID, options?: Options): Promise<StatObject>
     }
   }
 

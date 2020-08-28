@@ -70,7 +70,7 @@ export async function initIpfsClient (options: ClientOptions | string): Promise<
 
 export async function isPinned (ipfs: IpfsClient, cid: CID): Promise<boolean> {
   try {
-    const [file] = await asyncIterableToArray(ipfs.pin.ls(cid))
+    const [file] = await asyncIterableToArray(ipfs.pin.ls({ paths: cid }))
     return file.cid.toString() === cid.toString()
   } catch (e) {
     if (e.message === `path '${cid}' is not pinned`) return false
@@ -98,12 +98,13 @@ function generateRandomData (size: number): string {
 }
 
 export async function uploadRandomData (ipfs: IpfsClient): Promise<File> {
-  const [file] = await asyncIterableToArray(ipfs.add([
+  const file = await ipfs.add(
     {
       path: `${Math.random().toString(36).substring(7)}.txt`,
       content: `Nice to be on IPFS ${generateRandomData(1000 * 1000 * 2)}`
     }
-  ]))
+  )
+
   return {
     ...file,
     size: bytesToMegabytes(file.size).toNumber(),
