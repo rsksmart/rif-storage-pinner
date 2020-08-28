@@ -70,6 +70,7 @@
     "ipfs-http-client": "^44.3.0",
     "log-symbols": "^4.0.0",
     "multiaddr": "^8.0.0",
+    "parse-duration": "^0.4.4",
     "peer-id": "^0.14.0",
     "reflect-metadata": "^0.1.13",
     "semver": "^7.3.2",

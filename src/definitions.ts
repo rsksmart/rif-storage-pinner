@@ -82,7 +82,7 @@ export interface Config {
   }
 
   directAddress?: {
-    ttl?: number
+    ttl?: string
   }
 
   // What strategy for event listening should be used

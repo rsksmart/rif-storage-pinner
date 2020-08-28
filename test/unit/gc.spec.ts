@@ -41,7 +41,7 @@ describe('GC', function () {
     // @ts-ignore
     config.blockchain.eventsEmitter.confirmations = 5
     // @ts-ignore
-    config.directAddress = { ttl: 1000 } // 1 second
+    config.directAddress = { ttl: '1s' } // 1 second
 
     channelSpy = sinon.stub(channel, 'broadcast')
   })
@@ -202,7 +202,7 @@ describe('GC', function () {
     beforeEach(async () => {
       await sequelize.sync({ force: true })
     })
-    it('Should remove expired addressess', async () => {
+    it('Should remove expired addressees', async () => {
       await DirectAddressModel.create({ peerId: 'TestPeer', agreementReference: 'testAgreement' })
 
       await sleep(1100)

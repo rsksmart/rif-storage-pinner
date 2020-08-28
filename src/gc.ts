@@ -1,5 +1,6 @@
 import { BlockHeader } from 'web3-eth'
 import config from 'config'
+import parse from 'parse-duration'
 
 import Agreement from './models/agreement.model'
 import { Op } from 'sequelize'
@@ -77,8 +78,11 @@ export function collectDirectAddresses () {
     if (!config.has('directAddress.ttl')) {
       logger.error('ttl for "directAddress" not provided')
     }
-    const ttl = config.get<number>('directAddress.ttl')
+    const ttl = parse(config.get<string>('directAddress.ttl'))
 
+    if (!ttl) {
+      throw new Error('Invalid Direct Address ttl value')
+    }
     await DirectAddressModel.destroy({
       where: {
         createdAt: {
