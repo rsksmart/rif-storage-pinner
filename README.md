@@ -32,7 +32,7 @@
 Example of usage:
 ```bash
 $ rif-pinning init --offerId=0x123456789
-$ rif-pinning --provider='ws://localhost:8546' --ipfs='/ip4/127.0.0.1/tcp/5001' --network=testnet --strategy=blockchain
+$ rif-pinning daemon --provider='ws://localhost:8546' --ipfs='http://localhost:5001' --network=testnet --strategy=blockchain
 ```
 
 This will:
@@ -41,7 +41,7 @@ This will:
  - listens only for events for the Offer ID `0x123456789`
  - use blockchain node for listening on events at `ws://localhost:8546` that is connected to testnet network
  - thanks to `--network testnet` will use predefined deployed smart-contracts on testnet
- - connects to your locally running IPFS node at `/ip4/127.0.0.1/tcp/5001`
+ - connects to your locally running IPFS node at `http://localhost:5001`
 
 ## Commands
 <!-- commands -->
@@ -52,7 +52,7 @@ This will:
 * [`rif-pinning help [COMMAND]`](#rif-pinning-help-command)
 * [`rif-pinning init`](#rif-pinning-init)
 
-#### `rif-pinning agreements`
+### `rif-pinning agreements`
 
 Agreements info
 
@@ -135,7 +135,7 @@ EXAMPLES
   $ rif-pinning daemon --strategy=blockchain --provider 'ws://localhost:8546' --ipfs '/ip4/127.0.0.1/tcp/5001' --network
   testnet
 
-  $ rif-pinning daemon --strategy=marketplace --ipfs '/ip4/127.0.0.1/tcp/5001' --network testnet
+  $ rif-pinning daemon --strategy=marketplace --ipfs 'http://localhost:5001' --network testnet
 ```
 
 ### `rif-pinning db-migration`
@@ -184,7 +184,7 @@ OPTIONS
   --all  see all commands in CLI
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.1.0/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.2.0/src/commands/help.ts)_
 
 ### `rif-pinning init`
 
