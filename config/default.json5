@@ -19,6 +19,10 @@
     sizeFetchTimeout: '4m'
   },
 
+  directAddress: {
+    ttl: '1h'
+  },
+
   blockchain: {
     // Topics that will be listened to
     topics: [

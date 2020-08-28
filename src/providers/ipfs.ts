@@ -1,4 +1,4 @@
-import ipfsClient, { CID, ClientOptions, IpfsClient, Version } from 'ipfs-http-client'
+import ipfsClient, { CID, ClientOptions, IpfsClient, multiaddr, Version } from 'ipfs-http-client'
 import * as semver from 'semver'
 import config from 'config'
 import BigNumber from 'bignumber.js'
@@ -14,17 +14,50 @@ const logger = loggingFactory('ipfs')
 const REQUIRED_IPFS_VERSION = '>=0.5.0'
 const NOT_PINNED_ERROR_MSG = 'not pinned or pinned indirectly'
 
-class PinJob extends Job {
+export class PinJob extends Job {
   private readonly hash: string
   private readonly ipfs: IpfsClient
   private readonly expectedSize: BigNumber
+  private peerId: string | undefined
+  private swarmAddresses: multiaddr[] | undefined
 
-  constructor (ipfs: IpfsClient, hash: string, expectedSize: BigNumber) {
+  constructor (ipfs: IpfsClient, hash: string, expectedSize: BigNumber, peerId?: string) {
     super(hash, 'ipfs - pin')
 
+    this.peerId = peerId
     this.expectedSize = expectedSize
     this.ipfs = ipfs
     this.hash = hash
+  }
+
+  async getPeer (peerId?: string): Promise<{ id: string, addresses: multiaddr[] } | undefined> {
+    if (!peerId) return undefined
+    const peer = await this.ipfs.dht.findPeer(new CID(peerId))
+
+    if (!peer) return undefined
+    return {
+      ...peer,
+      addresses: peer.addrs.map(addr => multiaddr(`${addr.toString()}/p2p/${peer.id}`))
+    }
+  }
+
+  async swarmConnect (): Promise<void> {
+    logger.debug('In Pinning Job Swarm connect')
+
+    this.swarmAddresses = (await this.getPeer(this.peerId))?.addresses
+
+    if (this.swarmAddresses) {
+      await this.ipfs.swarm.connect(this.swarmAddresses)
+    }
+  }
+
+  async swarmDisconnect (): Promise<void> {
+    logger.debug('In Pinning Job Swarm disconnect')
+
+    // Disconnect from peer
+    if (this.swarmAddresses) {
+      await this.ipfs.swarm.disconnect(this.swarmAddresses)
+    }
   }
 
   async _run (): Promise<void> {
@@ -48,10 +81,14 @@ class PinJob extends Job {
       }
     }
 
+    await this.swarmConnect().catch(logger.warn)
+
     logger.info(`Pinning hash: ${hash} start`)
     // TODO: For this call there is applied the default 20 minutes timeout. This should be estimated using the size.
     //  https://github.com/ipfs/js-ipfs/blob/master/packages/ipfs-http-client/src/lib/core.js#L113
     await this.ipfs.pin.add(cid) // The data can be big and we don't want to automatically timeout here.
+
+    await this.swarmDisconnect().catch(logger.warn)
   }
 }
 
@@ -94,9 +131,10 @@ export class IpfsProvider implements Provider {
    *
    * @param hash
    * @param expectedSize
+   * @param peerId
    */
-  pin (hash: string, expectedSize: BigNumber): Promise<void> {
-    const job = new PinJob(this.ipfs, hash, expectedSize)
+  pin (hash: string, expectedSize: BigNumber, peerId?: string): Promise<void> {
+    const job = new PinJob(this.ipfs, hash, expectedSize, peerId)
     return this.jobsManager.run(job)
   }
 

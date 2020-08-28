@@ -8,11 +8,11 @@ import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/c
 import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
-import { errorHandler as originalErrorHandler, isEventWithProvider } from '../../utils'
+import { errorHandler as originalErrorHandler, getPeerIdByAgreement, isEventWithProvider } from '../../utils'
 import { ethFactory, getEventsEmitter, getNewBlockEmitter } from '../../blockchain/utils'
 import { loggingFactory } from '../../logger'
 import Agreement from '../../models/agreement.model'
-import { collectPinsClosure } from '../../gc'
+import gcHanlder from '../../gc'
 import type { BaseEventsEmitter } from '../../blockchain/events'
 import type { AutoStartStopEventEmitter } from '../../blockchain/new-block-emitters'
 
@@ -115,7 +115,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     this.eventsEmitter?.on('reorgOutOfRange', this.appResetCallback)
 
     // Pinning Garbage Collecting
-    this.newBlockEmitter?.on('newBlock', this.errorHandler(collectPinsClosure(this.manager), loggingFactory('gc')))
+    this.newBlockEmitter?.on('newBlock', this.errorHandler(gcHanlder({ manager: this.manager }), loggingFactory('gc')))
   }
 
   async precache (): Promise<void> {
@@ -153,7 +153,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     precacheLogger.info('Pinning valid Agreements')
     for (const agreement of await Agreement.findAll()) {
       if (agreement.hasSufficientFunds) {
-        await this.manager.pin(agreement.dataReference, agreement.size)
+        await this.manager.pin(agreement.dataReference, agreement.size, await getPeerIdByAgreement(agreement.agreementReference))
       }
     }
   }

@@ -23,7 +23,7 @@ export enum Providers {
 }
 
 export interface Provider {
-  pin (hash: string, expectedSize: BigNumber): Promise<void>
+  pin (hash: string, expectedSize: BigNumber, peerId?: string): Promise<void>
   unpin (hash: string): void
 }
 
@@ -79,6 +79,10 @@ export interface Config {
 
   comms?: {
     libp2p?: Libp2pOptions
+  }
+
+  directAddress?: {
+    ttl?: string
   }
 
   // What strategy for event listening should be used
@@ -260,7 +264,7 @@ export interface AgreementSizeExceededPayload {
 
 export interface MultiaddrAnnouncementPayload {
   agreementReference: string
-  multiaddr: string
+  peerId: string
 }
 
 export interface CommsMessage<Payload> {

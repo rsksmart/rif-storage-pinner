@@ -1,4 +1,5 @@
 import { hexToAscii } from 'web3-utils'
+import { BlockHeader } from 'web3-eth'
 import fs from 'fs'
 import BigNumber from 'bignumber.js'
 import config from 'config'
@@ -31,6 +32,7 @@ import { JobsManager } from './jobs-manager'
 import { IpfsProvider } from './providers/ipfs'
 import { Migration } from './migrations'
 import { Sequelize } from 'sequelize'
+import DirectAddressModel from './models/direct-address.model'
 
 export function bnFloor (v: string | number | BigNumber): BigNumber {
   return new BigNumber(v).integerValue(BigNumber.ROUND_FLOOR)
@@ -309,6 +311,20 @@ export default abstract class BaseCommand extends Command {
 
     if (db) {
       await this.initDB(this.dbPath, { ...db, skipPrompt: Boolean(this.parsedArgs.flags.skipPrompt) })
+    }
+  }
+}
+
+export async function getPeerIdByAgreement (agreementReference: string): Promise<string | undefined> {
+  const directAddress = await DirectAddressModel.findOne({ where: { agreementReference } })
+  await DirectAddressModel.destroy({ where: { agreementReference } })
+  return directAddress?.peerId
+}
+
+export function composeGc (fns: Array<(block: BlockHeader) => Promise<void>>): (block: BlockHeader) => Promise<void> {
+  return async function (blockHeader: BlockHeader): Promise<void> {
+    for (const gc of fns) {
+      await gc(blockHeader)
     }
   }
 }

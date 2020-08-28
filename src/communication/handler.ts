@@ -3,13 +3,14 @@ import type {
   MultiaddrAnnouncementPayload
 } from '../definitions'
 import { loggingFactory } from '../logger'
+import DirectAddressModel from '../models/direct-address.model'
 
 const logger = loggingFactory('comms:handler')
 
 // eslint-disable-next-line require-await
 async function handlePeerIdAnnouncement (message: CommsMessage<MultiaddrAnnouncementPayload>): Promise<void> {
-  // TODO: Implement this
-  throw new Error('Not implemented')
+  const { payload: { peerId, agreementReference } } = message
+  await DirectAddressModel.create({ peerId, agreementReference })
 }
 
 // eslint-disable-next-line require-await

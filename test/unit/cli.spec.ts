@@ -52,6 +52,7 @@ class BaseCommandMock extends BaseCommand {
 const getBaseCommandMock = () => new BaseCommandMock([], {} as IConfig)
 
 describe('CLI', function () {
+  this.timeout(5000)
   describe('BaseCommand', () => {
     let baseCommand = getBaseCommandMock()
 

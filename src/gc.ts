@@ -1,5 +1,6 @@
 import { BlockHeader } from 'web3-eth'
 import config from 'config'
+import parse from 'parse-duration'
 
 import Agreement from './models/agreement.model'
 import { Op } from 'sequelize'
@@ -8,8 +9,12 @@ import { loggingFactory } from './logger'
 import { broadcast } from './communication'
 import { MessageCodesEnum } from './definitions'
 import { NotPinnedError } from './errors'
+import DirectAddressModel from './models/direct-address.model'
+import { composeGc } from './utils'
 
 const logger = loggingFactory('gc')
+
+type GcHandlerOptions = { manager?: ProviderManager }
 
 /**
  * This is a closure that garbage-collects pins of expired Agreements.
@@ -20,9 +25,10 @@ const logger = loggingFactory('gc')
  * This is in order to handle case when reorg happens and the DepositFunds event is emitted in the
  * confirmation range.
  *
- * @param manager
+ * @param options
  */
-export function collectPinsClosure (manager: ProviderManager) {
+
+export function collectPinsClosure (options?: GcHandlerOptions) {
   return async (block: BlockHeader): Promise<void> => {
     logger.verbose('Running pinning GC')
 
@@ -49,7 +55,7 @@ export function collectPinsClosure (manager: ProviderManager) {
       } else { // Agreement is still without funds!
         logger.info(`Unpinning agreement ${agreement.agreementReference}.`)
         try {
-          await manager.unpin(agreement.dataReference)
+          await options?.manager?.unpin(agreement.dataReference)
         } catch (e) {
           if (e.code === NotPinnedError.code) {
             logger.info(`Data reference ${agreement.dataReference} was already removed prior our GC run!`)
@@ -63,4 +69,33 @@ export function collectPinsClosure (manager: ProviderManager) {
       await agreement.save()
     }
   }
+}
+
+export function collectDirectAddresses () {
+  return async (): Promise<void> => {
+    logger.info('In collect Direct Addresses')
+
+    if (!config.has('directAddress.ttl')) {
+      logger.error('ttl for "directAddress" not provided')
+    }
+    const ttl = parse(config.get<string>('directAddress.ttl'))
+
+    if (!ttl) {
+      throw new Error('Invalid Direct Address ttl value')
+    }
+    await DirectAddressModel.destroy({
+      where: {
+        createdAt: {
+          [Op.lte]: new Date(Date.now() - ttl)
+        }
+      }
+    })
+  }
+}
+
+export default function (options?: GcHandlerOptions) {
+  return composeGc([
+    collectPinsClosure(options),
+    collectDirectAddresses()
+  ])
 }
