@@ -16,13 +16,13 @@ export class ProviderManager implements Provider {
     }
   }
 
-  public async pin (hash: string, expectedSize: BigNumber, peerId?: string): Promise<void> {
+  public async pin (hash: string, expectedSize: BigNumber, agreementReference: string): Promise<void> {
     if (hash.startsWith('/ipfs/')) {
       if (!this.ipfs) {
         throw new Error('IPFS provider was not registered!')
       }
 
-      await this.ipfs.pin(hash, expectedSize, peerId)
+      await this.ipfs.pin(hash, expectedSize, agreementReference)
     } else {
       throw new Error(`Unknown type of hash ${hash}`)
     }

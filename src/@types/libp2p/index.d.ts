@@ -1,5 +1,6 @@
 declare module 'libp2p' {
   import { EventEmitter } from 'events'
+  import PeerId from 'peer-id'
 
   export interface Options {
     peerId?: any
@@ -25,7 +26,7 @@ declare module 'libp2p' {
   }
 
   export default class Libp2p extends EventEmitter {
-    peerId: any
+    peerId: PeerId
 
     constructor (config?: Options)
 
@@ -41,6 +42,7 @@ declare module 'libp2p' {
 
     peerStore: {
       get (peerId: any): any
+      on: (name: string, callback: (data: any) => void) => void
     }
 
     peerInfo: {

@@ -8,6 +8,7 @@ import { loggingFactory } from '../logger'
 import { Job, JobsManager } from '../jobs-manager'
 import { HashExceedsSizeError, NotPinnedError } from '../errors'
 import { bytesToMegabytes } from '../utils'
+import DirectAddressModel from '../models/direct-address.model'
 
 const logger = loggingFactory('ipfs')
 
@@ -18,19 +19,25 @@ export class PinJob extends Job {
   private readonly hash: string
   private readonly ipfs: IpfsClient
   private readonly expectedSize: BigNumber
-  private peerId: string | undefined
   private swarmAddresses: multiaddr[] | undefined
 
-  constructor (ipfs: IpfsClient, hash: string, expectedSize: BigNumber, peerId?: string) {
-    super(hash, 'ipfs - pin')
+  constructor (ipfs: IpfsClient, hash: string, expectedSize: BigNumber, agreementReference: string) {
+    super(hash, agreementReference, 'ipfs - pin')
 
-    this.peerId = peerId
     this.expectedSize = expectedSize
     this.ipfs = ipfs
     this.hash = hash
   }
 
-  async getPeer (peerId?: string): Promise<{ id: string, addresses: multiaddr[] } | undefined> {
+  private async getPeerIdByAgreement (agreementReference: string): Promise<string | undefined> {
+    const directAddress = await DirectAddressModel.findOne({ where: { agreementReference } })
+    await DirectAddressModel.destroy({ where: { agreementReference } })
+    return directAddress?.peerId
+  }
+
+  private async getPeer (): Promise<{ id: string, addresses: multiaddr[] } | undefined> {
+    const peerId = await this.getPeerIdByAgreement(this.agreementReference)
+
     if (!peerId) return undefined
     const peer = await this.ipfs.dht.findPeer(new CID(peerId))
 
@@ -41,17 +48,17 @@ export class PinJob extends Job {
     }
   }
 
-  async swarmConnect (): Promise<void> {
+  private async swarmConnect (): Promise<void> {
     logger.debug('In Pinning Job Swarm connect')
 
-    this.swarmAddresses = (await this.getPeer(this.peerId))?.addresses
+    this.swarmAddresses = (await this.getPeer())?.addresses
 
     if (this.swarmAddresses) {
       await this.ipfs.swarm.connect(this.swarmAddresses)
     }
   }
 
-  async swarmDisconnect (): Promise<void> {
+  private async swarmDisconnect (): Promise<void> {
     logger.debug('In Pinning Job Swarm disconnect')
 
     // Disconnect from peer
@@ -131,10 +138,10 @@ export class IpfsProvider implements Provider {
    *
    * @param hash
    * @param expectedSize
-   * @param peerId
+   * @param agreementReference
    */
-  pin (hash: string, expectedSize: BigNumber, peerId?: string): Promise<void> {
-    const job = new PinJob(this.ipfs, hash, expectedSize, peerId)
+  pin (hash: string, expectedSize: BigNumber, agreementReference: string): Promise<void> {
+    const job = new PinJob(this.ipfs, hash, expectedSize, agreementReference)
     return this.jobsManager.run(job)
   }
 

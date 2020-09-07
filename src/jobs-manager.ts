@@ -13,10 +13,10 @@ export const FINISHED_EVENT_NAME = 'finished'
 export abstract class Job extends EventEmitter {
   public readonly entity: JobModel
 
-  protected constructor (name: string, type?: string) {
+  protected constructor (name: string, agreementReference: string, type?: string) {
     super()
 
-    this.entity = new JobModel({ name, type })
+    this.entity = new JobModel({ name, type, agreementReference })
   }
 
   abstract async _run (): Promise<void>
@@ -31,6 +31,10 @@ export abstract class Job extends EventEmitter {
 
   get state (): string {
     return this.entity.state
+  }
+
+  get agreementReference (): string {
+    return this.entity.agreementReference
   }
 
   public run (): void {
@@ -81,7 +85,8 @@ export class JobsManager {
       await broadcast(MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED, {
         hash: job.name,
         size: e.currentSize,
-        expectedSize: e.expectedSize
+        expectedSize: e.expectedSize,
+        agreementReference: job.agreementReference
       })
     } else {
       await broadcast(MessageCodesEnum.E_GENERAL, {
@@ -100,9 +105,9 @@ export class JobsManager {
     for (let retry = 1; retry <= this.retries; retry++) {
       try {
         logger.info(`Starting job (${job.name})`)
-        await broadcast(MessageCodesEnum.I_HASH_START, { hash: job.name })
+        await broadcast(MessageCodesEnum.I_HASH_START, { hash: job.name, agreementReference: job.agreementReference })
         await runAndAwaitFirstEvent(job, FINISHED_EVENT_NAME, () => { job.run() })
-        await broadcast(MessageCodesEnum.I_HASH_PINNED, { hash: job.name })
+        await broadcast(MessageCodesEnum.I_HASH_PINNED, { hash: job.name, agreementReference: job.agreementReference })
         logger.info(`Finished job in ${process.hrtime(start)[0]}s (${job.name})`)
         break // Lets exit then!
       } catch (e) {
@@ -122,7 +127,8 @@ export class JobsManager {
             hash: job.name,
             retryNumber: retry,
             totalRetries: this.retries,
-            error: e.message
+            error: e.message,
+            agreementReference: job.agreementReference
           })
 
           if (backoff > 0) {

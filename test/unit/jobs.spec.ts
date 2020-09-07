@@ -18,17 +18,22 @@ import JobModel from '../../src/models/job.model'
 import { runAndAwaitFirstEvent } from '../../src/utils'
 import { HashExceedsSizeError } from '../../src/errors'
 import * as channel from '../../src/communication'
+import Agreement from '../../src/models/agreement.model'
+import { mockAgreement } from '../fake-marketplace-service'
+import DirectAddressModel from '../../src/models/direct-address.model'
 
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
 chai.use(dirtyChai)
 const expect = chai.expect
 
+const AGREEMENT_REFERENCE = '0x123'
+
 class StubJob extends Job {
   public stub: Sinon.SinonStub
 
   constructor () {
-    super(`testing job ${randomHex(10)}`)
+    super(`testing job ${randomHex(10)}`, AGREEMENT_REFERENCE)
     this.stub = sinon.stub()
   }
 
@@ -41,9 +46,15 @@ describe('Jobs', function () {
   let sequelize: Sequelize
   let models: JobModel[]
   let channelSpy: Sinon.SinonSpy
+  let agreement: Agreement
 
   before(async (): Promise<void> => {
     sequelize = await sequelizeFactory()
+    await sequelize.sync({ force: true })
+
+    agreement = new Agreement(mockAgreement({ agreementReference: AGREEMENT_REFERENCE }))
+    await agreement.save()
+
     channelSpy = sinon.stub(channel, 'broadcast')
   })
 
@@ -52,8 +63,7 @@ describe('Jobs', function () {
   })
 
   describe('Job class', function () {
-    beforeEach(async () => {
-      await sequelize.sync({ force: true })
+    beforeEach(() => {
       channelSpy.resetHistory()
     })
 
@@ -66,19 +76,19 @@ describe('Jobs', function () {
       expect(job.name).to.eql(job.entity.name)
       expect(job.state).to.eql(JobState.CREATED)
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(0)
 
       const promise = runAndAwaitFirstEvent(job, FINISHED_EVENT_NAME, () => { job.run() })
         .then(async () => {
-          models = await JobModel.findAll()
+          models = await JobModel.findAll({ where: { name: job.name } })
           expect(models).to.have.length(1)
           expect(models[0].name).to.eql(job.name)
           expect(models[0].state).to.eql(JobState.FINISHED)
           expect(job.stub).to.be.calledOnce()
         })
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(1)
       expect(models[0].name).to.eql(job.name)
       expect(models[0].state).to.eql(JobState.RUNNING)
@@ -94,7 +104,7 @@ describe('Jobs', function () {
 
       await expect(runAndAwaitFirstEvent(job, FINISHED_EVENT_NAME, () => { job.run() })).to.be.rejectedWith('testing')
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(1)
       expect(models[0].name).to.eql(job.name)
       expect(models[0].state).to.eql(JobState.ERRORED)
@@ -106,7 +116,7 @@ describe('Jobs', function () {
 
       await runAndAwaitFirstEvent(job, FINISHED_EVENT_NAME, () => { job.run() })
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(1)
       expect(models[0].name).to.eql(job.name)
       expect(models[0].state).to.eql(JobState.FINISHED)
@@ -115,7 +125,7 @@ describe('Jobs', function () {
 
       job.retry(1, 3)
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(1)
       expect(models[0].name).to.eql(job.name)
       expect(models[0].state).to.eql(JobState.BACKOFF)
@@ -124,8 +134,7 @@ describe('Jobs', function () {
   })
 
   describe('Job Manager', function () {
-    beforeEach(async () => {
-      await sequelize.sync({ force: true })
+    beforeEach(() => {
       channelSpy.resetHistory()
     })
 
@@ -133,20 +142,20 @@ describe('Jobs', function () {
       const manager = new JobsManager()
       const job = new StubJob()
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(0)
 
       await manager.run(job)
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(1)
       expect(models[0].name).to.eql(job.name)
       expect(models[0].state).to.eql(JobState.FINISHED)
       expect(models[0].retry).to.be.null()
       expect(job.stub).to.be.calledOnce()
       expect(channelSpy).to.be.calledTwice()
-      expect(channelSpy).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
-      expect(channelSpy).calledWith(MessageCodesEnum.I_HASH_PINNED, { hash: job.name })
+      expect(channelSpy).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name, agreementReference: '0x123' })
+      expect(channelSpy).calledWith(MessageCodesEnum.I_HASH_PINNED, { hash: job.name, agreementReference: '0x123' })
     })
 
     it('should retry failed Job', async () => {
@@ -156,12 +165,12 @@ describe('Jobs', function () {
       job.stub.onCall(1).rejects(new Error('testing'))
       job.stub.onCall(2).resolves()
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(0)
 
       await manager.run(job)
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(1)
       expect(models[0].name).to.eql(job.name)
       expect(models[0].state).to.eql(JobState.FINISHED)
@@ -176,33 +185,44 @@ describe('Jobs', function () {
       job.stub.onCall(1).rejects(new Error('testing2'))
       job.stub.onCall(2).rejects(new Error('testing3'))
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(0)
 
       await expect(manager.run(job)).to.be.rejectedWith('testing3')
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(1)
       expect(models[0].name).to.eql(job.name)
       expect(models[0].state).to.eql(JobState.ERRORED)
       expect(models[0].retry).to.eql('2/3')
       expect(job.stub).to.be.calledThrice()
       expect(channelSpy).to.have.callCount(6)
-      expect(channelSpy.getCall(0)).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
+      expect(channelSpy.getCall(0)).calledWith(MessageCodesEnum.I_HASH_START, {
+        hash: job.name,
+        agreementReference: '0x123'
+      })
       expect(channelSpy.getCall(1)).calledWith(MessageCodesEnum.W_HASH_RETRY, {
         hash: job.name,
         retryNumber: 1,
         totalRetries: 3,
-        error: 'testing1'
+        error: 'testing1',
+        agreementReference: '0x123'
       })
-      expect(channelSpy.getCall(2)).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
+      expect(channelSpy.getCall(2)).calledWith(MessageCodesEnum.I_HASH_START, {
+        hash: job.name,
+        agreementReference: '0x123'
+      })
       expect(channelSpy.getCall(3)).calledWith(MessageCodesEnum.W_HASH_RETRY, {
         hash: job.name,
         retryNumber: 2,
         totalRetries: 3,
-        error: 'testing2'
+        error: 'testing2',
+        agreementReference: '0x123'
       })
-      expect(channelSpy.getCall(4)).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
+      expect(channelSpy.getCall(4)).calledWith(MessageCodesEnum.I_HASH_START, {
+        hash: job.name,
+        agreementReference: '0x123'
+      })
       expect(channelSpy.getCall(5)).calledWith(MessageCodesEnum.E_GENERAL, {
         hash: job.name,
         error: 'testing3'
@@ -215,31 +235,39 @@ describe('Jobs', function () {
       job.stub.onCall(0).rejects(new Error('testing1'))
       job.stub.onCall(1).rejects(new HashExceedsSizeError('testing2', new BigNumber(10), new BigNumber(9)))
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(0)
 
       await expect(manager.run(job)).to.be.rejectedWith('testing2')
 
-      models = await JobModel.findAll()
+      models = await JobModel.findAll({ where: { name: job.name } })
       expect(models).to.have.length(1)
       expect(models[0].name).to.eql(job.name)
       expect(models[0].state).to.eql(JobState.ERRORED)
       expect(models[0].retry).to.eql('1/3')
       expect(job.stub).to.be.calledTwice()
       expect(channelSpy).to.have.callCount(4)
-      expect(channelSpy.getCall(0)).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
+      expect(channelSpy.getCall(0)).calledWith(MessageCodesEnum.I_HASH_START, {
+        hash: job.name,
+        agreementReference: '0x123'
+      })
       expect(channelSpy.getCall(1)).calledWith(MessageCodesEnum.W_HASH_RETRY, {
         hash: job.name,
         retryNumber: 1,
         totalRetries: 3,
-        error: 'testing1'
+        error: 'testing1',
+        agreementReference: '0x123'
       })
-      expect(channelSpy.getCall(2)).calledWith(MessageCodesEnum.I_HASH_START, { hash: job.name })
+      expect(channelSpy.getCall(2)).calledWith(MessageCodesEnum.I_HASH_START, {
+        hash: job.name,
+        agreementReference: '0x123'
+      })
 
       expect(channelSpy.getCall(3)).calledWith(MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED, {
         hash: job.name,
         size: new BigNumber(10),
-        expectedSize: new BigNumber(9)
+        expectedSize: new BigNumber(9),
+        agreementReference: '0x123'
       })
     })
   })
@@ -280,8 +308,9 @@ describe('Jobs', function () {
 
     it('call swarm connect -> pin -> swarm disconnect', async () => {
       const hash = fakeHash.replace('/ipfs/', '')
+      await DirectAddressModel.create({ agreementReference: fakeAgreementReference, peerId: fakePeerId })
 
-      const job = new PinJob(ipfsStub as unknown as IpfsClient, fakeHash, fakeSize, fakePeerId)
+      const job = new PinJob(ipfsStub as unknown as IpfsClient, fakeHash, fakeSize, fakeAgreementReference)
       await job._run()
 
       expect(ipfsStub.object.stat.calledWith(new CID(hash), { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })).to.be.true()

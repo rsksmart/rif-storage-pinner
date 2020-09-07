@@ -10,7 +10,10 @@ import { promisify } from 'util'
 import type { HttpProvider } from 'web3-core'
 import { Sequelize } from 'sequelize'
 import { reset as resetStore, getObject } from 'sequelize-store'
-import { createLibP2P, Message, Room } from '@rsksmart/rif-communications-pubsub'
+import Libp2p from 'libp2p'
+import PeerId from 'peer-id'
+import { createLibP2P, Message, Room, DirectChat } from '@rsksmart/rif-communications-pubsub'
+import { MessageDirect } from '@rsksmart/rif-communications-pubsub/types/definitions'
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
 import { initApp } from '../src'
@@ -20,13 +23,16 @@ import { loggingFactory } from '../src/logger'
 import { initStore } from '../src/store'
 import { sequelizeFactory } from '../src/sequelize'
 import { bytesToMegabytes, sleep } from '../src/utils'
-import Libp2p from 'libp2p'
-import PeerId from 'peer-id'
 
 export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 export const providerAddress = '0xB22230f21C57f5982c2e7C91162799fABD5733bE'
 export const errorSpy = sinon.spy()
 export const appResetCallbackSpy = sinon.spy()
+
+interface Listener<T> {
+  on: (name: string, fn: (msg: T) => void) => void
+  off: (name: string, fn: (msg: T) => void) => void
+}
 
 function errorHandlerStub (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> {
   return (...args) => {
@@ -126,6 +132,7 @@ export class TestingApp {
   public peerId: PeerId.JSONPeerId | undefined
   public libp2p: Libp2p | undefined
   public pubsub: Room | undefined
+  public direct: DirectChat | undefined
   public consumerAddress = ''
   public providerAddress = ''
 
@@ -181,6 +188,7 @@ export class TestingApp {
     const roomName = `*:${this.providerAddress}`
     this.libp2p = await createLibP2P({
       addresses: { listen: ['/ip4/127.0.0.1/tcp/0'] },
+      peerId: await PeerId.create(),
       config: {
         peerDiscovery: {
           bootstrap: {
@@ -196,7 +204,13 @@ export class TestingApp {
     this.pubsub.on('peer:left', (peer) => this.commsLogger.verbose(`${roomName}: peer ${peer} left`))
     this.pubsub.on('message', (msg: Message) => {
       const parsedMsg = msg as unknown as Message<CommsMessage<unknown>>
-      this.commsLogger.debug(`Message ${parsedMsg.data.code}:`, msg.data)
+      this.commsLogger.debug(`Pubsub message ${parsedMsg.data.code}:`, msg.data)
+    })
+
+    this.commsLogger.info('Listening on direct chat!')
+    this.direct = DirectChat.getDirectChat(this.libp2p)
+    this.direct.on('message', (msg: MessageDirect) => {
+      this.commsLogger.debug('Direct message:', msg)
     })
   }
 
@@ -318,23 +332,41 @@ export class TestingApp {
     })
   }
 
-  public awaitForMessage<T> (code: MessageCodesEnum, timeout = 3000): Promise<CommsMessage<T>> {
-    return Promise.race<CommsMessage<T>>([
-      new Promise<CommsMessage<T>>(resolve => {
-        const handler = (msg: Message) => {
-          const parsedMsg = msg as unknown as Message<CommsMessage<T>>
-
-          if (parsedMsg.data.code === code) {
-            resolve(parsedMsg.data)
-            this.pubsub!.off('message', handler)
+  private awaitForMessage<T> (listener: Listener<T>, code?: MessageCodesEnum, timeout = 3000): Promise<T> {
+    let resolved = false
+    return Promise.race<T>([
+      new Promise<T>(resolve => {
+        const handler = (msg: T) => {
+          if ((msg as unknown as Message<CommsMessage<unknown>>)?.data?.code === code) {
+            resolve(msg)
+            resolved = true
+            listener.off('message', handler)
           }
         }
-        this.pubsub!.on('message', handler)
+        listener.on('message', handler)
       }),
-      (async (): Promise<never> => {
+      (async (): Promise<T> => {
         await sleep(timeout)
-        throw new Error(`Waiting for message with code ${code} timed out!`)
+
+        // Lets throw only when needed
+        if (!resolved) {
+          throw new Error(`Waiting for message with code ${code} timed out!`)
+        }
+
+        return {} as T
       })()
     ])
+  }
+
+  public async awaitForPubSubMessage<T> (code: MessageCodesEnum, timeout = 3000): Promise<CommsMessage<T>> {
+    return (await this.awaitForMessage<Message<CommsMessage<T>>>(this.pubsub!, code, timeout)).data
+  }
+
+  public awaitForDirectMessage<T> (timeout = 3000): Promise<MessageDirect<T>> {
+    return this.awaitForMessage(this.direct!, undefined, timeout)
+  }
+
+  public async sendDirectMessageToPinner (msg: any): Promise<void> {
+    await this.direct?.sendTo(this.peerId!.id, msg)
   }
 }

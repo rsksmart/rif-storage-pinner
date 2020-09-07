@@ -59,7 +59,7 @@ function emitReorg (app: TestingApp) {
 }
 
 describe('Marketplace Strategy', function () {
-  this.timeout(5000)
+  this.timeout(10000)
   let app: TestingApp
 
   before(() => {
@@ -79,9 +79,8 @@ describe('Marketplace Strategy', function () {
       await app.init()
 
       const offer = mockOffer({ peerId: app.peerId?.id })
-      const agreements: Record<string, any>[] = []
       stubOffer.get.onFirstCall().resolves(offer)
-      stubAgreement.find.onFirstCall().resolves(agreements)
+      stubAgreement.find.onFirstCall().resolves([])
 
       await app.start()
     })
@@ -101,9 +100,9 @@ describe('Marketplace Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      const newAgreementMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_NEW)
-      const hashStartMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_START)
-      const hashPinnedMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_PINNED)
+      const newAgreementMsgPromise = app.awaitForPubSubMessage(MessageCodesEnum.I_AGREEMENT_NEW)
+      const hashStartMsgPromise = app.awaitForPubSubMessage(MessageCodesEnum.I_HASH_START)
+      const hashPinnedMsgPromise = app.awaitForPubSubMessage(MessageCodesEnum.I_HASH_PINNED)
 
       const agreementReference = createAgreement(app, file).agreementReference
 
@@ -111,16 +110,16 @@ describe('Marketplace Strategy', function () {
 
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
 
-      expect(await newAgreementMsgPromise).to.deep.include({ payload: { agreementReference: agreementReference } })
-      expect(await hashStartMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
-      expect(await hashPinnedMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
+      expect(await newAgreementMsgPromise).to.deep.include({ payload: { agreementReference } })
+      expect(await hashStartMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}`, agreementReference } })
+      expect(await hashPinnedMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}`, agreementReference } })
     })
 
     it('should reject if size limit exceed', async () => {
       const file = await uploadRandomData(app.ipfsConsumer!)
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
-      const agreementRejectedMsgPromise = app.awaitForMessage(MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED)
+      const agreementRejectedMsgPromise = app.awaitForPubSubMessage(MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED)
 
       createAgreement(app, file, { billingPeriod: 1, size: Math.ceil(file.size - 1) })
 
@@ -144,7 +143,7 @@ describe('Marketplace Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      const agreementStoppedMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_STOPPED)
+      const agreementStoppedMsgPromise = app.awaitForPubSubMessage(MessageCodesEnum.I_AGREEMENT_STOPPED)
       const agreement = createAgreement(app, file, { billingPeriod: 1, availableFunds: 500 })
 
       await sleep(1000)
@@ -173,9 +172,9 @@ describe('Marketplace Strategy', function () {
       // Check if not pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
-      const newAgreementMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_NEW)
-      const hashStartMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_START)
-      const hashPinnedMsgPromise = app.awaitForMessage(MessageCodesEnum.I_HASH_PINNED)
+      const newAgreementMsgPromise = app.awaitForPubSubMessage(MessageCodesEnum.I_AGREEMENT_NEW)
+      const hashStartMsgPromise = app.awaitForPubSubMessage(MessageCodesEnum.I_HASH_START)
+      const hashPinnedMsgPromise = app.awaitForPubSubMessage(MessageCodesEnum.I_HASH_PINNED)
 
       const agreement = await createAgreement(app, file, {
         billingPeriod: 10,
@@ -191,12 +190,12 @@ describe('Marketplace Strategy', function () {
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
 
       expect(await newAgreementMsgPromise).to.deep.include({ payload: { agreementReference: agreement.agreementReference } })
-      expect(await hashStartMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
-      expect(await hashPinnedMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}` } })
+      expect(await hashStartMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}`, agreementReference: agreement.agreementReference } })
+      expect(await hashPinnedMsgPromise).to.deep.include({ payload: { hash: `/ipfs/${file.cidString}`, agreementReference: agreement.agreementReference } })
 
       // First lets the time fast forward so the Agreement runs out of funds
       await sleep(2000)
-      const agreementExpiredMsgPromise = app.awaitForMessage(MessageCodesEnum.I_AGREEMENT_EXPIRED)
+      const agreementExpiredMsgPromise = app.awaitForPubSubMessage(MessageCodesEnum.I_AGREEMENT_EXPIRED)
 
       // Create new block to
       emitBlock(app, { number: 10 })
@@ -226,7 +225,7 @@ describe('Marketplace Strategy', function () {
       stubResetFunctions(stubAgreement)
     })
 
-    afterEach(async () => {
+    after(async () => {
       await app.stop()
     })
 
@@ -234,8 +233,8 @@ describe('Marketplace Strategy', function () {
       app = new TestingApp()
       await app.init()
 
-      const ipfs = await initIpfsClient(consumerIpfsUrl)
-      file = await uploadRandomData(ipfs)
+      const file = await uploadRandomData(app.ipfsConsumer!)
+      expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.false()
 
       const offer = mockOffer({ peerId: app.peerId?.id })
       const agreements = [
@@ -246,7 +245,7 @@ describe('Marketplace Strategy', function () {
       stubOffer.get.onFirstCall().resolves(offer)
       stubAgreement.find.resolves(agreements)
 
-      await app.start(undefined, false)
+      await app.start({ forcePrecache: true }, false)
       await sleep(100)
 
       const store = getObject()
