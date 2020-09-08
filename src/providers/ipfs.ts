@@ -14,6 +14,9 @@ const logger = loggingFactory('ipfs')
 const REQUIRED_IPFS_VERSION = '>=0.5.0'
 const NOT_PINNED_ERROR_MSG = 'not pinned or pinned indirectly'
 
+const MIN_PIN_TIMEOUT = 60000 * 20 // 20 minutes
+const RATE_MB_PER_SECOND = 0.5
+
 export class PinJob extends Job {
   private readonly hash: string
   private readonly ipfs: IpfsClient
@@ -63,12 +66,14 @@ export class PinJob extends Job {
   async _run (): Promise<void> {
     const hash = this.hash.replace('/ipfs/', '')
     const cid = new CID(hash)
+    let metadataSize // In MB
 
     logger.verbose(`(${hash}) Retrieving size of CID`)
     try {
       const stats = await this.ipfs.object.stat(cid, { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })
+      metadataSize = bytesToMegabytes(stats.CumulativeSize)
 
-      if (bytesToMegabytes(stats.CumulativeSize).gt(this.expectedSize)) {
+      if (metadataSize.gt(this.expectedSize)) {
         logger.error(`The hash ${hash} has cumulative size of ${bytesToMegabytes(stats.CumulativeSize)} megabytes while it was expected to have ${this.expectedSize} megabytes.`)
         throw new HashExceedsSizeError('The hash exceeds payed size!', bytesToMegabytes(stats.CumulativeSize), this.expectedSize)
       }
@@ -84,9 +89,12 @@ export class PinJob extends Job {
     await this.swarmConnect().catch(logger.warn)
 
     logger.info(`Pinning hash: ${hash} start`)
-    // TODO: For this call there is applied the default 20 minutes timeout. This should be estimated using the size.
-    //  https://github.com/ipfs/js-ipfs/blob/master/packages/ipfs-http-client/src/lib/core.js#L113
-    await this.ipfs.pin.add(cid) // The data can be big and we don't want to automatically timeout here.
+    // We can be generous on the actual pinning timeout as if the CID would not be present
+    // in IPFS network, then the previous ipfs.object.stat() call would timeout already then.
+    // We are using 0.5 MB per second transfer rate, with keeping at least 20 minutes as default.
+    // SizeInMB * 0.5 * 1000 ==> ms
+    const estimatedTimeout = Math.max(MIN_PIN_TIMEOUT, metadataSize.div(RATE_MB_PER_SECOND).multipliedBy(1000).toNumber())
+    await this.ipfs.pin.add(cid, { timeout: estimatedTimeout })
 
     await this.swarmDisconnect().catch(logger.warn)
   }
