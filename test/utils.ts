@@ -51,6 +51,37 @@ export function encodeHash (hash: string): string[] {
   return [asciiToHex(hash.slice(0, 32)), ...encodeHash(hash.slice(32))]
 }
 
+/**
+ * IN-PLACE prefix array!
+ * @param arr
+ * @param prefix
+ */
+export function prefixArray (arr: string[], prefix: string, lengthPerElement = 32): string[] {
+  if (prefix.length >= lengthPerElement) {
+    throw new Error(`Too long prefix! Max ${lengthPerElement} chars!`)
+  }
+
+  const endingLength = lengthPerElement - prefix.length
+
+  let tmp
+  let carryOver = prefix
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i].length > lengthPerElement) {
+      throw new Error(`Element ${i} was longer then expected!`)
+    }
+
+    tmp = `${carryOver}${arr[i].slice(0, endingLength)}`
+    carryOver = arr[i].slice(endingLength)
+    arr[i] = tmp
+  }
+
+  if (carryOver) {
+    arr.push(carryOver)
+  }
+
+  return arr
+}
+
 export async function asyncIterableToArray (asyncIterable: any): Promise<Array<any>> {
   const result = []
   for await (const value of asyncIterable) {
@@ -302,13 +333,13 @@ export class TestingApp {
       throw new Error('Provider should be initialized and has at least 2 accounts and StorageManage contract should be deployed')
     }
 
-    // TODO: This is not correct! The 0x01 byte will get encoded as well, we need to shift it by the prefix,
-    //  but I dont see any easy way how to do it.
-    const msg = encodeHash(`0x01${this.peerId!.id}`)
+    const encodedPeerId = encodeHash(this.peerId!.id).map(el => el.replace('0x', ''))
+    const prefixedMsg = prefixArray(encodedPeerId, '01', 64)
+      .map(el => `0x${el}`)
 
     const offerCall = this.contract
       .methods
-      .setOffer(1000000, [1, 100], [10, 80], msg)
+      .setOffer(1000000, [1, 100], [10, 80], prefixedMsg)
     await offerCall.send({ from: this.providerAddress, gas: await offerCall.estimateGas() })
   }
 
