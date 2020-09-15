@@ -214,7 +214,7 @@ export class TestingApp {
     // Create PeerId for the Pinner
     store.peerId = this.peerId.id
     store.peerPubKey = this.peerId.pubKey!
-    store.peerPrivKey = this.peerId.privKey
+    store.peerPrivKey = this.peerId.privKey!
 
     // Create PubSub room to listen on events
     const roomName = `*:${this.providerAddress}`
