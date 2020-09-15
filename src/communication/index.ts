@@ -107,16 +107,15 @@ export async function broadcast (code: MessageCodesEnum, payload: Record<string,
     agreementReference: payload.agreementReference,
     message: JSON.stringify(msg)
   })
-  const messageCountForAgreement = await Message.count({ where: { agreementReference: payload.agreementReference } })
 
-  if (messageCountForAgreement > config.get<number>('comms.countOfMessagesPersistedPerAgreement')) {
-    // We have reached maximum messages for agreement
-    // We have added one Message, so we gonna remove the oldest one
-    const latestMessage = await Message.findOne({
-      where: { agreementReference: payload.agreementReference }
-    })
-    await latestMessage?.destroy()
-  }
+  // Remove old messages
+  const messageLimit = config.get<number>('comms.countOfMessagesPersistedPerAgreement')
+  const messagesToDelete = await Message.findAll({
+    offset: messageLimit,
+    order: [['id', 'DESC']],
+    where: { agreementReference: payload.agreementReference }
+  })
+  await Promise.all(messagesToDelete.map(msg => msg.destroy()))
 
   await room.broadcast(msg)
 }

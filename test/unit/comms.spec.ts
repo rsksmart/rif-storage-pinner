@@ -87,11 +87,13 @@ describe('Comms', function () {
       } as AgreementInfoPayload
 
       await broadcast(MessageCodesEnum.I_AGREEMENT_NEW, msg)
+      await broadcast(MessageCodesEnum.I_AGREEMENT_EXPIRED, msg)
 
       messages = await Message.findAll({ where: { agreementReference: 'testReference1' } })
-      expect(messages).to.have.length(1)
+      expect(messages).to.have.length(2)
       expect(messages[0].code).to.eql(MessageCodesEnum.I_AGREEMENT_NEW)
-      expect(broadcastSpy).to.be.calledOnce()
+      expect(messages[1].code).to.eql(MessageCodesEnum.I_AGREEMENT_EXPIRED)
+      expect(broadcastSpy).to.be.calledTwice()
     })
 
     it('should fail when message does not have agreement reference', async () => {
