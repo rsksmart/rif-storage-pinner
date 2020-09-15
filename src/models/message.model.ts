@@ -1,6 +1,8 @@
 import { Table, Column, Model, DataType } from 'sequelize-typescript'
 
 @Table({
+  freezeTableName: true,
+  tableName: 'message',
   timestamps: false
 })
 export default class Message extends Model {

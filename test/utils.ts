@@ -55,6 +55,7 @@ export function encodeHash (hash: string): string[] {
  * IN-PLACE prefix array!
  * @param arr
  * @param prefix
+ * @param lengthPerElement
  */
 export function prefixArray (arr: string[], prefix: string, lengthPerElement = 32): string[] {
   if (prefix.length >= lengthPerElement) {
