@@ -78,7 +78,7 @@ export default class InitCommand extends BaseCommand {
 
       store.peerId = peerIdJson.id
       store.peerPubKey = peerIdJson.pubKey as string
-      store.peerPrivKey = peerIdJson.privKey
+      store.peerPrivKey = peerIdJson.privKey as string
       this.spinner.stop()
 
       const uiUrl = config.get<string>('uiUrl')
