@@ -9,16 +9,16 @@ import { Migration } from '../migrations'
 
 const logger = loggingFactory('cli:db-migration')
 
-const MigrationTemplate = `import { QueryInterface } from 'sequelize'
-import { Sequelize } from 'sequelize-typescript'
+const MigrationTemplate = `import Sequelize, { QueryInterface } from 'sequelize'
+import { Sequelize as SequelizeTs } from 'sequelize-typescript'
 
 export default {
   // eslint-disable-next-line require-await
-  async up (queryInterface: QueryInterface, sequelize: Sequelize): Promise<void> {
+  async up (queryInterface: QueryInterface, sequelize: SequelizeTs): Promise<void> {
     return Promise.reject(Error('Not implemented'))
   },
   // eslint-disable-next-line require-await
-  async down (queryInterface: QueryInterface, sequelize: Sequelize): Promise<void> {
+  async down (queryInterface: QueryInterface, sequelize: SequelizeTs): Promise<void> {
     return Promise.reject(Error('Not implemented'))
   }
 }

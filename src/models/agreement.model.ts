@@ -1,8 +1,9 @@
-import { Table, Column, Model, DataType } from 'sequelize-typescript'
+import { Table, Column, Model, DataType, HasMany } from 'sequelize-typescript'
 import BigNumber from 'bignumber.js'
 
 import { BigNumberStringType } from '../sequelize'
 import { bnFloor } from '../utils'
+import JobModel from './job.model'
 
 @Table({
   freezeTableName: true,
@@ -43,6 +44,9 @@ export default class Agreement extends Model {
 
   @Column({ type: DataType.NUMBER() })
   expiredAtBlockNumber!: number | null
+
+  @HasMany(() => JobModel)
+  jobs!: JobModel[]
 
   periodPrice (): BigNumber {
     return this.size.times(this.billingPrice)

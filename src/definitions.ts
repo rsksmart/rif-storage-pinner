@@ -79,6 +79,7 @@ export interface Config {
 
   comms?: {
     libp2p?: Libp2pOptions
+    countOfMessagesPersistedPerAgreement?: number
   }
 
   directAddress?: {
@@ -242,29 +243,41 @@ export enum MessageCodesEnum {
   E_AGREEMENT_SIZE_LIMIT_EXCEEDED = 'E_AGR_SIZE_OVERFLOW'
 }
 
-export interface RetryPayload {
+// Outgoing messages
+
+interface BasePayload {
+  agreementReference: string
+}
+
+export interface RetryPayload extends BasePayload {
   error: string
   retryNumber: number
   totalRetries: number
 }
 
-export interface HashInfoPayload {
+export interface HashInfoPayload extends BasePayload {
   hash: string
 }
 
-export interface AgreementInfoPayload {
-  agreementReference: string
-}
+export type AgreementInfoPayload = BasePayload
 
-export interface AgreementSizeExceededPayload {
+export interface AgreementSizeExceededPayload extends BasePayload {
   hash: string
   size: number
   expectedSize: number
 }
 
+// Incoming messages
+
 export interface MultiaddrAnnouncementPayload {
   agreementReference: string
   peerId: string
+}
+
+export interface ResendMessagesPayload {
+  requestId: string
+  agreementReference: string
+  code?: string
 }
 
 export interface CommsMessage<Payload> {

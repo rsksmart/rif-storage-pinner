@@ -20,7 +20,7 @@ import type {
   Processor
 } from '../../definitions'
 import type { ProviderManager } from '../../providers'
-import { errorHandler as originalErrorHandler, getPeerIdByAgreement } from '../../utils'
+import { errorHandler as originalErrorHandler } from '../../utils'
 
 const logger: Logger = loggingFactory('processor:cache')
 const NEW_BLOCK_EVENT = 'newBlock'
@@ -125,12 +125,12 @@ export class MarketplaceEventsProcessor extends EventProcessor {
       const agreements = await this.services.agreement.find({ query: { offerId: this.offerId }, paginate: false })
       for (const agr of agreements) {
         const agreement = new Agreement(agr)
+        await Agreement.upsert(agreement.toJSON())
 
         // Pin agreements
         if (agreement.isActive && agreement.hasSufficientFunds) {
-          await this.manager.pin(agreement.dataReference, agreement.size, await getPeerIdByAgreement(agreement.agreementReference))
+          await this.manager.pin(agreement.dataReference, agreement.size, agreement.agreementReference)
         }
-        await Agreement.upsert(agreement.toJSON())
       }
     }
 

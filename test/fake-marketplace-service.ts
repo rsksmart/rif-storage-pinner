@@ -40,7 +40,7 @@ export function mockOffer (offer: Record<string, any> = {}): Record<string, any>
 export const mockAgreement = (agreement: Record<string, any> = {}) => Object.assign({
   agreementReference: '0x1233',
   offerId: providerAddress,
-  dataReference: 'ipfs/123',
+  dataReference: '/ipfs/123',
   size: 32,
   consumer: '0x1235',
   isActive: true,

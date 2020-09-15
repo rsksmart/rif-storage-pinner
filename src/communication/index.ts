@@ -1,7 +1,6 @@
 import PeerId from 'peer-id'
 import type Libp2p from 'libp2p'
 import { Room, createLibP2P, DirectChat } from '@rsksmart/rif-communications-pubsub'
-import { MessageDirect } from '@rsksmart/rif-communications-pubsub/types/definitions'
 
 import { getObject } from 'sequelize-store'
 import config from 'config'
@@ -12,9 +11,11 @@ import type {
   AgreementInfoPayload,
   HashInfoPayload,
   RetryPayload,
-  AgreementSizeExceededPayload, CommsMessage
+  AgreementSizeExceededPayload
 } from '../definitions'
 import { handle } from './handler'
+import Message from '../models/message.model'
+import { errorHandler } from '../utils'
 
 const logger = loggingFactory('comms')
 const COMMUNICATION_PROTOCOL_VERSION = 1
@@ -58,9 +59,7 @@ export async function start (offerId?: string): Promise<void> {
 
   direct = DirectChat.getDirectChat(libp2p)
   direct.on('error', (e) => logger.error(e))
-  direct.on('message', (message: MessageDirect): Promise<void> => {
-    return handle((message.data as unknown) as CommsMessage<any>)
-  })
+  direct.on('message', errorHandler(handle, logger))
 }
 
 export async function stop (): Promise<void> {
@@ -90,6 +89,10 @@ export async function broadcast (code: MessageCodesEnum, payload: Record<string,
     throw new Error('Communication was not started yet!')
   }
 
+  if (!payload.agreementReference) {
+    throw new Error('Every broadcasted message has to have Agreement Reference!')
+  }
+
   const msg = {
     code,
     payload,
@@ -99,6 +102,20 @@ export async function broadcast (code: MessageCodesEnum, payload: Record<string,
 
   logger.verbose(`Broadcasting message with code: ${code}`)
 
-  // TODO: Persist the sent messages for "rebroadcast"
+  await Message.create({
+    code,
+    agreementReference: payload.agreementReference,
+    message: JSON.stringify(msg)
+  })
+
+  // Remove old messages
+  const messageLimit = config.get<number>('comms.countOfMessagesPersistedPerAgreement')
+  const messagesToDelete = await Message.findAll({
+    offset: messageLimit,
+    order: [['id', 'DESC']],
+    where: { agreementReference: payload.agreementReference }
+  })
+  await Promise.all(messagesToDelete.map(msg => msg.destroy()))
+
   await room.broadcast(msg)
 }

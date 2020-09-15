@@ -1,4 +1,5 @@
-import { Table, Column, Model, DataType } from 'sequelize-typescript'
+import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript'
+import Agreement from './agreement.model'
 
 @Table({
   freezeTableName: true,
@@ -8,6 +9,13 @@ import { Table, Column, Model, DataType } from 'sequelize-typescript'
 export default class JobModel extends Model {
   @Column({ type: DataType.STRING(), allowNull: false })
   name!: string
+
+  @ForeignKey(() => Agreement)
+  @Column({ type: DataType.STRING(67), allowNull: false })
+  agreementReference!: string
+
+  @BelongsTo(() => Agreement)
+  agreement!: Agreement
 
   @Column({ type: DataType.ENUM('created', 'backoff', 'running', 'errored', 'finished'), allowNull: false, defaultValue: 'created' })
   state!: string

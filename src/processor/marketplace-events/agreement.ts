@@ -6,7 +6,7 @@ import type {
   MarketplaceEvent,
   HandlersObject
 } from '../../definitions'
-import { buildHandler, getPeerIdByAgreement } from '../../utils'
+import { buildHandler } from '../../utils'
 import Agreement from '../../models/agreement.model'
 import { EventError, NotPinnedError } from '../../errors'
 import { MessageCodesEnum } from '../../definitions'
@@ -22,7 +22,7 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
     logger.info(`Created new Agreement with ID ${newAgreement.agreementReference} for offer ${newAgreement.offerId}`)
 
     if (options.manager) {
-      await options.manager.pin(newAgreement.dataReference, agreement.size, await getPeerIdByAgreement(agreement.agreementReference))
+      await options.manager.pin(newAgreement.dataReference, agreement.size, agreement.agreementReference)
       await broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: newAgreement.agreementReference })
     }
   },
