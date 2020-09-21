@@ -32,11 +32,12 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
         size,
         billingPeriod,
         billingPrice,
+        token,
         availableFunds
       }
     } = event as NewAgreement
 
-    const agreementReference = soliditySha3(consumer, ...dReference)
+    const agreementReference = soliditySha3(consumer, ...dReference, token)
     const dataReference = decodeByteArray(dReference)
 
     const data = {
