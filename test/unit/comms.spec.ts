@@ -62,7 +62,7 @@ describe('Comms', function () {
     await initStore(sequelize)
     const store = getObject()
     store.peerId = peerId.id
-    store.peerPrivKey = peerId.privKey
+    store.peerPrivKey = peerId.privKey!
     store.peerPubKey = peerId.pubKey!
 
     await start()
