@@ -29,6 +29,7 @@
 
 ## Usage
 
+### Bare metal instances
 Example of usage:
 ```bash
 $ rif-pinning init --offerId=0x123456789
@@ -43,14 +44,40 @@ This will:
  - thanks to `--network testnet` will use predefined deployed smart-contracts on testnet
  - connects to your locally running IPFS node at `http://localhost:5001`
 
+### Docker compose 
+
+* Modify the file `.env-pinner`. This files push the environment variables when the rif-storage-pinner service starts. For more information refer to **Environment Variables** section from this README file.
+* Some variables need to keep the single quotes `' '` sign. Do not remove them.
+* For the `docker-compose.yml` file, under the volumes section, setup the desired folders. If nothing is changed, by default those folders are created.
+
+```bash
+docker-compose build
+docker-compose up -d
+```
+
+Probably, you need to add the `sudo` for command execution.
+
 ## Commands
 <!-- commands -->
-* [`rif-pinning agreements`](#rif-pinning-agreements)
-* [`rif-pinning cleanup`](#rif-pinning-cleanup)
-* [`rif-pinning daemon`](#rif-pinning-daemon)
-* [`rif-pinning db-migration`](#rif-pinning-db-migration)
-* [`rif-pinning help [COMMAND]`](#rif-pinning-help-command)
-* [`rif-pinning init`](#rif-pinning-init)
+- [RIF Storage.js Pinning service](#rif-storagejs-pinning-service)
+  - [Table of Contents](#table-of-contents)
+  - [Install](#install)
+    - [npm](#npm)
+  - [Usage](#usage)
+    - [Bare metal instances](#bare-metal-instances)
+    - [Docker compose](#docker-compose)
+  - [Commands](#commands)
+    - [`rif-pinning agreements`](#rif-pinning-agreements)
+    - [`rif-pinning cleanup`](#rif-pinning-cleanup)
+    - [`rif-pinning daemon`](#rif-pinning-daemon)
+    - [`rif-pinning db-migration`](#rif-pinning-db-migration)
+    - [`rif-pinning help [COMMAND]`](#rif-pinning-help-command)
+    - [`rif-pinning init`](#rif-pinning-init)
+    - [Environmental variables](#environmental-variables)
+  - [Contribute](#contribute)
+    - [Development](#development)
+      - [Tips](#tips)
+  - [License](#license)
 
 ### `rif-pinning agreements`
 

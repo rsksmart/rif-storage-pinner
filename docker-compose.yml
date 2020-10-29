@@ -1,0 +1,34 @@
+version: "3"
+
+services:
+  # IPFS container definition
+  rif-pinner-ipfs:
+    image: ipfs/go-ipfs:v0.7.0
+    env_file: 
+      - .env-pinner
+    volumes:
+      - "/var/lib/rif/pinner-storage/ipfs/ipfs_staging:/export"
+      - "/var/lib/rif/pinner-storage/ipfs/ipfs_data:/data/ipfs"
+    ports:
+      - 5001:5001
+      - 8080:8080
+    networks:
+      - rif-pinner-services
+  
+  # Pinner container definition
+  rif-pinner-service:
+    image: rif-pinner-service:latest
+    build: 
+      context: ./
+      dockerfile: Dockerfile.pinner
+    env_file: 
+      - .env-pinner
+    volumes:
+      - "/var/log/rif/:/var/log/rif/"
+      - "/var/lib/rif/pinner-storage/db/:/var/lib/rif-pinner/service/db/"
+    networks:
+      - rif-pinner-services
+
+networks:
+  rif-pinner-services:
+    driver: bridge

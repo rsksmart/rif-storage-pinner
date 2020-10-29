@@ -1,0 +1,8 @@
+FROM node:10
+
+WORKDIR /app
+COPY . /app
+
+RUN chmod 775 entrypoint.d/entrypoint.sh
+RUN npm i g
+CMD ["/app/entrypoint.d/entrypoint.sh"]
