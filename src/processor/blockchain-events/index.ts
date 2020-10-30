@@ -1,7 +1,14 @@
-import type { Eth } from 'web3-eth'
+import { Eth } from 'web3-eth'
 import { AbiItem } from 'web3-utils'
 import { getObject } from 'sequelize-store'
 import config from 'config'
+import {
+  Contract,
+  EventsEmitter,
+  EventsEmitterCreationOptions, NEW_BLOCK_EVENT_NAME, NEW_EVENT_EVENT_NAME,
+  NewBlockEmitter, REORG_OUT_OF_RANGE_EVENT_NAME,
+  Web3Events
+} from '@rsksmart/web3-events'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
@@ -9,12 +16,9 @@ import offer from './offer'
 import agreement from './agreement'
 import { EventProcessor } from '../index'
 import { errorHandler as originalErrorHandler, isEventWithProvider } from '../../utils'
-import { ethFactory, getEventsEmitter, getNewBlockEmitter } from '../../blockchain/utils'
 import { loggingFactory } from '../../logger'
 import Agreement from '../../models/agreement.model'
-import gcHanlder from '../../gc'
-import type { BaseEventsEmitter } from '../../blockchain/events'
-import type { AutoStartStopEventEmitter } from '../../blockchain/new-block-emitters'
+import gcHandler from '../../gc'
 
 import type {
   AppOptions,
@@ -29,6 +33,13 @@ import type {
 import type { ProviderManager } from '../../providers'
 
 const logger: Logger = loggingFactory('processor:blockchain')
+
+function ethFactory (): Eth {
+  const provider = Eth.givenProvider || config.get('blockchain.provider')
+  logger.info(`Connecting to provider ${provider}`)
+
+  return new Eth(provider)
+}
 
 function filterBlockchainEvents (offerId: string, callback: Processor<BlockchainEvent>): Processor<BlockchainEvent> {
   return async (event: BlockchainEvent): Promise<void> => {
@@ -53,9 +64,9 @@ export class BlockchainEventsProcessor extends EventProcessor {
   private readonly errorHandler: (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
   private readonly manager: ProviderManager
   private readonly eth: Eth
-  private eventsEmitter: BaseEventsEmitter | undefined
-  private newBlockEmitter: AutoStartStopEventEmitter | undefined
+  private eventsEmitter?: EventsEmitter<BlockchainEvent>
   private appResetCallback: () => void
+  private newBlockEmitter?: NewBlockEmitter
 
   constructor (offerId: string, manager: ProviderManager, options: AppOptions) {
     super(offerId, options)
@@ -87,67 +98,66 @@ export class BlockchainEventsProcessor extends EventProcessor {
       throw new Error(`Network ID not defined or incorrect. Expected ${networkId}, got ${await this.eth.net.getId()}`)
     }
 
-    this.newBlockEmitter = getNewBlockEmitter(this.eth)
-    this.eventsEmitter = getEventsEmitter(
-      this.eth,
-      storageManagerContractAbi.abi as AbiItem[],
-      { newBlockEmitter: this.newBlockEmitter, contractAddress: this.options?.contractAddress }
-    )
+    const web3events = new Web3Events(this.eth)
+    this.newBlockEmitter = web3events.defaultNewBlockEmitter
+
+    const contractAddresses = config.get<string>('blockchain.contractAddress')
+    const contract = new Contract(storageManagerContractAbi.abi as AbiItem[], contractAddresses, 'storage')
+    const logger = loggingFactory('blockchain')
+    const options = config.get<EventsEmitterCreationOptions>('blockchain.eventsEmitter')
+
+    logger.info(`For listening on service 'blockchain' using contract on address: ${contractAddresses}`)
+
+    this.eventsEmitter = web3events.createEventsEmitter<BlockchainEvent>(contract, options)
     this.initialized = true
   }
 
   async run (): Promise<void> {
     if (!this.initialized) await this.initialize()
 
+    if (!this.eventsEmitter || !this.newBlockEmitter) {
+      throw new Error('Processor was not correctly initialized!')
+    }
+
     // If not set then it is first time running ==> precache
     if (!getObject().lastFetchedBlockNumber || this.options?.forcePrecache) {
       await this.precache()
     }
 
-    this.eventsEmitter?.on('error', (e: Error) => {
+    this.eventsEmitter.on('error', (e: object) => {
       logger.error(`There was unknown error in the blockchain's Events Emitter! ${e}`)
     })
 
     // Listen on Offer events
-    this.eventsEmitter?.on('newEvent', this.processor)
+    this.eventsEmitter.on(NEW_EVENT_EVENT_NAME, this.processor)
 
     // Listening for reorgs outside of confirmations range
-    this.eventsEmitter?.on('reorgOutOfRange', this.appResetCallback)
+    this.eventsEmitter.on(REORG_OUT_OF_RANGE_EVENT_NAME, this.appResetCallback)
 
     // Pinning Garbage Collecting
-    this.newBlockEmitter?.on('newBlock', this.errorHandler(gcHanlder({ manager: this.manager }), loggingFactory('gc')))
+    this.newBlockEmitter.on(NEW_BLOCK_EVENT_NAME, this.errorHandler(gcHandler({ manager: this.manager }), loggingFactory('gc')))
   }
 
   async precache (): Promise<void> {
     if (!this.initialized) await this.initialize()
 
+    if (!this.eventsEmitter) {
+      throw new Error('Processor was not correctly initialized!')
+    }
+
     const precacheLogger = loggingFactory('processor:blockchain:precache')
-    const _eventsEmitter = this.eventsEmitter
-    const _processor = filterBlockchainEvents(this.offerId,
+    const processor = filterBlockchainEvents(this.offerId,
       this.errorHandler(this.getProcessor<BlockchainEvent, BlockchainEventProcessorOptions>(this.handlers, { eth: this.eth }), logger)
     )
 
     // Wait to build up the database with latest data
     precacheLogger.verbose('Populating database')
-
-    await new Promise<void>((resolve, reject) => {
-      const dataQueue: BlockchainEvent[] = []
-      const dataQueuePusher = (event: BlockchainEvent): void => { dataQueue.push(event) }
-
-      _eventsEmitter?.on('initFinished', async function () {
-        _eventsEmitter?.off('newEvent', dataQueuePusher)
-        // Needs to be sequentially processed
-        try {
-          for (const event of dataQueue) {
-            await _processor(event)
-          }
-          resolve()
-        } catch (e) {
-          reject(e)
-        }
-      })
-      _eventsEmitter?.on('newEvent', dataQueuePusher)
-    })
+    for await (const batch of this.eventsEmitter.fetch()) {
+      for (const event of batch.events) {
+        await processor(event)
+      }
+      precacheLogger.verbose(`Processing: ${Math.round(batch.stepsComplete / batch.totalSteps * 100)}%`)
+    }
 
     // Now lets pin every Agreement that has funds
     precacheLogger.info('Pinning valid Agreements')

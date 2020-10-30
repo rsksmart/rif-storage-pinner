@@ -3,20 +3,14 @@
  */
 import type { BigNumber } from 'bignumber.js'
 
-import type {
-  AgreementFundsDeposited,
-  AgreementFundsPayout,
-  AgreementFundsWithdrawn,
-  AgreementStopped,
-  NewAgreement,
-  TotalCapacitySet,
-  MessageEmitted
-} from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
 import type { Eth } from 'web3-eth'
 import type { ClientOptions as IpfsOptions } from 'ipfs-http-client'
 import type { Options as Libp2pOptions } from 'libp2p'
 
 import type { ProviderManager } from './providers'
+
+import * as storageEvents from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
+import * as stakingEvents from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/Staking'
 
 export enum Providers {
   IPFS = 'ipfs'
@@ -197,18 +191,20 @@ export interface MarketplaceEvent {
   payload: Record<string, any>
 }
 
-export type BlockchainAgreementEvents =
-  NewAgreement
-  | AgreementStopped
-  | AgreementFundsDeposited
-  | AgreementFundsWithdrawn
-  | AgreementFundsPayout
+export type BlockchainAgreementEvents = storageEvents.AgreementFundsDeposited
+  | storageEvents.AgreementFundsPayout
+  | storageEvents.AgreementFundsWithdrawn
+  | storageEvents.AgreementStopped
 
-export type BlockchainOfferEvents = TotalCapacitySet | MessageEmitted
+export type BlockchainAgreementEventsWithNewAgreement = BlockchainAgreementEvents | storageEvents.NewAgreement
 
-export type BlockchainEventsWithProvider = BlockchainOfferEvents | NewAgreement
+export type BlockchainOfferEvents = storageEvents.BillingPlanSet
+  | storageEvents.MessageEmitted
+  | storageEvents.TotalCapacitySet
 
-export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEvents
+export type BlockchainStakeEvents = stakingEvents.Staked | stakingEvents.Unstaked
+export type BlockchainEventsWithProvider = BlockchainOfferEvents | storageEvents.NewAgreement
+export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEventsWithNewAgreement | BlockchainStakeEvents
 
 export type StorageEvents = BlockchainEvent | MarketplaceEvent
 

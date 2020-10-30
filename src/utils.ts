@@ -32,6 +32,7 @@ import { JobsManager } from './jobs-manager'
 import { IpfsProvider } from './providers/ipfs'
 import { Migration } from './migrations'
 import { Sequelize } from 'sequelize'
+import { Web3Events } from '@rsksmart/web3-events'
 
 export function bnFloor (v: string | number | BigNumber): BigNumber {
   return new BigNumber(v).integerValue(BigNumber.ROUND_FLOOR)
@@ -287,6 +288,8 @@ export default abstract class BaseCommand extends Command {
         }
       }
     }
+
+    await Web3Events.init(sequelize) // And Web3Events models to Sequelize
 
     this.sequelize = sequelize
     return sequelize

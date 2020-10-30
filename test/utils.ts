@@ -24,6 +24,7 @@ import { initStore } from '../src/store'
 import { sequelizeFactory } from '../src/sequelize'
 import { bytesToMegabytes, sleep } from '../src/utils'
 
+export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 export const providerAddress = '0xB22230f21C57f5982c2e7C91162799fABD5733bE'
 export const errorSpy = sinon.spy()
@@ -167,6 +168,7 @@ export class TestingApp {
   public direct: DirectChat | undefined
   public consumerAddress = ''
   public providerAddress = ''
+  public contractOwner = ''
 
   async initAndStart (options?: Partial<AppOptions>, awaitComms = true): Promise<void> {
     await this.init()
@@ -293,6 +295,7 @@ export class TestingApp {
     this.ipfsProvider = undefined
     this.consumerAddress = ''
     this.providerAddress = ''
+    this.contractOwner = ''
     this.pubsub?.leave()
     this.pubsub = undefined
     await this.libp2p?.stop()
@@ -313,7 +316,8 @@ export class TestingApp {
 
   private async initBlockchainProvider (): Promise<void> {
     this.eth = new Eth(config.get<string>('blockchain.provider'))
-    const [provider, consumer] = await this.eth.getAccounts()
+    const [owner, provider, consumer] = await this.eth.getAccounts()
+    this.contractOwner = owner
     this.providerAddress = provider
     this.consumerAddress = consumer
   }
@@ -340,15 +344,20 @@ export class TestingApp {
 
     const offerCall = this.contract
       .methods
-      .setOffer(1000000, [1, 100], [10, 80], prefixedMsg)
+      .setOffer(1000000, [[1, 100]], [[10, 80]], [ZERO_ADDRESS], prefixedMsg)
     await offerCall.send({ from: this.providerAddress, gas: await offerCall.estimateGas() })
   }
 
   private async deployStorageManager (): Promise<void> {
-    if (!this.eth || !this.providerAddress) throw new Error('Provider should be initialized and has at least 2 accounts')
+    if (!this.eth || !this.providerAddress) {
+      throw new Error('Provider should be initialized and has at least 2 accounts')
+    }
     const contract = new this.eth.Contract(storageManagerContractAbi.abi as AbiItem[])
     const deploy = await contract.deploy({ data: storageManagerContractAbi.bytecode })
-    this.contract = await deploy.send({ from: this.providerAddress, gas: await deploy.estimateGas() })
+    this.contract = await deploy.send({ from: this.contractOwner, gas: await deploy.estimateGas() })
+    await this.contract?.methods.initialize().send({ from: this.contractOwner })
+    await this.contract?.methods.setWhitelistedTokens(ZERO_ADDRESS, true).send({ from: this.contractOwner })
+    await this.contract?.methods.setWhitelistedProvider(this.providerAddress, true).send({ from: this.contractOwner })
   }
 
   public async advanceBlock (): Promise<void> {

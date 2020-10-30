@@ -28,7 +28,7 @@ async function createAgreement (app: TestingApp, file: File, billingPeriod: numb
   return receipt.events.NewAgreement.returnValues.agreementReference
 }
 
-describe('Blockchain Strategy', function () {
+describe.only('Blockchain Strategy', function () {
   this.timeout(50000)
   let app: TestingApp
 
