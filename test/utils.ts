@@ -316,7 +316,7 @@ export class TestingApp {
 
   private async initBlockchainProvider (): Promise<void> {
     this.eth = new Eth(config.get<string>('blockchain.provider'))
-    const [owner, provider, consumer] = await this.eth.getAccounts()
+    const [provider, consumer, owner] = await this.eth.getAccounts()
     this.contractOwner = owner
     this.providerAddress = provider
     this.consumerAddress = consumer
