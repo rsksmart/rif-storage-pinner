@@ -5,7 +5,7 @@ import { promises as fs } from 'fs'
 import ipfsClient, { CID, ClientOptions, IpfsClient } from 'ipfs-http-client'
 import Eth from 'web3-eth'
 import { Contract } from 'web3-eth-contract'
-import { AbiItem, asciiToHex } from 'web3-utils'
+import { AbiItem, asciiToHex, padRight, soliditySha3 } from 'web3-utils'
 import { promisify } from 'util'
 import type { HttpProvider } from 'web3-core'
 import { Sequelize } from 'sequelize'
@@ -14,7 +14,7 @@ import Libp2p from 'libp2p'
 import PeerId from 'peer-id'
 import { createLibP2P, Message, Room, DirectChat } from '@rsksmart/rif-communications-pubsub'
 import { MessageDirect } from '@rsksmart/rif-communications-pubsub/types/definitions'
-import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
+import { Web3Events } from '@rsksmart/web3-events'
 
 import { initApp } from '../src'
 import { AppOptions, CommsMessage, Logger, MessageCodesEnum, Strategy } from '../src/definitions'
@@ -23,6 +23,8 @@ import { loggingFactory } from '../src/logger'
 import { initStore } from '../src/store'
 import { sequelizeFactory } from '../src/sequelize'
 import { bytesToMegabytes, sleep } from '../src/utils'
+
+import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
@@ -44,9 +46,22 @@ function errorHandlerStub (fn: (...args: any[]) => Promise<void>, logger: Logger
   }
 }
 
+export async function createAgreement (app: TestingApp, file: File, billingPeriod: number, money: number, size?: number): Promise<string> {
+  const agreementSize = Math.ceil(size ?? file.size)
+  const methodCall = app.contract!
+    .methods
+    .newAgreement(file.encodedHash, app.providerAddress, agreementSize, billingPeriod, ZERO_ADDRESS, 0, [], [], ZERO_ADDRESS)
+
+  const gas = await methodCall.estimateGas({ from: app.consumerAddress, value: money })
+  await methodCall.send({ from: app.consumerAddress, gas: gas * 2, value: money })
+  await app.advanceBlock()
+
+  return soliditySha3(app.consumerAddress, ...file.encodedHash, ZERO_ADDRESS) as string
+}
+
 export function encodeHash (hash: string): string[] {
   if (hash.length <= 32) {
-    return [asciiToHex(hash)]
+    return [padRight(asciiToHex(hash), 64)]
   }
 
   return [asciiToHex(hash.slice(0, 32)), ...encodeHash(hash.slice(32))]
@@ -122,6 +137,7 @@ export interface File {
   size: number
   cid: CID
   cidString: string
+  encodedHash: string[]
 }
 
 function generateRandomData (size: number): string {
@@ -148,7 +164,8 @@ export async function uploadRandomData (ipfs: IpfsClient): Promise<File> {
     ...file,
     size: bytesToMegabytes(file.size).toNumber(),
     fileHash: `/ipfs/${file.cid.toString()}`,
-    cidString: file.cid.toString()
+    cidString: file.cid.toString(),
+    encodedHash: encodeHash(`/ipfs/${file.cid.toString()}`)
   }
 }
 
@@ -205,6 +222,7 @@ export class TestingApp {
     // Init DB
     const sequelize = await sequelizeFactory(config.get<string>('db'))
     await sequelize.sync({ force: true })
+    await Web3Events.init(sequelize)
     await initStore(sequelize)
     const store = getObject()
     store.offerId = this.providerAddress

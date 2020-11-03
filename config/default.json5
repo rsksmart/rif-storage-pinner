@@ -25,26 +25,29 @@
   },
 
   blockchain: {
-    // Topics that will be listened to
-    topics: [
-      'TotalCapacitySet(address,uin64)',
-//      'BillingPlanSet(address,uint64,uint128)',
-      'MessageEmitted(address,bytes32[])',
-      'NewAgreement(bytes32,bytes32[],address,address,uint128,uint64,uint128,uint256)',
-      'AgreementFundsDeposited(bytes32,uint256)',
-      'AgreementFundsWithdrawn(bytes32,uint256)',
-      'AgreementFundsPayout(bytes32,uint256)',
-      'AgreementStopped(bytes32)',
-    ],
-
     // Immediately remove events when they are confirmed
     waitBlockCountBeforeConfirmationRemoved: 0,
 
     // Network ID check for blockchain connection, * means any
     networkId: "*",
 
-    // Specify behavior of EventsEmitter, that retrieves events from blockchain and pass them onwards for further processing.
     eventsEmitter: {
+      // Will process one event at a time
+      serialProcessing: true,
+
+      // Topics that will be listened to
+      topics: [
+        [ // It needs to be a "double array" because that represents an "or" of the topics and not "and"
+          'TotalCapacitySet(address,uint64)',
+          'MessageEmitted(address,bytes32[])',
+          'NewAgreement(bytes32[],address,address,uint128,uint64,uint128,address,uint256)',
+          'AgreementFundsDeposited(bytes32,uint256,address)',
+          'AgreementFundsWithdrawn(bytes32,uint256,address)',
+          'AgreementFundsPayout(bytes32,uint256,address)',
+          'AgreementStopped(bytes32)'
+        ]
+      ],
+
       // If to use polling strategy, if false then listening is used.
       polling: true,
 
@@ -52,7 +55,7 @@
       pollingInterval: 5000,
 
       // Starting block that upon first start of the service, will the blockchain be crawled for the past events.
-      startingBlock: 'genesis',
+      startingBlock: 0,
 
       // Number of blocks that will be waited before passing an event for further processing.
       confirmations: 6

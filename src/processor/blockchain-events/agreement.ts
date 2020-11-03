@@ -36,11 +36,12 @@ const handlers: HandlersObject<BlockchainAgreementEventsWithNewAgreement, Blockc
         size,
         billingPeriod,
         billingPrice,
+        token: tokenAddress,
         availableFunds
       }
     } = event as NewAgreement
 
-    const agreementReference = soliditySha3(consumer, ...dReference)
+    const agreementReference = soliditySha3(consumer, ...dReference, tokenAddress)
     const dataReference = decodeByteArray(dReference)
 
     const data = {
@@ -52,6 +53,7 @@ const handlers: HandlersObject<BlockchainAgreementEventsWithNewAgreement, Blockc
       billingPeriod,
       billingPrice,
       availableFunds,
+      token: tokenAddress,
       expiredAtBlockNumber: null, // If not new, then lets reset the expiredAt column
       lastPayout: await getBlockDate(options.eth, blockNumber)
     }

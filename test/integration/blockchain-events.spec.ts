@@ -2,7 +2,7 @@ import chai from 'chai'
 import dirtyChai from 'dirty-chai'
 import config from 'config'
 
-import { encodeHash, errorSpy, File, isPinned, TestingApp, uploadRandomData } from '../utils'
+import { createAgreement, errorSpy, isPinned, TestingApp, uploadRandomData, ZERO_ADDRESS } from '../utils'
 import { loggingFactory } from '../../src/logger'
 import { MessageCodesEnum, Strategy } from '../../src/definitions'
 import { sleep } from '../../src/utils'
@@ -11,24 +11,7 @@ chai.use(dirtyChai)
 const logger = loggingFactory('test:pinning:blockchain')
 const expect = chai.expect
 
-async function createAgreement (app: TestingApp, file: File, billingPeriod: number, money: number, size?: number): Promise<string> {
-  const encodedFileHash = encodeHash(file.fileHash)
-
-  const agreementSize = Math.ceil(size ?? file.size)
-  const methodCall = app.contract
-    ?.methods
-    .newAgreement(encodedFileHash, app.providerAddress, agreementSize, billingPeriod, [])
-
-  const gas = await methodCall.estimateGas({ from: app.consumerAddress, value: money })
-  const receipt = await methodCall.send({ from: app.consumerAddress, gas: gas * 2, value: money })
-  logger.info('Agreement created')
-
-  await app.advanceBlock()
-
-  return receipt.events.NewAgreement.returnValues.agreementReference
-}
-
-describe.only('Blockchain Strategy', function () {
+describe('Blockchain Strategy', function () {
   this.timeout(50000)
   let app: TestingApp
 
@@ -137,15 +120,16 @@ describe.only('Blockchain Strategy', function () {
       // Should be pinned
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
 
-      const payoutGas = await app.contract
-        ?.methods
-        .payoutFunds([agreementReference])
-        .estimateGas({ from: app.providerAddress })
-
-      await app.contract
-        ?.methods
-        .payoutFunds([agreementReference])
-        .send({ from: app.providerAddress, gas: payoutGas })
+      const payoutFunds = await app.contract?.methods.payoutFunds(
+        [file.encodedHash],
+        [app.consumerAddress],
+        ZERO_ADDRESS,
+        app.providerAddress
+      )
+      await payoutFunds.send({
+        from: app.providerAddress,
+        gas: (await payoutFunds.estimateGas({ from: app.providerAddress })) * 2
+      })
       logger.debug('Payed out')
 
       await app.advanceBlock()

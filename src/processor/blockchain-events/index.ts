@@ -1,12 +1,12 @@
-import { Eth } from 'web3-eth'
+import Eth from 'web3-eth'
 import { AbiItem } from 'web3-utils'
 import { getObject } from 'sequelize-store'
 import config from 'config'
 import {
   Contract,
   EventsEmitter,
-  EventsEmitterCreationOptions, NEW_BLOCK_EVENT_NAME, NEW_EVENT_EVENT_NAME,
-  NewBlockEmitter, REORG_OUT_OF_RANGE_EVENT_NAME,
+  EventsEmitterCreationOptions, LAST_FETCHED_BLOCK_NUMBER_KEY, NEW_BLOCK_EVENT_NAME, NEW_EVENT_EVENT_NAME,
+  NewBlockEmitter, NewBlockEmitterOptions, REORG_OUT_OF_RANGE_EVENT_NAME,
   Web3Events
 } from '@rsksmart/web3-events'
 
@@ -57,6 +57,11 @@ function filterBlockchainEvents (offerId: string, callback: Processor<Blockchain
   }
 }
 
+function isServiceInitialized (serviceName: string): boolean {
+  const store = getObject()
+  return store[`web3events.${serviceName}.${LAST_FETCHED_BLOCK_NUMBER_KEY}`] !== undefined
+}
+
 export class BlockchainEventsProcessor extends EventProcessor {
   private readonly handlers = [offer, agreement] as EventsHandler<BlockchainEvent, BlockchainEventProcessorOptions>[]
   private readonly processor: Processor<BlockchainEvent>
@@ -64,8 +69,9 @@ export class BlockchainEventsProcessor extends EventProcessor {
   private readonly errorHandler: (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
   private readonly manager: ProviderManager
   private readonly eth: Eth
+  private readonly appResetCallback: () => void
+  private readonly contractAddresses: string
   private eventsEmitter?: EventsEmitter<BlockchainEvent>
-  private appResetCallback: () => void
   private newBlockEmitter?: NewBlockEmitter
 
   constructor (offerId: string, manager: ProviderManager, options: AppOptions) {
@@ -75,6 +81,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
       throw new Error('We need appResetCallback to be defined for BlockchainEventsProcessor!')
     }
 
+    this.contractAddresses = options.contractAddress ?? config.get<string>('blockchain.contractAddress')
     this.appResetCallback = options.appResetCallback
     this.manager = manager
     this.errorHandler = options?.errorHandler ?? originalErrorHandler
@@ -92,21 +99,29 @@ export class BlockchainEventsProcessor extends EventProcessor {
   async initialize (): Promise<void> {
     if (this.initialized) throw new Error('Already Initialized')
 
+    const logger = loggingFactory('blockchain')
+    logger.info('Initializing Blockchain processor')
+
     const networkId = config.get<string|number>('blockchain.networkId')
 
-    if (networkId !== '*' && networkId !== await this.eth.net.getId()) {
+    const ethNetworkId = await this.eth.net.getId()
+    logger.verbose(`Connected to network ID ${ethNetworkId}`)
+
+    if (networkId !== '*' && networkId !== ethNetworkId) {
       throw new Error(`Network ID not defined or incorrect. Expected ${networkId}, got ${await this.eth.net.getId()}`)
     }
 
-    const web3events = new Web3Events(this.eth)
+    const web3events = new Web3Events(this.eth, {
+      store: getObject('web3events.'),
+      logger: loggingFactory('web3events'),
+      defaultNewBlockEmitter: config.get<NewBlockEmitterOptions>('blockchain.newBlockEmitter')
+    })
     this.newBlockEmitter = web3events.defaultNewBlockEmitter
 
-    const contractAddresses = config.get<string>('blockchain.contractAddress')
-    const contract = new Contract(storageManagerContractAbi.abi as AbiItem[], contractAddresses, 'storage')
-    const logger = loggingFactory('blockchain')
+    const contract = new Contract(storageManagerContractAbi.abi as AbiItem[], this.contractAddresses, 'storage')
     const options = config.get<EventsEmitterCreationOptions>('blockchain.eventsEmitter')
 
-    logger.info(`For listening on service 'blockchain' using contract on address: ${contractAddresses}`)
+    logger.info(`For listening on service 'blockchain' using contract on address: ${this.contractAddresses}`)
 
     this.eventsEmitter = web3events.createEventsEmitter<BlockchainEvent>(contract, options)
     this.initialized = true
@@ -120,7 +135,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
     }
 
     // If not set then it is first time running ==> precache
-    if (!getObject().lastFetchedBlockNumber || this.options?.forcePrecache) {
+    if (!isServiceInitialized('storage') || this.options?.forcePrecache) {
       await this.precache()
     }
 

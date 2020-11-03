@@ -6,6 +6,7 @@ import type { BigNumber } from 'bignumber.js'
 import type { Eth } from 'web3-eth'
 import type { ClientOptions as IpfsOptions } from 'ipfs-http-client'
 import type { Options as Libp2pOptions } from 'libp2p'
+import type { EventsEmitterOptions, NewBlockEmitterOptions } from '@rsksmart/web3-events'
 
 import type { ProviderManager } from './providers'
 
@@ -42,28 +43,8 @@ export interface Logger {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   debug (message: string | object, ...meta: any[]): void
-}
 
-export interface NewBlockEmitterOptions {
-  // If to use polling strategy, if false then listening is used.
-  polling?: boolean
-
-  // Interval in milliseconds, how often is blockchain checked.
-  pollingInterval?: number
-}
-
-export interface EventsEmitterOptions {
-  // If to use polling strategy, if false then listening is used.
-  polling?: boolean
-
-  // Interval in milliseconds, how often is blockchain checked.
-  pollingInterval?: number
-
-  // Starting block that upon first start of the service, will the blockchain be crawled for the past events.
-  startingBlock?: string
-
-  // Number of blocks that will be waited before passing an event for further processing.
-  confirmations?: number
+  extend?: (name: string) => Logger
 }
 
 export interface Config {
@@ -89,12 +70,6 @@ export interface Config {
 
     // Address of deployed pinning contract
     contractAddress?: string
-
-    // Events that will be listened to
-    events?: string[]
-
-    // Topics that will be listened to, if specified than has priority over "events" configuration
-    topics?: string[]
 
     // Specify behavior of EventsEmitter, that retrieves events from blockchain and pass them onwards for further processing.
     eventsEmitter?: EventsEmitterOptions
