@@ -23,6 +23,7 @@ import { loggingFactory } from '../src/logger'
 import { initStore } from '../src/store'
 import { sequelizeFactory } from '../src/sequelize'
 import { bytesToMegabytes, sleep } from '../src/utils'
+import { Migration } from '../src/migrations'
 
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
@@ -221,7 +222,10 @@ export class TestingApp {
 
     // Init DB
     const sequelize = await sequelizeFactory(config.get<string>('db'))
-    await sequelize.sync({ force: true })
+    const migrator = new Migration(sequelize)
+    await migrator.up()
+
+    // DB dependencies
     await Web3Events.init(sequelize)
     await initStore(sequelize)
     const store = getObject()

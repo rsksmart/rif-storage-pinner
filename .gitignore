@@ -35,6 +35,7 @@ node_modules
 .repos
 
 db_test.sqlite
+path3
 
 oclif.manifest.json
 .eslintrc.js

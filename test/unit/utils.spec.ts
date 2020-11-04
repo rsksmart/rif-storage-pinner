@@ -11,7 +11,7 @@ describe('Utils', function () {
     it('should split longer hash then 32 chars into chanks', () => {
       expect(encodeHash('qwertyuiopqwertyuiopwertyuiopqwetyuiopwertyuiopqwe')).to.eql([
         '0x71776572747975696f7071776572747975696f70776572747975696f70717765',
-        '0x747975696f70776572747975696f70717765'
+        '0x747975696f70776572747975696f707177650000000000000000000000000000'
       ])
     })
   })
