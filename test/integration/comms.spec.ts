@@ -2,30 +2,11 @@ import chai from 'chai'
 import dirtyChai from 'dirty-chai'
 import config from 'config'
 
-import { encodeHash, File, TestingApp, uploadRandomData } from '../utils'
-import { loggingFactory } from '../../src/logger'
+import { createAgreement, TestingApp, uploadRandomData } from '../utils'
 import { MessageCodesEnum, Strategy } from '../../src/definitions'
 
 chai.use(dirtyChai)
-const logger = loggingFactory('test:pinning:blockchain')
 const expect = chai.expect
-
-async function createAgreement (app: TestingApp, file: File, billingPeriod: number, money: number, size?: number): Promise<string> {
-  const encodedFileHash = encodeHash(file.fileHash)
-
-  const agreementSize = Math.ceil(size ?? file.size)
-  const methodCall = app.contract
-    ?.methods
-    .newAgreement(encodedFileHash, app.providerAddress, agreementSize, billingPeriod, [])
-
-  const gas = await methodCall.estimateGas({ from: app.consumerAddress, value: money })
-  const receipt = await methodCall.send({ from: app.consumerAddress, gas: gas * 2, value: money })
-  logger.info('Agreement created')
-
-  await app.advanceBlock()
-
-  return receipt.events.NewAgreement.returnValues.agreementReference
-}
 
 describe('Comms', function () {
   this.timeout(50000)

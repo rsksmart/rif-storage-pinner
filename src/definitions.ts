@@ -3,20 +3,15 @@
  */
 import type { BigNumber } from 'bignumber.js'
 
-import type {
-  AgreementFundsDeposited,
-  AgreementFundsPayout,
-  AgreementFundsWithdrawn,
-  AgreementStopped,
-  NewAgreement,
-  TotalCapacitySet,
-  MessageEmitted
-} from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
 import type { Eth } from 'web3-eth'
 import type { ClientOptions as IpfsOptions } from 'ipfs-http-client'
 import type { Options as Libp2pOptions } from 'libp2p'
+import type { EventsEmitterOptions, NewBlockEmitterOptions } from '@rsksmart/web3-events'
 
 import type { ProviderManager } from './providers'
+
+import * as storageEvents from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/StorageManager'
+import * as stakingEvents from '@rsksmart/rif-marketplace-storage/types/web3-v1-contracts/Staking'
 
 export enum Providers {
   IPFS = 'ipfs'
@@ -48,28 +43,8 @@ export interface Logger {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   debug (message: string | object, ...meta: any[]): void
-}
 
-export interface NewBlockEmitterOptions {
-  // If to use polling strategy, if false then listening is used.
-  polling?: boolean
-
-  // Interval in milliseconds, how often is blockchain checked.
-  pollingInterval?: number
-}
-
-export interface EventsEmitterOptions {
-  // If to use polling strategy, if false then listening is used.
-  polling?: boolean
-
-  // Interval in milliseconds, how often is blockchain checked.
-  pollingInterval?: number
-
-  // Starting block that upon first start of the service, will the blockchain be crawled for the past events.
-  startingBlock?: string
-
-  // Number of blocks that will be waited before passing an event for further processing.
-  confirmations?: number
+  extend?: (name: string) => Logger
 }
 
 export interface Config {
@@ -95,12 +70,6 @@ export interface Config {
 
     // Address of deployed pinning contract
     contractAddress?: string
-
-    // Events that will be listened to
-    events?: string[]
-
-    // Topics that will be listened to, if specified than has priority over "events" configuration
-    topics?: string[]
 
     // Specify behavior of EventsEmitter, that retrieves events from blockchain and pass them onwards for further processing.
     eventsEmitter?: EventsEmitterOptions
@@ -197,18 +166,20 @@ export interface MarketplaceEvent {
   payload: Record<string, any>
 }
 
-export type BlockchainAgreementEvents =
-  NewAgreement
-  | AgreementStopped
-  | AgreementFundsDeposited
-  | AgreementFundsWithdrawn
-  | AgreementFundsPayout
+export type BlockchainAgreementEvents = storageEvents.AgreementFundsDeposited
+  | storageEvents.AgreementFundsPayout
+  | storageEvents.AgreementFundsWithdrawn
+  | storageEvents.AgreementStopped
 
-export type BlockchainOfferEvents = TotalCapacitySet | MessageEmitted
+export type BlockchainAgreementEventsWithNewAgreement = BlockchainAgreementEvents | storageEvents.NewAgreement
 
-export type BlockchainEventsWithProvider = BlockchainOfferEvents | NewAgreement
+export type BlockchainOfferEvents = storageEvents.BillingPlanSet
+  | storageEvents.MessageEmitted
+  | storageEvents.TotalCapacitySet
 
-export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEvents
+export type BlockchainStakeEvents = stakingEvents.Staked | stakingEvents.Unstaked
+export type BlockchainEventsWithProvider = BlockchainOfferEvents | storageEvents.NewAgreement
+export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEventsWithNewAgreement | BlockchainStakeEvents
 
 export type StorageEvents = BlockchainEvent | MarketplaceEvent
 

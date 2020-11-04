@@ -1,5 +1,6 @@
 import { soliditySha3 } from 'web3-utils'
 import BigNumber from 'bignumber.js'
+import type Eth from 'web3-eth'
 
 import {
   AgreementFundsDeposited, AgreementFundsPayout, AgreementFundsWithdrawn,
@@ -10,19 +11,22 @@ import {
 import { loggingFactory } from '../../logger'
 import { EventError, NotPinnedError } from '../../errors'
 import { buildHandler, decodeByteArray } from '../../utils'
-import { getBlockDate } from '../../blockchain/utils'
 import Agreement from '../../models/agreement.model'
 import type {
   BlockchainEventProcessorOptions,
-  BlockchainAgreementEvents, HandlersObject
+  BlockchainAgreementEventsWithNewAgreement, HandlersObject
 } from '../../definitions'
 import { MessageCodesEnum } from '../../definitions'
 import { broadcast } from '../../communication'
 
 const logger = loggingFactory('processor:blockchain:agreement')
 
-const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcessorOptions> = {
-  async NewAgreement (event: BlockchainAgreementEvents, options: BlockchainEventProcessorOptions): Promise<void> {
+async function getBlockDate (eth: Eth, blockNumber: number): Promise<Date> {
+  return new Date(((await eth.getBlock(blockNumber)).timestamp as number) * 1000)
+}
+
+const handlers: HandlersObject<BlockchainAgreementEventsWithNewAgreement, BlockchainEventProcessorOptions> = {
+  async NewAgreement (event: BlockchainAgreementEventsWithNewAgreement, options: BlockchainEventProcessorOptions): Promise<void> {
     const {
       blockNumber,
       returnValues: {
@@ -32,11 +36,12 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
         size,
         billingPeriod,
         billingPrice,
+        token: tokenAddress,
         availableFunds
       }
     } = event as NewAgreement
 
-    const agreementReference = soliditySha3(consumer, ...dReference)
+    const agreementReference = soliditySha3(consumer, ...dReference, tokenAddress)
     const dataReference = decodeByteArray(dReference)
 
     const data = {
@@ -48,6 +53,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
       billingPeriod,
       billingPrice,
       availableFunds,
+      token: tokenAddress,
       expiredAtBlockNumber: null, // If not new, then lets reset the expiredAt column
       lastPayout: await getBlockDate(options.eth, blockNumber)
     }
@@ -61,7 +67,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     }
   },
 
-  async AgreementStopped (event: BlockchainAgreementEvents, options: BlockchainEventProcessorOptions): Promise<void> {
+  async AgreementStopped (event: BlockchainAgreementEventsWithNewAgreement, options: BlockchainEventProcessorOptions): Promise<void> {
     const { returnValues: { agreementReference: id } } = event as AgreementStopped
     const agreement = await Agreement.findByPk(id)
 
@@ -87,7 +93,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     logger.info(`Agreement ${id} was stopped.`)
   },
 
-  async AgreementFundsDeposited (event: BlockchainAgreementEvents): Promise<void> {
+  async AgreementFundsDeposited (event: BlockchainAgreementEventsWithNewAgreement): Promise<void> {
     const { returnValues: { agreementReference: id, amount } } = event as AgreementFundsDeposited
     const agreement = await Agreement.findByPk(id)
 
@@ -101,7 +107,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     logger.info(`Agreement ${id} was topped up with ${amount}.`)
   },
 
-  async AgreementFundsWithdrawn (event: BlockchainAgreementEvents): Promise<void> {
+  async AgreementFundsWithdrawn (event: BlockchainAgreementEventsWithNewAgreement): Promise<void> {
     const { returnValues: { agreementReference: id, amount } } = event as AgreementFundsWithdrawn
     const agreement = await Agreement.findByPk(id)
 
@@ -115,7 +121,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
     logger.info(`${amount} was withdrawn from funds of Agreement ${id}.`)
   },
 
-  async AgreementFundsPayout (event: BlockchainAgreementEvents, options: BlockchainEventProcessorOptions): Promise<void> {
+  async AgreementFundsPayout (event: BlockchainAgreementEventsWithNewAgreement, options: BlockchainEventProcessorOptions): Promise<void> {
     const { blockNumber, returnValues: { agreementReference: id, amount } } = event as AgreementFundsPayout
     const agreement = await Agreement.findByPk(id)
 
@@ -131,7 +137,7 @@ const handlers: HandlersObject<BlockchainAgreementEvents, BlockchainEventProcess
   }
 }
 
-export default buildHandler<BlockchainAgreementEvents, BlockchainEventProcessorOptions>(
+export default buildHandler<BlockchainAgreementEventsWithNewAgreement, BlockchainEventProcessorOptions>(
   handlers
   , ['NewAgreement', 'AgreementFundsDeposited', 'AgreementFundsWithdrawn', 'AgreementFundsPayout', 'AgreementStopped']
 )
