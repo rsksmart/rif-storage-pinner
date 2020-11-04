@@ -9,11 +9,10 @@ import { AbiItem, asciiToHex } from 'web3-utils'
 import { promisify } from 'util'
 import type { HttpProvider } from 'web3-core'
 import { Sequelize } from 'sequelize'
-import { reset as resetStore, getObject } from 'sequelize-store'
+import { reset as resetStore, getObject, getEndPromise } from 'sequelize-store'
 import Libp2p from 'libp2p'
 import PeerId from 'peer-id'
-import { createLibP2P, Message, Room, DirectChat } from '@rsksmart/rif-communications-pubsub'
-import { DirectMessage } from '@rsksmart/rif-communications-pubsub/types/definitions'
+import { createLibP2P, Message, Room, DirectChat, DirectMessage } from '@rsksmart/rif-communications-pubsub'
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
 import { initApp } from '../src'
@@ -215,12 +214,16 @@ export class TestingApp {
     store.peerId = this.peerId.id
     store.peerPubKey = this.peerId.pubKey!
     store.peerPrivKey = this.peerId.privKey!
+    await getEndPromise()
+    this.logger.info(`Pinning service PeerId: ${this.peerId.id}`)
 
     // Create PubSub room to listen on events
     const roomName = `*:${this.providerAddress}`
+    const testAppPeerId = await PeerId.create()
+    this.logger.info(`Testing app PeerId: ${testAppPeerId.toJSON().id}`)
     this.libp2p = await createLibP2P({
       addresses: { listen: ['/ip4/127.0.0.1/tcp/0'] },
-      peerId: await PeerId.create(),
+      peerId: testAppPeerId,
       config: {
         peerDiscovery: {
           bootstrap: {
@@ -254,10 +257,13 @@ export class TestingApp {
 
     if (awaitComms) {
       commsHaveConnectionPromise = new Promise(resolve => {
-        this.pubsub!.on('peer:joined', (peer) => {
+        const peerUnsubscribe = this.pubsub!.on('peer:joined', (peer) => {
           if (peer === this.peerId!.id) {
             this.logger.info('Pinning service joined PubSub. Lets start tests!')
             resolve()
+            peerUnsubscribe()
+          } else {
+            this.logger.warn(`Different PeerId joined than expected! ${peer}`)
           }
         })
       })
@@ -269,9 +275,10 @@ export class TestingApp {
       appResetCallback: appResetCallbackSpy
     }, options, { contractAddress: this.contract?.options.address }) as AppOptions
     this.app = await initApp(this.providerAddress, appOptions)
-    this.logger.info('Pinning service started, waiting for joing comms')
+    this.logger.info('Pinning service started')
 
     if (awaitComms) {
+      this.logger.info('Waiting for joining comms')
       await commsHaveConnectionPromise
     }
   }
