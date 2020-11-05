@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# This helps to check the env variables pushed from env file
+# Will be on the log file
+env
+
+./bin/run init --no-override-db
+./bin/run daemon "$@"
