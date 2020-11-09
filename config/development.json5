@@ -1,5 +1,5 @@
 {
-  uiUrl: 'http://localhost:3000/offer?peerId=<<peerId>>',
+  uiUrl: 'http://localhost:3000/storage/sell',
   comms: {
     libp2p: {
       config: {

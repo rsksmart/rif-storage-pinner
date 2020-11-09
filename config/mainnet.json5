@@ -1,4 +1,5 @@
 {
+  uiUrl: 'http://marketplace.rifos.org/storage/sell',
   blockchain: {
     //contractAddress : ''
     networkId: 30,

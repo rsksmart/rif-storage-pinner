@@ -8,8 +8,6 @@ import { getObject, getEndPromise as forStoreFinish } from 'sequelize-store'
 import BaseCommand, { promptForFlag } from '../utils'
 import PeerId from 'peer-id'
 
-const PEER_ID_PLACEHOLDER = '<<peerId>>'
-
 export default class InitCommand extends BaseCommand {
   static flags = {
     ...BaseCommand.flags,
@@ -82,8 +80,8 @@ export default class InitCommand extends BaseCommand {
       this.spinner.stop()
 
       const uiUrl = config.get<string>('uiUrl')
-      this.log(`Create Offer here: ${uiUrl.replace(PEER_ID_PLACEHOLDER, peerId.toB58String())}`)
-      this.log(`Or input your PeerId into the form: ${peerId.toB58String()}`)
+      this.log(`Create Offer here: ${uiUrl}`)
+      this.log(`Input your PeerId into the form: ${peerId.toB58String()}`)
 
       await forStoreFinish()
     } catch (e) {
