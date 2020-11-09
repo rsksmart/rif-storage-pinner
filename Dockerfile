@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm ci --only=production && npm install tasegir
 COPY . ./
-RUN npx tasegir compile
+RUN npm run compile
 
 # Runtime container
 FROM node:10-alpine
