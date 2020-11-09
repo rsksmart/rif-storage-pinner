@@ -1,6 +1,26 @@
 {
   strategy: 'RIFS_STRATEGY',
   db: 'RIFS_DB',
+  comms: {
+    libp2p: {
+      addresses: {
+        listen: {
+          "__name": "RIFS_COMMS_LISTEN",
+          "__format": "json"
+        }
+      },
+      config: {
+        peerDiscovery: {
+          bootstrap: {
+            list: {
+              "__name": "RIFS_COMMS_BOOTSTRAP",
+              "__format": "json"
+            }
+          }
+        }
+      }
+    },
+  },
   blockchain: {
     provider: 'RIFS_PROVIDER',
     contractAddress: 'RIFS_CONTRACT_ADDR'

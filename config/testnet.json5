@@ -4,7 +4,7 @@
     contractAddress : '0x9A74f110586971345a396C74228094A04f5a5eA6',
     networkId: 31,
     eventsEmitter: {
-      startingBlock: 1131351
+      startingBlock: 1131351,
       confirmations: 3
     }
   },

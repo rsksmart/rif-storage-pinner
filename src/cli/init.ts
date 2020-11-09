@@ -13,7 +13,8 @@ export default class InitCommand extends BaseCommand {
     ...BaseCommand.flags,
     offerId: promptForFlag(flags.string({
       char: 'o',
-      description: 'ID of Offer to which should the service listen to'
+      description: 'ID of Offer to which should the service listen to',
+      env: 'RIFS_OFFER'
     })),
     keyType: flags.string({
       char: 't',
@@ -25,6 +26,10 @@ export default class InitCommand extends BaseCommand {
       char: 's',
       default: 2048,
       description: 'Size of private key that will be used for Peer Identity'
+    }),
+    'override-db': flags.boolean({
+      allowNo: true,
+      description: 'Skip the prompt when database exists with used value --override-db/--no-override-db'
     })
   }
 
@@ -47,10 +52,16 @@ export default class InitCommand extends BaseCommand {
     if (!isAddress(offerId)) throw new Error('Invalid Offer Address')
 
     if (fs.existsSync(this.dbPath as string)) {
-      if (!this.parsedArgs.flags.skipPrompt && !(await this.confirm('Are you sure you want to overwrite your current DB? All data will be erased! (y/n)'))) {
+      const overrideDb = this.parsedArgs.flags['override-db']
+
+      if (overrideDb === false) {
         this.exit()
-      } else {
+      }
+
+      if (overrideDb === true || this.parsedArgs.flags.skipPrompt === true || await this.confirm('Are you sure you want to overwrite your current DB? All data will be erased! (y/n)')) {
         fs.unlinkSync(this.dbPath as string)
+      } else {
+        this.exit()
       }
     }
 
@@ -79,9 +90,13 @@ export default class InitCommand extends BaseCommand {
       store.peerPrivKey = peerIdJson.privKey as string
       this.spinner.stop()
 
-      const uiUrl = config.get<string>('uiUrl')
-      this.log(`Create Offer here: ${uiUrl}`)
-      this.log(`Input your PeerId into the form: ${peerId.toB58String()}`)
+      if (config.has('uiUrl')) {
+        const uiUrl = config.get<string>('uiUrl')
+        this.log(`Create Offer here: ${uiUrl}`)
+        this.log(`Input your PeerId into the form: ${peerId.toB58String()}`)
+      } else {
+        this.log(`Your PeerId: ${peerId.toB58String()}`)
+      }
 
       await forStoreFinish()
     } catch (e) {

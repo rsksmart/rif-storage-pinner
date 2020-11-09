@@ -34,6 +34,9 @@ node_modules
 # IPFS repos for development
 .repos
 
+# Deployment configuration
+.env-pinner
+
 db_test.sqlite
 path3
 

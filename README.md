@@ -19,15 +19,18 @@
 - [Contribute](#contribute)
 - [License](#license)
 
-## Install
+## Usage
 
-### npm
+### Running on bare metal
 
-```sh
-> npm install @rsksmart/rif-storage-pinning
+Install the package from NPM:
+```bash
+$ npm install @rsksmart/rif-storage-pinning
 ```
 
-## Usage
+When you initialize the Pinning service you need Offer ID. It is address of your account that you will use to create
+the Offer on the RIF Marketplace. You can either go to the RIF Marketplace directly and follow its guidance on how to set up
+new Offer, or if you need to set up the Pinning service prior that just use the account address instead here.
 
 Example of usage:
 ```bash
@@ -43,13 +46,51 @@ This will:
  - thanks to `--network testnet` will use predefined deployed smart-contracts on testnet
  - connects to your locally running IPFS node at `http://localhost:5001`
 
+### Docker
+
+Currently, the Docker image is not published anywhere, so you have to clone/download this repository first.
+Bellow we will describe only deployment using `docker-compose`, but it is possible to use only Docker image as well.
+
+In the root of the repository create file `.env-pinner` where you can specify any environmental variable as specified bellow. Example is:
+
+```
+RIFS_OFFER='' # fill in the Offer ID here
+RIFS_STRATEGY=blockchain
+RIFS_NETWORK=testnet
+RIFS_PROVIDER='' # fill in the address of RSKj node
+RIFS_COMMS_BOOTSTRAP='' # fill in the address of libp2p bootstrap nodes
+```
+
+Then to start the pinning service you can simply run:
+
+```bash
+$ docker-compose up
+```
+
+## Environmental variables
+
+Pinning service supports following environmental variables:
+
+ - `RIFS_CONFIG` (`string`) - Same like `--config` flag.
+ - `RIFS_CONTRACT_ADDR` (`string`) - Specifies address of smart contract to listen the events from. Mainly for development as this is otherwise configured using `--network` flag.
+ - `RIFS_COMMS_LISTEN` (`array`) - Defines an array of multiaddress that the Pinner's libp2p node will listen on. Same as libp2p config's [`address.listen`](https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md#customizing-libp2p) property.
+ - `RIFS_COMMS_BOOTSTRAP` (`array`) - Defines an array of multiaddress that the Pinner's libp2p node will use to bootstrap its connectivity. Same as libp2p config's [`bootstrap.list`](https://github.com/libp2p/js-libp2p-bootstrap) property.
+ - `RIFS_DB` (`string`) - Specify the name or path to the data base file.
+ - `RIFS_IPFS` (`string`) - Same like `--ipfs` flag.
+ - `RIFS_NETWORK` (`testnet|mainnet`) - Same like `--network` flag.
+ - `RIFS_OFFER` (`string`) - Specifies Offer Id which the Pinning service should listen on. Same like `--offerId` flag.
+ - `RIFS_STRATEGY` (`blockchain|marketplace`) - Same like `--strategy` flag.
+ - `RIFS_PROVIDER` (`string`) - Same like `--provider` flag.
+ - `LOG_LEVEL` (`string`) - Same like `--log` flag.
+ - `LOG_FILTER` (`string`) - Same like `--log-filter` flag.
+ - `LOG_PATH` (`string`) - Same like `--log-path` flag.
+
 ## Commands
 <!-- commands -->
 * [`rif-pinning agreements`](#rif-pinning-agreements)
 * [`rif-pinning cleanup`](#rif-pinning-cleanup)
 * [`rif-pinning daemon`](#rif-pinning-daemon)
 * [`rif-pinning db-migration`](#rif-pinning-db-migration)
-* [`rif-pinning help [COMMAND]`](#rif-pinning-help-command)
 * [`rif-pinning init`](#rif-pinning-init)
 
 ### `rif-pinning agreements`
@@ -169,23 +210,6 @@ EXAMPLES
   $ rif-pinning db --generate my_first_migration
 ```
 
-### `rif-pinning help [COMMAND]`
-
-display help for rif-pinning
-
-```
-USAGE
-  $ rif-pinning help [COMMAND]
-
-ARGUMENTS
-  COMMAND  command to show help for
-
-OPTIONS
-  --all  see all commands in CLI
-```
-
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.2.0/src/commands/help.ts)_
-
 ### `rif-pinning init`
 
 Initialize Pinner service dependencies
@@ -197,10 +221,13 @@ USAGE
 OPTIONS
   -d, --db=db                          Name or path to DB file
   -o, --offerId=offerId                ID of Offer to which should the service listen to
+  -s, --keySize=keySize                [default: 2048] Size of private key that will be used for Peer Identity
+  -t, --keyType=rsa|ed25519|secp256k1  [default: rsa] Type of private key that will be used for Peer Identity
   --config=config                      path to JSON config file to load
   --log=error|warn|info|verbose|debug  [default: error] what level of information to log
   --log-filter=log-filter              what components should be logged (+-, chars allowed)
   --log-path=log-path                  log to file, default is STDOUT
+  --[no-]override-db                   Skip the prompt when database exists with used value --override-db/--no-override-db
   --skipPrompt                         Answer yes for any prompting
 
 EXAMPLES
@@ -210,21 +237,6 @@ EXAMPLES
   $ rif-pinning init --db ./folder
 ```
 <!-- commandsstop -->
-
-### Environmental variables
-
-Pinning service supports following environmental variables:
-
- - `RIFS_OFFER` (`string`) - Specifies Offer Id which the Pinning service should listen on. Same like `--offerId` flag.
- - `RIFS_DB` (`string`) - Specify the name or path to the data base file.
- - `RIFS_NETWORK` (`testnet|mainnet`) - Same like `--network` flag.
- - `RIFS_PROVIDER` (`string`) - Same like `--provider` flag.
- - `RIFS_CONFIG` (`string`) - Same like `--config` flag.
- - `RIFS_CONTRACT_ADDR` (`string`) - Specifies address of smart contract to listen the events from. Mainly for development as this is otherwise configured using `--network` flag.
- - `RIFS_IPFS` (`string`) - Same like `--ipfs` flag.
- - `LOG_LEVEL` (`string`) - Same like `--log` flag.
- - `LOG_FILTER` (`string`) - Same like `--log-filter` flag.
- - `LOG_PATH` (`string`) - Same like `--log-path` flag.
 
 ## Contribute
 
