@@ -1,0 +1,7 @@
+.circleci
+.nyc_output
+.repos
+coverage
+lib
+node_modules
+types

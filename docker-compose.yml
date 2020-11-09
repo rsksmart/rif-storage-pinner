@@ -1,0 +1,46 @@
+version: "3"
+
+services:
+  # IPFS container definition
+  ipfs:
+    image: ipfs/go-ipfs:v0.7.0
+    env_file:
+      - .env-pinner
+    volumes:
+      - "ipfs-repo:/data/ipfs"
+    ports:
+      - 4001:4001
+      - 4001:4001/udp
+    expose:
+      - 5001
+    networks:
+      - rif-pinner-services
+
+  # Pinner container definition
+  rif-pinner-service:
+    image: rif-pinning-service:latest
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      RIFS_COMMS_LISTEN: '["/ip4/127.0.0.1/tcp/8999", "/ip4/127.0.0.1/tcp/8998/ws"]'
+      RIFS_IPFS: 'http://ipfs:5001'
+      LOG_LEVEL: 'verbose'
+      RIFS_DB: '/srv/data/db.sqlite'
+    env_file:
+      - .env-pinner
+    ports:
+      - 8999:8999
+      - 8998:8998
+    volumes:
+      - pinning-db:/srv/data/
+    networks:
+      - rif-pinner-services
+
+networks:
+  rif-pinner-services:
+    driver: bridge
+
+volumes:
+  ipfs-repo:
+  pinning-db:
