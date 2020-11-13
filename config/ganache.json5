@@ -2,9 +2,9 @@
   blockchain: {
     provider: 'ws://localhost:8545',
     // Default address using the rif-marketplace-dev ganache
-    contractAddress: '0xCfEB869F69431e42cdB54A4F4f105C19C080A601',
+    contractAddress: '0xDDb64fE46a91D46ee29420539FC25FD07c5FEa3E',
     eventsEmitter: {
-      confirmations: 1
+      confirmations: 2
     }
   },
   ipfs: {
