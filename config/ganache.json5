@@ -12,5 +12,16 @@
     clientOptions: {
       url: 'http://localhost:5003'
     }
+  },
+  comms: {
+    libp2p: {
+      config: {
+        peerDiscovery: {
+          bootstrap: {
+            enabled: false
+          }
+        }
+      }
+    }
   }
 }
