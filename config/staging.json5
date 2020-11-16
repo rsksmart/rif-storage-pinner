@@ -1,6 +1,20 @@
 {
+  comms: {
+    libp2p: {
+      config: {
+        peerDiscovery: {
+          bootstrap: {
+            list: [
+              '/dns4/pubsub-01.us-west-2.aws.staging.rifcomputing.net/tcp/6666',
+              '/dns4/pubsub-02.us-west-2.aws.staging.rifcomputing.net/tcp/6666'
+            ]
+          }
+        },
+      },
+    },
+  },
   blockchain: {
-    contractAddress : '0xEaEff4a8A8622B7520eE34f4CC2e50f1e58411C0',
+    contractAddress: '0xEaEff4a8A8622B7520eE34f4CC2e50f1e58411C0',
     networkId: 31,
     eventsEmitter: {
       startingBlock: 1333889,
