@@ -41,7 +41,7 @@
     "lint": "tasegir lint",
     "prepack": "tasegir run --watch node_modules/.bin/oclif-dev -- manifest && sed -i '' 's#\"./src/cli\"#\"./lib/cli\"#g' package.json",
     "postpack": "sed -i '' 's#\"./lib/cli\"#\"./src/cli\"#g' package.json",
-    "release": "tasegir release --no-build",
+    "release": "tasegir release --no-build --no-docs --target=node",
     "start": "tasegir run --watch ./bin/run --",
     "test:integration": "cross-env ALLOW_CONFIG_MUTATIONS=true tasegir test --target node --files ./test/integration/*.spec.ts",
     "test:unit": "cross-env ALLOW_CONFIG_MUTATIONS=true tasegir test --target node --files ./test/unit/*.spec.ts",
