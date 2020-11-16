@@ -1,3 +1,20 @@
+<a name="0.1.0-pre.4"></a>
+# [0.1.0-pre.4](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.3...v0.1.0-pre.4) (2020-11-16)
+
+
+### Bug Fixes
+
+* basic timeout estimation ([d231ca2](https://github.com/rsksmart/rds-ipfs/commit/d231ca2))
+* privKey possible undefined ([6db9a7e](https://github.com/rsksmart/rds-ipfs/commit/6db9a7e))
+* privKey possible undefined in tests ([#215](https://github.com/rsksmart/rds-ipfs/issues/215)) ([e464ae1](https://github.com/rsksmart/rds-ipfs/commit/e464ae1))
+
+
+### Features
+
+* **comms:** rebroadcast past messages ([#193](https://github.com/rsksmart/rds-ipfs/issues/193)) ([b6ac0e0](https://github.com/rsksmart/rds-ipfs/commit/b6ac0e0))
+
+
+
 <a name="0.1.0-pre.3"></a>
 # [0.1.0-pre.3](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.2...v0.1.0-pre.3) (2020-08-28)
 
