@@ -73,8 +73,8 @@ Pinning service supports following environmental variables:
 
  - `RIFS_CONFIG` (`string`) - Same like `--config` flag.
  - `RIFS_CONTRACT_ADDR` (`string`) - Specifies address of smart contract to listen the events from. Mainly for development as this is otherwise configured using `--network` flag.
- - `RIFS_COMMS_LISTEN` (`array`) - Defines an array of multiaddress that the Pinner's libp2p node will listen on. Same as libp2p config's [`address.listen`](https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md#customizing-libp2p) property.
- - `RIFS_COMMS_BOOTSTRAP` (`array`) - Defines an array of multiaddress that the Pinner's libp2p node will use to bootstrap its connectivity. Same as libp2p config's [`bootstrap.list`](https://github.com/libp2p/js-libp2p-bootstrap) property.
+ - `RIFS_COMMS_BOOTSTRAP_ENABLED` (`true`/`false`) - Defines if bootstrap should be used. Same as libp2p config's [`bootstrap.enabled`](https://github.com/libp2p/js-libp2p-bootstrap) property.
+ - `RIFS_COMMS_BOOTSTRAP_LIST` (`array`) - Defines an array of multiaddress that the Pinner's libp2p node will use to bootstrap its connectivity. Same as libp2p config's [`bootstrap.list`](https://github.com/libp2p/js-libp2p-bootstrap) property.
  - `RIFS_DB` (`string`) - Specify the name or path to the data base file.
  - `RIFS_IPFS` (`string`) - Same like `--ipfs` flag.
  - `RIFS_NETWORK` (`testnet|mainnet`) - Same like `--network` flag.

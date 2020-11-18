@@ -12,8 +12,9 @@
       config: {
         peerDiscovery: {
           bootstrap: {
+            enabled: "RIFS_COMMS_BOOTSTRAP_ENABLED",
             list: {
-              "__name": "RIFS_COMMS_BOOTSTRAP",
+              "__name": "RIFS_COMMS_BOOTSTRAP_LIST",
               "__format": "json"
             }
           }
