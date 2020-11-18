@@ -1,3 +1,13 @@
+<a name="0.1.0-pre.5"></a>
+# [0.1.0-pre.5](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.4...v0.1.0-pre.5) (2020-11-18)
+
+
+### Bug Fixes
+
+* room topic calculation ([#242](https://github.com/rsksmart/rds-ipfs/issues/242)) ([459f756](https://github.com/rsksmart/rds-ipfs/commit/459f756))
+
+
+
 <a name="0.1.0-pre.4"></a>
 # [0.1.0-pre.4](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.3...v0.1.0-pre.4) (2020-11-16)
 
