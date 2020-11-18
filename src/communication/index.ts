@@ -24,12 +24,12 @@ let room: Room
 let direct: DirectChat
 let libp2p: Libp2p
 
-function getRoomTopic (offerId?: string): string {
+function getRoomTopic (offerId?: string, contractAddress?: string): string {
   const store = getObject()
-  return `${config.get<string>('blockchain.networkId')}:${config.get<string>('blockchain.contractAddress')}:${offerId ?? store.offerId}`
+  return `${config.get<string>('blockchain.networkId')}:${contractAddress ?? config.get<string>('blockchain.contractAddress')}:${offerId ?? store.offerId}`
 }
 
-export async function start (offerId?: string): Promise<void> {
+export async function start (offerId?: string, contractAddress?: string): Promise<void> {
   const store = getObject()
 
   const peerId = await PeerId.createFromJSON({
@@ -49,7 +49,7 @@ export async function start (offerId?: string): Promise<void> {
   }
   libp2p = await createLibP2P(libp2pConf)
 
-  const topic = getRoomTopic(offerId)
+  const topic = getRoomTopic(offerId, contractAddress)
   logger.info(`Joining Room with topic ${topic}`)
 
   room = new Room(libp2p, topic)
