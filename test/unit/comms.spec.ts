@@ -65,7 +65,7 @@ describe('Comms', function () {
     store.peerPrivKey = peerId.privKey!
     store.peerPubKey = peerId.pubKey!
 
-    await start()
+    await start(undefined, undefined)
   })
 
   after(() => {
