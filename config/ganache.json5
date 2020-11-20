@@ -5,12 +5,25 @@
     contractAddress: '0xDDb64fE46a91D46ee29420539FC25FD07c5FEa3E',
     eventsEmitter: {
       confirmations: 2
-    }
+    },
+    networkId: 8545
   },
   ipfs: {
     sizeFetchTimeout: '30s',
     clientOptions: {
       url: 'http://localhost:5003'
+    }
+  },
+  comms: {
+    libp2p: {
+      config: {
+        peerDiscovery: {
+          bootstrap: {
+            enabled: true,
+            list: ['/ip4/127.0.0.1/tcp/8998', '/ip4/127.0.0.1/tcp/8999/ws']
+          }
+        }
+      }
     }
   }
 }

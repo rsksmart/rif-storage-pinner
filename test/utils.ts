@@ -157,7 +157,7 @@ export async function uploadRandomData (ipfs: IpfsClient): Promise<File> {
   const file = await ipfs.add(
     {
       path: `${Math.random().toString(36).substring(7)}.txt`,
-      content: `Nice to be on IPFS ${generateRandomData(1000 * 1000 * 2)}`
+      content: `Nice to be on IPFS ${generateRandomData(1024 * 1024 * 2)}`
     }
   )
 
