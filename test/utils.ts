@@ -241,7 +241,8 @@ export class TestingApp {
     store.peerPrivKey = this.peerId.privKey!
 
     // Create PubSub room to listen on events
-    const roomName = `*:${this.contract?.options.address ?? config.get<string>('blockchain.contractAddress')}:${this.providerAddress}`
+    const contractAddress = this.contract?.options.address ?? config.get<string>('blockchain.contractAddress')
+    const roomName = `*:${contractAddress.toLowerCase()}:${this.providerAddress}`
     this.libp2p = await createLibP2P({
       addresses: { listen: ['/ip4/127.0.0.1/tcp/0'] },
       peerId: await PeerId.create(),
