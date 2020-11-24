@@ -14,7 +14,7 @@ import DirectAddressModel from '../models/direct-address.model'
 
 const logger = loggingFactory('ipfs')
 
-const REQUIRED_IPFS_VERSION = '>=0.5.0'
+const REQUIRED_IPFS_VERSION = '>=0.7.0'
 const NOT_PINNED_ERROR_MSG = 'not pinned or pinned indirectly'
 
 const MIN_PIN_TIMEOUT = 60000 * 20 // 20 minutes
