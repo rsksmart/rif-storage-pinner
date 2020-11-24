@@ -8,6 +8,7 @@ import sinon from 'sinon'
 import type Sinon from 'sinon'
 import { Sequelize } from 'sequelize-typescript'
 import { CID, IpfsClient, multiaddr } from 'ipfs-http-client'
+import parse from 'parse-duration'
 
 import { sequelizeFactory } from '../../src/sequelize'
 import { FINISHED_EVENT_NAME, Job, JobsManager } from '../../src/jobs-manager'
@@ -319,7 +320,7 @@ describe('Jobs', function () {
       await job._run()
 
       expect(ipfsStub.object.stat.calledWith(new CID(hash), { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })).to.be.true()
-      expect(ipfsStub.dag.stat.calledWith(new CID(hash), { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })).to.be.true()
+      expect(ipfsStub.dag.stat.calledWith(new CID(hash), { timeout: parse(config.get<string>('ipfs.sizeFetchTimeout')) })).to.be.true()
       expect(ipfsStub.dht.findPeer.calledWith(new CID(fakePeerId))).to.be.true()
       expect(ipfsStub.swarm.connect.calledWith(fakeAddresses)).to.be.true()
       expect(ipfsStub.pin.add.calledWith(new CID(hash))).to.be.true()

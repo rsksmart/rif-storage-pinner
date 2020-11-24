@@ -98,7 +98,7 @@ export class PinJob extends Job {
 
   private getActualFileSize (cid: CID): Promise<BigNumber> {
     const timeout = config.get<number | string>('ipfs.sizeFetchTimeout')
-    return this.ipfs.dag.stat(
+    return this.ipfs.dag.stat!(
       cid,
       { timeout: typeof timeout === 'number' ? timeout : parse(timeout) as number })
       .then(res => {

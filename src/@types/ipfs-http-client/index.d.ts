@@ -151,7 +151,7 @@ declare module 'ipfs-http-client' {
 
   export interface DagCommands {
     dag: {
-      stat(cid: CID, options?: Options): Promise<{ Size: number }>
+      stat?(cid: CID, options?: Options): Promise<{ Size: number }>
     }
   }
 
