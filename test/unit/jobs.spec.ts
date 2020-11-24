@@ -281,7 +281,8 @@ describe('Jobs', function () {
     const fakeAddresses = [multiaddr(fakeNodeAddress + '/p2p/' + fakePeerId)]
     const ipfsStub = {
       object: { stat: sinon.stub() },
-      pin: { add: sinon.stub() },
+      dag: { stat: sinon.stub() },
+      pin: { add: sinon.stub(), rm: sinon.stub() },
       dht: { findPeer: sinon.stub() },
       swarm: {
         connect: sinon.stub(),
@@ -292,15 +293,19 @@ describe('Jobs', function () {
     beforeEach(async () => {
       await sequelize.sync({ force: true })
       channelSpy.resetHistory()
-      ipfsStub.object.stat.returns({ CumulativeSize: 1 })
+      ipfsStub.object.stat.returns(Promise.resolve({ CumulativeSize: 1 }))
+      ipfsStub.dag.stat.returns(Promise.resolve({ Size: 1 }))
       ipfsStub.pin.add.returns(Promise.resolve())
+      ipfsStub.pin.rm.returns(Promise.resolve())
       ipfsStub.dht.findPeer.returns({ id: fakePeerId, addrs: [multiaddr(fakeNodeAddress)] })
       ipfsStub.swarm.connect.returns(Promise.resolve())
       ipfsStub.swarm.disconnect.returns(Promise.resolve())
     })
     afterEach(() => {
       ipfsStub.object.stat.reset()
+      ipfsStub.dag.stat.reset()
       ipfsStub.pin.add.reset()
+      ipfsStub.pin.rm.reset()
       ipfsStub.dht.findPeer.reset()
       ipfsStub.swarm.connect.reset()
       ipfsStub.swarm.disconnect.reset()
@@ -314,13 +319,14 @@ describe('Jobs', function () {
       await job._run()
 
       expect(ipfsStub.object.stat.calledWith(new CID(hash), { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })).to.be.true()
+      expect(ipfsStub.dag.stat.calledWith(new CID(hash), { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })).to.be.true()
       expect(ipfsStub.dht.findPeer.calledWith(new CID(fakePeerId))).to.be.true()
       expect(ipfsStub.swarm.connect.calledWith(fakeAddresses)).to.be.true()
       expect(ipfsStub.pin.add.calledWith(new CID(hash))).to.be.true()
       expect(ipfsStub.swarm.connect.calledWith(fakeAddresses)).to.be.true()
     })
-    it('size exceed error', async () => {
-      ipfsStub.object.stat.returns({ CumulativeSize: 10000000000000 })
+    it('meta size exceed error', async () => {
+      ipfsStub.object.stat.returns(Promise.resolve({ CumulativeSize: 10000000000000 }))
 
       const job = new PinJob(ipfsStub as unknown as IpfsClient, fakeHash, fakeSize, fakeAgreementReference)
 
@@ -329,6 +335,23 @@ describe('Jobs', function () {
         'The hash exceeds payed size!'
       )
       expect(ipfsStub.pin.add.called).to.be.false()
+      expect(ipfsStub.dht.findPeer.called).to.be.false()
+      expect(ipfsStub.swarm.connect.called).to.be.false()
+      expect(ipfsStub.swarm.disconnect.called).to.be.false()
+    })
+    it('actual size exceed error', async () => {
+      ipfsStub.dag.stat.returns(Promise.resolve({ Size: 10000000000000 }))
+
+      const job = new PinJob(ipfsStub as unknown as IpfsClient, fakeHash, fakeSize, fakeAgreementReference)
+
+      await expect(job._run()).eventually.be.rejectedWith(
+        HashExceedsSizeError,
+        'The hash exceeds payed size!'
+      )
+      expect(ipfsStub.object.stat.called).to.be.true()
+      expect(ipfsStub.pin.add.called).to.be.true()
+      expect(ipfsStub.dag.stat.called).to.be.true()
+      expect(ipfsStub.pin.rm.called).to.be.true()
       expect(ipfsStub.dht.findPeer.called).to.be.false()
       expect(ipfsStub.swarm.connect.called).to.be.false()
       expect(ipfsStub.swarm.disconnect.called).to.be.false()

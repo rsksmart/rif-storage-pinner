@@ -100,7 +100,6 @@ export class PinJob extends Job {
       cid,
       { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })
       .then(res => {
-        logger.info(res)
         return bytesToMegabytes(res.Size)
       })
       .catch(e => {
