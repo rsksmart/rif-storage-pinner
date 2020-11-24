@@ -149,7 +149,13 @@ declare module 'ipfs-http-client' {
     }
   }
 
-  export type IpfsClient = MiscellaneousCommands & RegularFiles.RegularFilesCommands & PinCommands & ObjectCommands & SwarmCommands & DHTCommands
+  export interface DagCommands {
+    dag: {
+      stat(cid: CID, options?: Options): Promise<{ Size: number }>
+    }
+  }
+
+  export type IpfsClient = MiscellaneousCommands & RegularFiles.RegularFilesCommands & PinCommands & ObjectCommands & SwarmCommands & DHTCommands & DagCommands
 
   interface Port {
     port: string

@@ -2,6 +2,7 @@ import ipfsClient, { CID, ClientOptions, IpfsClient, multiaddr, Version } from '
 import * as semver from 'semver'
 import config from 'config'
 import BigNumber from 'bignumber.js'
+import fetch, { RequestInit } from 'node-fetch'
 
 import type { Provider } from '../definitions'
 import { loggingFactory } from '../logger'
@@ -70,41 +71,85 @@ export class PinJob extends Job {
     }
   }
 
-  async _run (): Promise<void> {
+  private async pinProcess (cid: CID, { timeout }: { timeout?: number}): Promise<void> {
     const hash = this.hash.replace('/ipfs/', '')
-    const cid = new CID(hash)
-    let metadataSize // In MB
-
-    logger.verbose(`(${hash}) Retrieving size of CID`)
-    try {
-      const stats = await this.ipfs.object.stat(cid, { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })
-      metadataSize = bytesToMegabytes(stats.CumulativeSize)
-
-      if (metadataSize.gt(this.expectedSize)) {
-        logger.error(`The hash ${hash} has cumulative size of ${bytesToMegabytes(stats.CumulativeSize)} megabytes while it was expected to have ${this.expectedSize} megabytes.`)
-        throw new HashExceedsSizeError('The hash exceeds payed size!', bytesToMegabytes(stats.CumulativeSize), this.expectedSize)
-      }
-    } catch (e) {
-      if (e.name === 'TimeoutError') {
-        logger.error(`Fetching size of ${hash} timed out!`)
-        throw new Error(`Fetching size of ${hash} timed out!`)
-      } else {
-        throw e
-      }
-    }
-
     await this.swarmConnect().catch(logger.warn)
 
     logger.info(`Pinning hash: ${hash} start`)
+    await this.ipfs.pin.add(cid, { timeout })
+    await this.swarmDisconnect().catch(logger.warn)
+  }
+
+  private getMetaFileSize (cid: CID): Promise<BigNumber> {
+    return this.ipfs.object.stat(
+      cid,
+      { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') }
+    )
+      .then(({ CumulativeSize }) => bytesToMegabytes(CumulativeSize))
+      .catch(e => {
+        if (e.name === 'TimeoutError') {
+          logger.error(`Fetching size of ${cid.toString()} timed out!`)
+          throw new Error(`Fetching size of ${cid.toString()} timed out!`)
+        }
+        throw e
+      })
+  }
+
+  private getActualFileSize (cid: CID): Promise<BigNumber> {
+    return this.ipfs.dag.stat(
+      cid,
+      { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })
+      .then(res => {
+        logger.info(res)
+        return bytesToMegabytes(res.Size)
+      })
+      .catch(e => {
+        if (e.name === 'TimeoutError') {
+          logger.error(`Fetching size of ${cid.toString()} timed out!`)
+          throw new Error(`Fetching size of ${cid.toString()} timed out!`)
+        }
+        throw e
+      })
+  }
+
+  async _run (): Promise<void> {
+    const hash = this.hash.replace('/ipfs/', '')
+    const cid = new CID(hash)
+
+    // METADATA SIZE CHECK
+    logger.verbose(`(${hash}) Retrieving meta size of CID`)
+    const metadataSizeMb = await this.getMetaFileSize(cid) // In MB
+
+    if (metadataSizeMb.gt(this.expectedSize)) {
+      logger.error(`The hash ${hash} has cumulative size of ${metadataSizeMb.toString()} megabytes while it was expected to have ${this.expectedSize} megabytes.`)
+      throw new HashExceedsSizeError('The hash exceeds payed size!', metadataSizeMb, this.expectedSize)
+    }
+
+    // PIN PROCESS
     // We can be generous on the actual pinning timeout as if the CID would not be present
     // in IPFS network, then the previous ipfs.object.stat() call would timeout already then.
     // We are using 0.5 MB per second transfer rate, with keeping at least 20 minutes as default.
     // SizeInMB * 0.5 * 1000 ==> ms
-    const estimatedTimeout = Math.max(MIN_PIN_TIMEOUT, metadataSize.div(RATE_MB_PER_SECOND).multipliedBy(1000).toNumber())
-    await this.ipfs.pin.add(cid, { timeout: estimatedTimeout })
+    const estimatedTimeout = Math.max(MIN_PIN_TIMEOUT, metadataSizeMb.div(RATE_MB_PER_SECOND).multipliedBy(1000).toNumber())
+    await this.pinProcess(cid, { timeout: estimatedTimeout })
 
-    await this.swarmDisconnect().catch(logger.warn)
+    // ACTUAL SIZE CHECK
+    logger.verbose(`(${hash}) Retrieving actual size of CID`)
+    const sizeInMb = await this.getActualFileSize(cid) // In MB
+
+    if (sizeInMb.gt(this.expectedSize)) {
+      logger.error(`The hash ${hash} has cumulative size of ${sizeInMb.toString()} megabytes while it was expected to have ${this.expectedSize} megabytes.`)
+      // Unpin file
+      logger.info(`Unpin file ${hash} due to exceed size limit`)
+      await this.ipfs.pin.rm(cid)
+      throw new HashExceedsSizeError('The hash exceeds payed size!', sizeInMb, this.expectedSize)
+    }
   }
+}
+
+export function getDagStat (nodeUrl: string): (cid: CID, options?: any) => Promise<any> {
+  return (cid: CID, options?: RequestInit): Promise<any> =>
+    fetch(`${nodeUrl}/api/v0/dag/stat?arg=${cid.toString()}`, { method: 'POST', ...options })
 }
 
 export class IpfsProvider implements Provider {
@@ -123,6 +168,8 @@ export class IpfsProvider implements Provider {
     }
 
     const ipfs = ipfsClient(options)
+    // TODO: Remove that when ipfs-js fully support this API
+    ipfs.dag.stat = getDagStat(typeof options === 'string' ? options : options.url as string)
 
     let versionObject: Version
     try {
