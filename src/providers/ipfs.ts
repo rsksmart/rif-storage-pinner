@@ -3,6 +3,7 @@ import * as semver from 'semver'
 import config from 'config'
 import BigNumber from 'bignumber.js'
 import fetch, { RequestInit } from 'node-fetch'
+import parse from 'parse-duration'
 
 import type { Provider } from '../definitions'
 import { loggingFactory } from '../logger'
@@ -96,9 +97,10 @@ export class PinJob extends Job {
   }
 
   private getActualFileSize (cid: CID): Promise<BigNumber> {
+    const timeout = config.get<number | string>('ipfs.sizeFetchTimeout')
     return this.ipfs.dag.stat(
       cid,
-      { timeout: config.get<number | string>('ipfs.sizeFetchTimeout') })
+      { timeout: typeof timeout === 'number' ? timeout : parse(timeout) as number })
       .then(res => {
         return bytesToMegabytes(res.Size)
       })
@@ -148,7 +150,17 @@ export class PinJob extends Job {
 
 export function getDagStat (nodeUrl: string): (cid: CID, options?: any) => Promise<any> {
   return (cid: CID, options?: RequestInit): Promise<any> =>
-    fetch(`${nodeUrl}/api/v0/dag/stat?arg=${cid.toString()}`, { method: 'POST', ...options })
+    fetch(`${nodeUrl}/dag/stat?arg=${cid.toString()}`, { method: 'POST', ...options })
+      .then(async res => {
+        if (!res.ok) {
+          throw new Error(`Get dag stat for hash ${cid.toString()} error, ${res.statusText}`)
+        }
+        return (await res.text())
+          .split('\n')
+          .filter(el => el)
+          .map(el => JSON.parse(el))
+          .reduce((acc, el) => el.NumBlocks > acc.NumBlocks ? el : acc)
+      })
 }
 
 export class IpfsProvider implements Provider {
