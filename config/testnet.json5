@@ -1,4 +1,5 @@
 {
+  uiUrl: 'http://marketplace.testnet.rifos.org/storage/sell?peerId=<<peerId>>',
   blockchain: {
     contractAddress : '0x9A74f110586971345a396C74228094A04f5a5eA6',
     networkId: 31,
