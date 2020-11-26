@@ -27,6 +27,7 @@ RUN sed -i 's#"./src/cli"#"./lib/cli"#g' package.json
 
 ENV RIFS_DB '/srv/data/db.sqlite'
 ENV NODE_ENV 'production'
+ENV LOG_NO_COLORS 'true'
 
 ENTRYPOINT [ "./bin/entrypoint" ]
 

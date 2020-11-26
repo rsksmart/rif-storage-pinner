@@ -84,6 +84,7 @@ Pinning service supports following environmental variables:
  - `LOG_LEVEL` (`string`) - Same like `--log` flag.
  - `LOG_FILTER` (`string`) - Same like `--log-filter` flag.
  - `LOG_PATH` (`string`) - Same like `--log-path` flag.
+ - `LOG_NO_COLORS` (boolean) - if set the output won't be colorized
 
 ## Commands
 <!-- commands -->
