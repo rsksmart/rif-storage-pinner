@@ -99,6 +99,7 @@ export default class DaemonCommand extends BaseCommand {
         }).then(value => {
           // Lets save the function that stops the app
           stopCallback = value.stop
+          this.log('Daemon listening for incoming events.')
         }).catch(reject)
       })
 
