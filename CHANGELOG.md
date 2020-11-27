@@ -1,3 +1,22 @@
+<a name="0.1.0-pre.6"></a>
+# [0.1.0-pre.6](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.4...v0.1.0-pre.6) (2020-11-27)
+
+
+### Bug Fixes
+
+* **core:** logs colors handling ([#265](https://github.com/rsksmart/rds-ipfs/issues/265)) ([4bca600](https://github.com/rsksmart/rds-ipfs/commit/4bca600))
+* fix bytes to megabytes convertion ([#257](https://github.com/rsksmart/rds-ipfs/issues/257)) ([e8fef55](https://github.com/rsksmart/rds-ipfs/commit/e8fef55))
+* make contract address lower case for room topic ([#258](https://github.com/rsksmart/rds-ipfs/issues/258)) ([0db3317](https://github.com/rsksmart/rds-ipfs/commit/0db3317))
+* room topic calculation ([#242](https://github.com/rsksmart/rds-ipfs/issues/242)) ([459f756](https://github.com/rsksmart/rds-ipfs/commit/459f756))
+
+
+### Features
+
+* check actual size after pin ([#264](https://github.com/rsksmart/rds-ipfs/issues/264)) ([4c148d3](https://github.com/rsksmart/rds-ipfs/commit/4c148d3))
+* report when app running ([#267](https://github.com/rsksmart/rds-ipfs/issues/267)) ([a5fcebc](https://github.com/rsksmart/rds-ipfs/commit/a5fcebc))
+
+
+
 <a name="0.1.0-pre.5"></a>
 # [0.1.0-pre.5](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.4...v0.1.0-pre.5) (2020-11-18)
 
