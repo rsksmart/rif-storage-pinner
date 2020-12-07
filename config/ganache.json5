@@ -1,4 +1,5 @@
 {
+  uiUrl: 'http://localhost:3000/storage/sell?peerId=<<peerId>>',
   blockchain: {
     provider: 'ws://localhost:8545',
     // Default address using the rif-marketplace-dev ganache
