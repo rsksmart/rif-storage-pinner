@@ -27,7 +27,7 @@ let libp2p: Libp2p
 function getRoomTopic (offerId?: string, contractAddress?: string): string {
   const store = getObject()
   const cAddress = contractAddress ?? config.get<string>('blockchain.contractAddress')
-  return `${config.get<string>('blockchain.networkId')}:${cAddress.toLowerCase()}:${offerId ?? store.offerId}`
+  return `${config.get<string>('blockchain.networkId')}:${cAddress.toLowerCase()}:${offerId?.toLowerCase() ?? (store.offerId as string).toLowerCase()}`
 }
 
 export async function start (offerId?: string, contractAddress?: string): Promise<void> {
