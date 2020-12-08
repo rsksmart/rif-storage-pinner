@@ -1,10 +1,10 @@
 {
   uiUrl: 'http://marketplace.testnet.rifos.org/storage/sell?peerId=<<peerId>>',
   blockchain: {
-    contractAddress : '0x9A74f110586971345a396C74228094A04f5a5eA6',
+    contractAddress : '0x2647F2e5C2E6A05487708CBCBd72900Dc339af1b',
     networkId: 31,
     eventsEmitter: {
-      startingBlock: 1131351,
+      startingBlock: 1425147,
       confirmations: 3
     }
   },
