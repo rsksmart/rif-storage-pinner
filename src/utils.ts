@@ -191,7 +191,7 @@ export default abstract class BaseCommand extends Command {
 
   protected set offerId (offerId: string) {
     const store = getObject()
-    store.offerId = offerId
+    store.offerId = offerId.toLowerCase()
   }
 
   protected get offerId (): string {

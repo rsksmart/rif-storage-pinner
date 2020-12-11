@@ -75,7 +75,7 @@ export default class InitCommand extends BaseCommand {
 
       // Store offerId
       this.spinner.start('Set Offer ID')
-      this.offerId = offerId
+      this.offerId = offerId.toLowerCase()
       this.spinner.stop()
 
       // Peer identity
