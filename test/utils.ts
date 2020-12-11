@@ -222,14 +222,16 @@ export class TestingApp {
 
     // Init DB
     const sequelize = await sequelizeFactory(config.get<string>('db'))
-    const migrator = new Migration(sequelize)
-    await migrator.up()
 
     // DB dependencies
     await Web3Events.init(sequelize)
     await initStore(sequelize)
     const store = getObject()
     store.offerId = this.providerAddress.toLowerCase()
+
+    // Migration
+    const migrator = new Migration(sequelize)
+    await migrator.up()
 
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
