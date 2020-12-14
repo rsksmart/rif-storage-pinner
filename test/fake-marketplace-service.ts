@@ -33,7 +33,7 @@ export const stubReorg: StubService = createStubService({ events: [REORG_OUT_OF_
 export function mockOffer (offer: Record<string, any> = {}): Record<string, any> {
   return Object.assign({
     totalCapacity: '999999',
-    address: providerAddress
+    address: providerAddress.toLowerCase()
   }, offer)
 }
 

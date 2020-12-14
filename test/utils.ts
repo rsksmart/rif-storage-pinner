@@ -222,14 +222,16 @@ export class TestingApp {
 
     // Init DB
     const sequelize = await sequelizeFactory(config.get<string>('db'))
-    const migrator = new Migration(sequelize)
-    await migrator.up()
 
     // DB dependencies
     await Web3Events.init(sequelize)
     await initStore(sequelize)
     const store = getObject()
-    store.offerId = this.providerAddress
+    store.offerId = this.providerAddress.toLowerCase()
+
+    // Migration
+    const migrator = new Migration(sequelize)
+    await migrator.up()
 
     // Connection to IPFS consumer/provider nodes
     await this.initIpfs()
@@ -341,8 +343,8 @@ export class TestingApp {
     this.eth = new Eth(config.get<string>('blockchain.provider'))
     const [provider, consumer, owner] = await this.eth.getAccounts()
     this.contractOwner = owner
-    this.providerAddress = provider
-    this.consumerAddress = consumer
+    this.providerAddress = provider.toLowerCase()
+    this.consumerAddress = consumer.toLowerCase()
   }
 
   async initCacheProvider (): Promise<void> {

@@ -241,10 +241,10 @@ describe('CLI', function () {
 
       // Init the DB
       const sequelize = sequelizeFactory(dbPath)
-      const migration = new Migration(sequelize)
-      await migration.up()
       await initStore(sequelize)
       let store = getStore()
+      const migration = new Migration(sequelize)
+      await migration.up()
       store.offerId = '0x123'
       store.peerId = '0x333'
       await getEndPromise()

@@ -9,7 +9,6 @@ import {
   NewBlockEmitter, NewBlockEmitterOptions, REORG_OUT_OF_RANGE_EVENT_NAME,
   Web3Events
 } from '@rsksmart/web3-events'
-
 import storageManagerContractAbi from '@rsksmart/rif-marketplace-storage/build/contracts/StorageManager.json'
 
 import offer from './offer'
@@ -31,6 +30,7 @@ import type {
   BlockchainEventsWithProvider
 } from '../../definitions'
 import type { ProviderManager } from '../../providers'
+import { EventTransformer, getEventTransformer } from '../../event-transformer'
 
 const logger: Logger = loggingFactory('processor:blockchain')
 
@@ -41,8 +41,9 @@ function ethFactory (): Eth {
   return new Eth(provider)
 }
 
-function filterBlockchainEvents (offerId: string, callback: Processor<BlockchainEvent>): Processor<BlockchainEvent> {
-  return async (event: BlockchainEvent): Promise<void> => {
+function filterAndTransformBlockchainEvents (offerId: string, eventTransformer: EventTransformer, callback: Processor<BlockchainEvent>): Processor<BlockchainEvent> {
+  return async (originalEvent: BlockchainEvent): Promise<void> => {
+    const event = eventTransformer(originalEvent)
     logger.debug(`Got ${event.event} for provider ${(event as BlockchainEventsWithProvider).returnValues.provider}`)
 
     if (isEventWithProvider(event) && event.returnValues.provider === offerId) {
@@ -73,6 +74,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
   private readonly contractAddresses: string
   private eventsEmitter?: EventsEmitter<BlockchainEvent>
   private newBlockEmitter?: NewBlockEmitter
+  private eventTransformer: EventTransformer
 
   constructor (offerId: string, manager: ProviderManager, options: AppOptions) {
     super(offerId, options)
@@ -86,11 +88,14 @@ export class BlockchainEventsProcessor extends EventProcessor {
     this.manager = manager
     this.errorHandler = options?.errorHandler ?? originalErrorHandler
     this.eth = ethFactory()
+    this.eventTransformer = getEventTransformer<BlockchainEvent>(storageManagerContractAbi.abi as AbiItem[])
     const deps: BlockchainEventProcessorOptions = {
       manager: manager,
       eth: this.eth
     }
-    this.processor = filterBlockchainEvents(this.offerId,
+    this.processor = filterAndTransformBlockchainEvents(
+      this.offerId,
+      this.eventTransformer,
       this.errorHandler(this.getProcessor<BlockchainEvent, BlockchainEventProcessorOptions>(this.handlers, deps), logger)
     )
   }
@@ -161,7 +166,9 @@ export class BlockchainEventsProcessor extends EventProcessor {
     }
 
     const precacheLogger = loggingFactory('processor:blockchain:precache')
-    const processor = filterBlockchainEvents(this.offerId,
+    const processor = filterAndTransformBlockchainEvents(
+      this.offerId,
+      this.eventTransformer,
       this.errorHandler(this.getProcessor<BlockchainEvent, BlockchainEventProcessorOptions>(this.handlers, { eth: this.eth }), logger)
     )
 
