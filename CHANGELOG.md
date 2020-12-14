@@ -1,3 +1,19 @@
+<a name="0.1.0"></a>
+# [0.1.0](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.6...v0.1.0) (2020-12-14)
+
+
+### Bug Fixes
+
+* send agreement new message before start pinning ([#276](https://github.com/rsksmart/rds-ipfs/issues/276)) ([0bb1b21](https://github.com/rsksmart/rds-ipfs/commit/0bb1b21))
+
+
+### Features
+
+* add event transformer ([#290](https://github.com/rsksmart/rds-ipfs/issues/290)) ([061119e](https://github.com/rsksmart/rds-ipfs/commit/061119e))
+* lower case offer-id in topic computation ([#285](https://github.com/rsksmart/rds-ipfs/issues/285)) ([1c299e6](https://github.com/rsksmart/rds-ipfs/commit/1c299e6))
+
+
+
 <a name="0.1.0-pre.6"></a>
 # [0.1.0-pre.6](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.4...v0.1.0-pre.6) (2020-11-27)
 
