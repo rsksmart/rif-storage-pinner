@@ -226,7 +226,9 @@ describe('CLI', function () {
   })
 
   describe('daemon', () => {
-    it('should restart when appResetCallback is triggered', async () => {
+    it('should restart when appResetCallback is triggered', async function () {
+      this.timeout(10000)
+
       // Prepare DB and set it to be used
       const dbPath = path.join(__dirname, '..', '..', 'db_test.sqlite')
       try {
