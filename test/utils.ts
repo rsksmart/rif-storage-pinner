@@ -12,8 +12,7 @@ import { Sequelize } from 'sequelize'
 import { reset as resetStore, getObject } from 'sequelize-store'
 import Libp2p from 'libp2p'
 import PeerId from 'peer-id'
-import { createLibP2P, Message, Room, DirectChat } from '@rsksmart/rif-communications-pubsub'
-import { MessageDirect } from '@rsksmart/rif-communications-pubsub/types/definitions'
+import { createLibP2P, Message, Room, DirectChat, DirectMessage } from '@rsksmart/rif-communications-pubsub'
 import { Web3Events } from '@rsksmart/web3-events'
 
 import { initApp } from '../src'
@@ -268,7 +267,7 @@ export class TestingApp {
 
     this.commsLogger.info('Listening on direct chat!')
     this.direct = DirectChat.getDirectChat(this.libp2p)
-    this.direct.on('message', (msg: MessageDirect) => {
+    this.direct.on('message', (msg: DirectMessage) => {
       this.commsLogger.debug('Direct message:', msg)
     })
   }
@@ -428,7 +427,7 @@ export class TestingApp {
     return (await this.awaitForMessage<Message<CommsMessage<T>>>(this.pubsub!, code, timeout)).data
   }
 
-  public awaitForDirectMessage<T> (timeout = 3000): Promise<MessageDirect<T>> {
+  public awaitForDirectMessage<T> (timeout = 3000): Promise<DirectMessage<T>> {
     return this.awaitForMessage(this.direct!, undefined, timeout)
   }
 
