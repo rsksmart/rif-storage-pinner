@@ -102,7 +102,14 @@ export default class InitCommand extends BaseCommand {
 
       await forStoreFinish()
     } catch (e) {
-      fs.unlinkSync(this.dbPath as string)
+      try {
+        fs.unlinkSync(this.dbPath as string)
+      } catch (e) {
+        if (e.code !== 'ENOENT') {
+          throw e
+        }
+      }
+
       throw e
     }
     this.exit()
