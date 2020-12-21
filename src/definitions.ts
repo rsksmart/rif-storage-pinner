@@ -6,7 +6,7 @@ import type { BigNumber } from 'bignumber.js'
 import type { Eth } from 'web3-eth'
 import type { ClientOptions as IpfsOptions } from 'ipfs-http-client'
 import type { Options as Libp2pOptions } from 'libp2p'
-import type { EventsEmitterOptions, NewBlockEmitterOptions } from '@rsksmart/web3-events'
+import type { EventsEmitterCreationOptions, NewBlockEmitterOptions } from '@rsksmart/web3-events'
 
 import type { ProviderManager } from './providers'
 
@@ -72,7 +72,7 @@ export interface Config {
     contractAddress?: string
 
     // Specify behavior of EventsEmitter, that retrieves events from blockchain and pass them onwards for further processing.
-    eventsEmitter?: EventsEmitterOptions
+    eventsEmitter?: EventsEmitterCreationOptions
 
     // Specify behavior of NewBlockEmitter, that detects new blocks on blockchain.
     newBlockEmitter?: NewBlockEmitterOptions
