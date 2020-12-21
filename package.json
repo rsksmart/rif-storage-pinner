@@ -1,6 +1,6 @@
 {
   "name": "@rsksmart/rif-storage-pinning",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Application for providing your storage space to other to use in exchange of RIF Tokens",
   "keywords": [
     "IPFS",
