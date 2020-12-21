@@ -1,3 +1,13 @@
+<a name="0.1.2"></a>
+## [0.1.2](https://github.com/rsksmart/rds-ipfs/compare/v0.1.1...v0.1.2) (2020-12-21)
+
+
+### Bug Fixes
+
+* init command does not fail when rolling back ([5c0ef1b](https://github.com/rsksmart/rds-ipfs/commit/5c0ef1b))
+
+
+
 <a name="0.1.1"></a>
 ## [0.1.1](https://github.com/rsksmart/rds-ipfs/compare/v0.1.0-pre.6...v0.1.1) (2020-12-18)
 
