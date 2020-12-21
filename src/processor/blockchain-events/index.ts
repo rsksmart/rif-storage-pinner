@@ -4,7 +4,7 @@ import { getObject } from 'sequelize-store'
 import config from 'config'
 import {
   Contract,
-  EventsEmitter,
+  AutoEventsEmitter,
   EventsEmitterCreationOptions, LAST_FETCHED_BLOCK_NUMBER_KEY, NEW_BLOCK_EVENT_NAME, NEW_EVENT_EVENT_NAME,
   NewBlockEmitter, NewBlockEmitterOptions, REORG_OUT_OF_RANGE_EVENT_NAME,
   Web3Events
@@ -72,7 +72,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
   private readonly eth: Eth
   private readonly appResetCallback: () => void
   private readonly contractAddresses: string
-  private eventsEmitter?: EventsEmitter<BlockchainEvent>
+  private eventsEmitter?: AutoEventsEmitter<BlockchainEvent>
   private newBlockEmitter?: NewBlockEmitter
   private eventTransformer: EventTransformer
 
