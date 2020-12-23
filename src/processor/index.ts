@@ -31,7 +31,7 @@ export abstract class EventProcessor implements EventProcessorI {
       return processor
     }
 
-    abstract async initialize (): Promise<void>
-    abstract async run (): Promise<void>
-    async abstract stop (): Promise<void>
+    abstract initialize (): Promise<void>
+    abstract run (): Promise<void>
+    abstract stop (): Promise<void>
 }

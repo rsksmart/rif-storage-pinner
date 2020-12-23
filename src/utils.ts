@@ -112,8 +112,8 @@ export function runAndAwaitFirstEvent<T = void> (emitted: EventEmitter, event: s
   })
 }
 
-export function sleep<T> (ms: number, ...args: T[]): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(...args), ms))
+export function sleep<T> (ms: number, arg?: T): Promise<T | undefined> {
+  return new Promise(resolve => setTimeout(() => resolve(arg), ms))
 }
 
 /**

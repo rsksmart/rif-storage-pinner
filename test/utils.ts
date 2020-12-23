@@ -2,7 +2,9 @@ import config from 'config'
 import sinon from 'sinon'
 import path from 'path'
 import { promises as fs } from 'fs'
-import ipfsClient, { CID, ClientOptions, IpfsClient } from 'ipfs-http-client'
+import ipfsClient from 'ipfs-http-client'
+import CID from 'cids'
+import type { ClientOptions } from 'ipfs-http-client/src/lib/core'
 import Eth from 'web3-eth'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem, asciiToHex, padRight, soliditySha3 } from 'web3-utils'
@@ -31,6 +33,8 @@ export const consumerIpfsUrl = '/ip4/127.0.0.1/tcp/5002'
 export const providerAddress = '0xB22230f21C57f5982c2e7C91162799fABD5733bE'
 export const errorSpy = sinon.spy()
 export const appResetCallbackSpy = sinon.spy()
+
+type IpfsClient = ReturnType<typeof ipfsClient>
 
 interface Listener<T> {
   on: (name: string, fn: (msg: T) => void) => void
@@ -108,6 +112,8 @@ export async function asyncIterableToArray (asyncIterable: any): Promise<Array<a
 }
 
 export async function initIpfsClient (options: ClientOptions | string): Promise<IpfsClient> {
+  // TODO: Remove this when https://github.com/ipfs/js-ipfs/pull/3456 is shipped
+  // @ts-ignore
   const ipfs = await ipfsClient(options)
 
   try {
@@ -279,7 +285,7 @@ export class TestingApp {
     let commsHaveConnectionPromise
 
     if (awaitComms) {
-      commsHaveConnectionPromise = new Promise(resolve => {
+      commsHaveConnectionPromise = new Promise<void>(resolve => {
         this.pubsub!.on('peer:joined', (peer) => {
           if (peer === this.peerId!.id) {
             this.logger.info('Pinning service joined PubSub. Lets start tests!')

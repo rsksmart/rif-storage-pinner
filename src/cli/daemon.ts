@@ -93,7 +93,7 @@ export default class DaemonCommand extends BaseCommand {
       let stopCallback = (() => { throw new Error('No stop callback was assigned!') }) as () => void
 
       // Promise that resolves when reset callback is called
-      const resetPromise = new Promise((resolve, reject) => {
+      const resetPromise = new Promise<void>((resolve, reject) => {
         initApp(offerId, {
           appResetCallback: () => resolve()
         }).then(value => {

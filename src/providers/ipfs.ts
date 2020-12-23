@@ -1,4 +1,7 @@
-import ipfsClient, { CID, ClientOptions, IpfsClient, multiaddr, Version } from 'ipfs-http-client'
+import ipfsClient from 'ipfs-http-client'
+import multiaddr from 'multiaddr'
+import CID from 'cids'
+import type { ClientOptions } from 'ipfs-http-client/src/lib/core'
 import * as semver from 'semver'
 import config from 'config'
 import BigNumber from 'bignumber.js'
@@ -19,6 +22,19 @@ const NOT_PINNED_ERROR_MSG = 'not pinned or pinned indirectly'
 
 const MIN_PIN_TIMEOUT = 60000 * 20 // 20 minutes
 const RATE_MB_PER_SECOND = 0.5
+
+type IpfsClient = ReturnType<typeof ipfsClient>
+
+interface Version {
+  version: string
+  repo: number
+  commit: string
+}
+
+interface DagStat {
+  NumBlocks: number
+  Size: number
+}
 
 export class PinJob extends Job {
   private readonly hash: string
@@ -72,7 +88,7 @@ export class PinJob extends Job {
     }
   }
 
-  private async pinProcess (cid: CID, { timeout }: { timeout?: number}): Promise<void> {
+  private async pinProcess (cid: CID, { timeout }: { timeout?: number }): Promise<void> {
     const hash = this.hash.replace('/ipfs/', '')
     await this.swarmConnect().catch(logger.warn)
 
@@ -98,13 +114,16 @@ export class PinJob extends Job {
 
   private getActualFileSize (cid: CID): Promise<BigNumber> {
     const timeout = config.get<number | string>('ipfs.sizeFetchTimeout')
+
+    // TODO: Remove that when ipfs-js fully support this API
+    // @ts-ignore
     return this.ipfs.dag.stat!(
       cid,
       { timeout: typeof timeout === 'number' ? timeout : parse(timeout) as number })
-      .then(res => {
+      .then((res: DagStat) => {
         return bytesToMegabytes(res.Size)
       })
-      .catch(e => {
+      .catch((e: Error) => {
         if (e.name === 'TimeoutError') {
           logger.error(`Fetching size of ${cid.toString()} timed out!`)
           throw new Error(`Fetching size of ${cid.toString()} timed out!`)
@@ -148,7 +167,7 @@ export class PinJob extends Job {
   }
 }
 
-export function getDagStat (nodeUrl: string): (cid: CID, options?: any) => Promise<any> {
+export function getDagStat (nodeUrl: string): (cid: CID, options?: any) => Promise<DagStat> {
   return (cid: CID, options?: RequestInit): Promise<any> =>
     fetch(`${nodeUrl}/dag/stat?arg=${cid.toString()}&progress=false`, { method: 'POST', ...options })
       .then(res => {
@@ -174,8 +193,12 @@ export class IpfsProvider implements Provider {
       options = '/ip4/127.0.0.1/tcp/5001'
     }
 
+    // TODO: Remove this when https://github.com/ipfs/js-ipfs/pull/3456 is shipped
+    // @ts-ignore
     const ipfs = ipfsClient(options)
+
     // TODO: Remove that when ipfs-js fully support this API
+    // @ts-ignore
     ipfs.dag.stat = getDagStat(typeof options === 'string' ? options : options.url as string)
 
     let versionObject: Version

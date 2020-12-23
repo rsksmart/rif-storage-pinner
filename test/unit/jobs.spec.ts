@@ -7,7 +7,9 @@ import sinonChai from 'sinon-chai'
 import sinon from 'sinon'
 import type Sinon from 'sinon'
 import { Sequelize } from 'sequelize-typescript'
-import { CID, IpfsClient, multiaddr } from 'ipfs-http-client'
+import ipfsClient from 'ipfs-http-client'
+import multiaddr from 'multiaddr'
+import CID from 'cids'
 import parse from 'parse-duration'
 
 import { sequelizeFactory } from '../../src/sequelize'
@@ -27,6 +29,7 @@ chai.use(sinonChai)
 chai.use(chaiAsPromised)
 chai.use(dirtyChai)
 const expect = chai.expect
+type IpfsClient = ReturnType<typeof ipfsClient>
 
 const AGREEMENT_REFERENCE = '0x123'
 
