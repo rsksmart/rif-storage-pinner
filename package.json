@@ -58,7 +58,7 @@
     "@oclif/errors": "^1.3.1",
     "@oclif/parser": "^3.8.5",
     "@oclif/plugin-help": "^3.2.0",
-    "@rsksmart/rif-communications-pubsub": "0.1.0-dev.11",
+    "@rsksmart/rif-communications-pubsub": "github:rsksmart/rif-communications-pubsub#fix/ws-fix",
     "@rsksmart/rif-marketplace-storage": "0.1.0-dev.7",
     "@rsksmart/web3-events": "0.1.0-dev.4",
     "@types/node-fetch": "^2.5.7",
