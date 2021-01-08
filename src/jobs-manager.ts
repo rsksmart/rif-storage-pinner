@@ -114,6 +114,7 @@ export class JobsManager {
         // If the Error directly specifies that it does not make sense to retry the Job, exit immediately
         if (e.retryable === false) {
           await this.handleError(job, e)
+          return
         }
 
         logger.error(`While ${retry}/${this.retries} try of job ${job.name} error happened: ${e}`)

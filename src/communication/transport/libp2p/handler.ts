@@ -1,14 +1,15 @@
-import { CommsMessage, MessageCodesEnum, ResendMessagesPayload } from '../definitions'
-import type {
-  MultiaddrAnnouncementPayload
-} from '../definitions'
-import { loggingFactory } from '../logger'
-import DirectAddressModel from '../models/direct-address.model'
-import { sendTo } from './index'
-import Message from '../models/message.model'
 import { DirectMessage } from '@rsksmart/rif-communications-pubsub'
 
-const logger = loggingFactory('comms:handler')
+import { CommsMessage, MessageCodesEnum, ResendMessagesPayload } from '../../../definitions'
+import type {
+  MultiaddrAnnouncementPayload
+} from '../../../definitions'
+import { loggingFactory } from '../../../logger'
+import DirectAddressModel from '../../../models/direct-address.model'
+import { sendTo } from './index'
+import Message from '../../../models/message.model'
+
+const logger = loggingFactory('comms:libp2p:handler')
 
 // eslint-disable-next-line require-await
 async function handlePeerIdAnnouncement (message: DirectMessage<CommsMessage<MultiaddrAnnouncementPayload>>): Promise<void> {

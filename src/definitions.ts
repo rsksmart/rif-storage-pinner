@@ -257,3 +257,8 @@ export interface CommsMessage<Payload> {
   code: string
   payload: Payload
 }
+
+export interface CommsTransport {
+  broadcast (message: CommsMessage<any>): Promise<void>
+  stop (): void
+}
