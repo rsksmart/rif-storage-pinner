@@ -7,7 +7,9 @@ import type {
   AgreementInfoPayload,
   HashInfoPayload,
   RetryPayload,
-  AgreementSizeExceededPayload, CommsTransport
+  AgreementSizeExceededPayload,
+  CommsTransport,
+  CommunicationTransport
 } from '../definitions'
 import Message from '../models/message.model'
 
@@ -20,13 +22,14 @@ export async function start (offerId?: string, contractAddress?: string): Promis
   const transportType = config.get('comms.transport')
 
   switch (transportType) {
-    case 'libp2p':
+    case CommunicationTransport.Libp2p:
       transport = await initLibp2pTransport(offerId, contractAddress)
       break
-    case 'cache':
+    case CommunicationTransport.Cache:
       transport = await initCacheTransport(offerId, contractAddress)
       break
     default:
+      transport = await initCacheTransport(offerId, contractAddress)
       break
   }
 }

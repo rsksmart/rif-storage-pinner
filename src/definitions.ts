@@ -47,12 +47,19 @@ export interface Logger {
   extend?: (name: string) => Logger
 }
 
+export enum CommunicationTransport {
+  Cache = 'cache',
+  Libp2p = 'libp2p'
+}
+
 export interface Config {
   // URL to the UI that should be passed PeerId upon initialization. Use <<peerId>> as placeholder that will
   // get replaced with the actual PeerId.
   uiUrl?: string
 
   comms?: {
+    transport?: CommunicationTransport
+    cacheUrl?: string
     libp2p?: Libp2pOptions
     countOfMessagesPersistedPerAgreement?: number
   }
