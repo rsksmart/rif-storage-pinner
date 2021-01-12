@@ -168,7 +168,7 @@ export class PinJob extends Job {
 
 export function getDagStat (nodeUrl: string): (cid: CID, options?: any) => Promise<DagStat> {
   return (cid: CID, options?: RequestInit): Promise<any> =>
-    fetch(`${nodeUrl}/dag/stat?arg=${cid.toString()}&progress=false`, { method: 'POST', ...options })
+    fetch(`${nodeUrl}/api/v0/dag/stat?arg=${cid.toString()}&progress=false`, { method: 'POST', ...options })
       .then(res => {
         if (!res.ok) {
           throw new Error(`Get dag stat for hash ${cid.toString()} error, ${res.statusText}`)
