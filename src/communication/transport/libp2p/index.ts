@@ -81,7 +81,7 @@ export async function initTransport (offerId?: string, contractAddress?: string)
         throw new Error('Communication was not started yet!')
       }
 
-      await room.broadcast(message as JsonSerializable)
+      await room.broadcast(message as unknown as JsonSerializable)
     },
     stop
   }

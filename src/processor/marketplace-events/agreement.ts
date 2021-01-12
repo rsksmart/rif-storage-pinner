@@ -22,8 +22,8 @@ const handlers: HandlersObject<MarketplaceEvent, BaseEventProcessorOptions> = {
     logger.info(`Created new Agreement with ID ${newAgreement.agreementReference} for offer ${newAgreement.offerId}`)
 
     if (options.manager) {
-      await options.manager.pin(newAgreement.dataReference, agreement.size, agreement.agreementReference)
       await broadcast(MessageCodesEnum.I_AGREEMENT_NEW, { agreementReference: newAgreement.agreementReference })
+      await options.manager.pin(newAgreement.dataReference, agreement.size, agreement.agreementReference)
     }
   },
 

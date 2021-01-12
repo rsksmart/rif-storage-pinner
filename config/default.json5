@@ -72,7 +72,8 @@
     offers: '/storage/v0/offers',
     agreements: '/storage/v0/agreements',
     newBlock: '/new-block',
-    reorg: '/reorg'
+    reorg: '/reorg',
+    comms: '/comms',
   },
 
   jobs: {

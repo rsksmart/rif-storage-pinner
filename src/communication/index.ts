@@ -8,9 +8,9 @@ import type {
   HashInfoPayload,
   RetryPayload,
   AgreementSizeExceededPayload,
-  CommsTransport,
-  CommunicationTransport
+  CommsTransport
 } from '../definitions'
+import { CommunicationTransport } from '../definitions'
 import Message from '../models/message.model'
 
 const logger = loggingFactory('comms')
@@ -19,9 +19,9 @@ const COMMUNICATION_PROTOCOL_VERSION = 1
 let transport: CommsTransport
 
 export async function start (offerId?: string, contractAddress?: string): Promise<void> {
-  const transportType = config.get('comms.transport')
+  const transportType = config.get<CommunicationTransport>('comms.transport')
 
-  switch (transportType) {
+  switch (transportType.toLowerCase()) {
     case CommunicationTransport.Libp2p:
       transport = await initLibp2pTransport(offerId, contractAddress)
       break

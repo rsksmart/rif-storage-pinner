@@ -1,6 +1,7 @@
 {
   db: 'db_test.sqlite',
   comms: {
+    transport: 'libp2p',
     libp2p: {
       config: {
         peerDiscovery: {
