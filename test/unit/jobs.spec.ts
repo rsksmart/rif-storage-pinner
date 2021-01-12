@@ -74,8 +74,8 @@ describe('Jobs', function () {
     it('should save entity when ran', async () => {
       const job = new StubJob()
 
-      let promiseResolve: Function
-      job.stub.returns(new Promise(resolve => { promiseResolve = resolve }))
+      let promiseResolve: () => void
+      job.stub.returns(new Promise<void>(resolve => { promiseResolve = resolve }))
 
       expect(job.name).to.eql(job.entity.name)
       expect(job.state).to.eql(JobState.CREATED)

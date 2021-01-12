@@ -8,6 +8,12 @@
 
 declare module 'config' {
 
+  interface ConfigSource {
+    name: string
+    original?: string
+    parsed: any
+  }
+
   // see https://github.com/lorenwest/node-config/wiki/Using-Config-Utilities
   interface Util {
     // Extend an object (and any object it contains) with one or more objects (and objects contained in them).
@@ -40,7 +46,7 @@ declare module 'config' {
     // Returns a new deep copy of the current config object, or any part of the config if provided.
     toObject (config?: any): any
 
-    parseFile(path: string): object
+    parseFile(path: string): Record<string, unknown>
 
     /**
      * This allows module developers to attach their configurations onto
@@ -54,12 +60,6 @@ declare module 'config' {
     get<T> (setting: string): T
     has (setting: string): boolean
     util: Util
-  }
-
-  interface ConfigSource {
-    name: string
-    original?: string
-    parsed: any
   }
 
   const c: Config

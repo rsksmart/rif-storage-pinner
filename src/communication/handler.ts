@@ -25,7 +25,7 @@ async function handleResendLatestMessages (message: DirectMessage<CommsMessage<R
   }
 
   if (message.data.payload.code) {
-    // @ts-ignore
+    // @ts-ignore: No idea why
     where.where.code = message.data.payload.code
   }
 

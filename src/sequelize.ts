@@ -31,7 +31,7 @@ export function sequelizeFactory (dbPath?: string): Sequelize {
       return filename.substring(0, filename.indexOf('.model')) === member.toLowerCase()
     },
     logging: (msg) => logger.debug(formatLogs(msg)),
-    // @ts-ignore
+    // @ts-ignore: Not typed in upstream even though supported
     transactionType: 'IMMEDIATE'
   }
 

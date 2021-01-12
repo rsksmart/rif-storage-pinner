@@ -56,7 +56,7 @@ export function isEventWithProvider (event: BlockchainEvent): event is Blockchai
   return Boolean((event as BlockchainEventsWithProvider).returnValues.provider)
 }
 
-export function isValidEvent (value: string, handlers: object): value is keyof typeof handlers {
+export function isValidEvent (value: string, handlers: Record<string, unknown>): value is keyof typeof handlers {
   return value in handlers
 }
 

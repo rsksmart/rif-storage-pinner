@@ -115,8 +115,7 @@ export class PinJob extends Job {
   private getActualFileSize (cid: CID): Promise<BigNumber> {
     const timeout = config.get<number | string>('ipfs.sizeFetchTimeout')
 
-    // TODO: Remove that when ipfs-js fully support this API
-    // @ts-ignore
+    // @ts-ignore: TODO: Remove that when ipfs-js fully support this API
     return this.ipfs.dag.stat!(
       cid,
       { timeout: typeof timeout === 'number' ? timeout : parse(timeout) as number })
@@ -193,12 +192,10 @@ export class IpfsProvider implements Provider {
       options = '/ip4/127.0.0.1/tcp/5001'
     }
 
-    // TODO: Remove this when https://github.com/ipfs/js-ipfs/pull/3456 is shipped
-    // @ts-ignore
+    // @ts-ignore: TODO: Remove this when https://github.com/ipfs/js-ipfs/pull/3456 is shipped
     const ipfs = ipfsClient(options)
 
-    // TODO: Remove that when ipfs-js fully support this API
-    // @ts-ignore
+    // @ts-ignore: TODO: Remove that when ipfs-js fully support this API
     ipfs.dag.stat = getDagStat(typeof options === 'string' ? options : options.url as string)
 
     let versionObject: Version

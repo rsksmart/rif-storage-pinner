@@ -6,16 +6,13 @@ import colors from 'colors/safe'
 
 import BaseCommand from '../utils'
 import Agreement from '../models/agreement.model'
-import { loggingFactory } from '../logger'
 import JobModel from '../models/job.model'
 import { JobState } from '../definitions'
 import { IConfig } from '@oclif/config'
 
-const logger = loggingFactory('cli:agreements')
-
+enum FilterStatus { active = 'active', inactive = 'inactive '}
 type AgreementWithJobs = Agreement & { jobs: JobModel[] }
 type AgreementFilters = { status?: FilterStatus, pinningStatus?: JobState[] }
-enum FilterStatus { active = 'active', inactive = 'inactive '}
 
 const statusFilter = (agreement: AgreementWithJobs, status: FilterStatus | undefined): boolean =>
   !status ||

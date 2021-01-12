@@ -41,6 +41,14 @@ interface Listener<T> {
   off: (name: string, fn: (msg: T) => void) => void
 }
 
+export interface File {
+  fileHash: string
+  size: number
+  cid: CID
+  cidString: string
+  encodedHash: string[]
+}
+
 function errorHandlerStub (fn: (...args: any[]) => Promise<void>, logger: Logger): (...args: any[]) => Promise<void> {
   return (...args) => {
     return fn(...args).catch(err => {
@@ -112,8 +120,7 @@ export async function asyncIterableToArray (asyncIterable: any): Promise<Array<a
 }
 
 export async function initIpfsClient (options: ClientOptions | string): Promise<IpfsClient> {
-  // TODO: Remove this when https://github.com/ipfs/js-ipfs/pull/3456 is shipped
-  // @ts-ignore
+  // @ts-ignore: TODO: Remove this when https://github.com/ipfs/js-ipfs/pull/3456 is shipped
   const ipfs = await ipfsClient(options)
 
   try {
@@ -136,14 +143,6 @@ export async function isPinned (ipfs: IpfsClient, cid: CID): Promise<boolean> {
     if (e.message === `path '${cid}' is not pinned`) return false
     throw e
   }
-}
-
-export interface File {
-  fileHash: string
-  size: number
-  cid: CID
-  cidString: string
-  encodedHash: string[]
 }
 
 function generateRandomData (size: number): string {

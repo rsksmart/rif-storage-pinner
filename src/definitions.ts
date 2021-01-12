@@ -27,24 +27,32 @@ export interface Provider {
  */
 export interface Logger {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  critical (message: string | Error | object, ...meta: any[]): never
+  critical (message: string | Error | Record<string, unknown>, ...meta: any[]): never
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  error (message: string | Error | object, ...meta: any[]): void
+  error (message: string | Error | Record<string, unknown>, ...meta: any[]): void
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  warn (message: string | object, ...meta: any[]): void
+  warn (message: string | Record<string, unknown>, ...meta: any[]): void
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  info (message: string | object, ...meta: any[]): void
+  info (message: string | Record<string, unknown>, ...meta: any[]): void
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  verbose (message: string | object, ...meta: any[]): void
+  verbose (message: string | Record<string, unknown>, ...meta: any[]): void
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  debug (message: string | object, ...meta: any[]): void
+  debug (message: string | Record<string, unknown>, ...meta: any[]): void
 
   extend?: (name: string) => Logger
+}
+
+export enum Strategy { Blockchain = 'blockchain', Marketplace = 'marketplace' }
+
+export interface JobManagerOptions {
+  retries?: number
+  backoffTime?: number
+  exponentialBackoff?: boolean
 }
 
 export interface Config {
@@ -114,12 +122,6 @@ export enum JobState {
   FINISHED = 'finished'
 }
 
-export interface JobManagerOptions {
-  retries?: number
-  backoffTime?: number
-  exponentialBackoff?: boolean
-}
-
 export type ErrorHandler = (fn: (...args: any[]) => Promise<void>, logger: Logger) => (...args: any[]) => Promise<void>
 
 export interface AppOptions {
@@ -129,34 +131,6 @@ export interface AppOptions {
   contractAddress?: string
   strategy?: Strategy
 }
-
-export enum Strategy { Blockchain = 'blockchain', Marketplace = 'marketplace' }
-
-/**
- * Interface for more complex handling of events.
- */
-export interface EventsHandler<T extends StorageEvents, O extends EventProcessorOptions> {
-  events: string[]
-  process: (event: T, options: O) => Promise<void>
-}
-
-/**
- * Interface for object with event handler functions
- */
-export type HandlersObject<T extends StorageEvents, O extends EventProcessorOptions> = { [key: string]: (event: T, options: O) => Promise<void> }
-
-/**
- * Interfaces for Processor.
- */
-export type Processor<T> = (event: T) => Promise<void>
-
-export type BaseEventProcessorOptions = { manager?: ProviderManager }
-
-export type BlockchainEventProcessorOptions = { eth: Eth } & BaseEventProcessorOptions
-
-export type EventProcessorOptions = BaseEventProcessorOptions | BlockchainEventProcessorOptions
-
-export type GetProcessorOptions = { errorHandler?: ErrorHandler, errorLogger?: Logger }
 
 /**
  * Events interfaces.
@@ -183,16 +157,43 @@ export type BlockchainEvent = BlockchainOfferEvents | BlockchainAgreementEventsW
 
 export type StorageEvents = BlockchainEvent | MarketplaceEvent
 
+/**
+ * Interfaces for Processor.
+ */
+export type Processor<T> = (event: T) => Promise<void>
+
+export type BaseEventProcessorOptions = { manager?: ProviderManager }
+
+export type BlockchainEventProcessorOptions = { eth: Eth } & BaseEventProcessorOptions
+
+export type EventProcessorOptions = BaseEventProcessorOptions | BlockchainEventProcessorOptions
+
+export type GetProcessorOptions = { errorHandler?: ErrorHandler, errorLogger?: Logger }
+
+/**
+ * Interface for object with event handler functions
+ */
+export type HandlersObject<T extends StorageEvents, O extends EventProcessorOptions> = { [key: string]: (event: T, options: O) => Promise<void> }
+
+/**
+ * Interface for more complex handling of events.
+ */
+export interface EventsHandler<T extends StorageEvents, O extends EventProcessorOptions> {
+  events: string[]
+  process: (event: T, options: O) => Promise<void>
+}
+
 /****************************************************************************************
  * CLI
  */
+
+export type CliInitDbOptions = { migrate?: boolean }
+
 export interface InitCommandOption {
   db?: CliInitDbOptions
   baseConfig?: boolean
   serviceRequired?: boolean
 }
-
-export type CliInitDbOptions = { migrate?: boolean }
 
 /****************************************************************************************
  * Communications

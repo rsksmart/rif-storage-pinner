@@ -13,7 +13,7 @@ describe('Comms', function () {
   let app: TestingApp
 
   before(async () => {
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     config.strategy = Strategy.Blockchain
 
     app = new TestingApp()
