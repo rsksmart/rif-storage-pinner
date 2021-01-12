@@ -5,7 +5,7 @@ import type { BigNumber } from 'bignumber.js'
 
 import type { Eth } from 'web3-eth'
 import type { ClientOptions as IpfsOptions } from 'ipfs-http-client/src/lib/core'
-import type { Options as Libp2pOptions } from 'libp2p'
+import type { Libp2pOptions } from 'libp2p'
 import type { EventsEmitterCreationOptions, NewBlockEmitterOptions } from '@rsksmart/web3-events'
 
 import type { ProviderManager } from './providers'

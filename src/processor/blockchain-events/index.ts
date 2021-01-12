@@ -144,7 +144,7 @@ export class BlockchainEventsProcessor extends EventProcessor {
       await this.precache()
     }
 
-    this.eventsEmitter.on('error', (e: Record<string, unknown>) => {
+    this.eventsEmitter.on('error', (e) => {
       logger.error(`There was unknown error in the blockchain's Events Emitter! ${e}`)
     })
 
