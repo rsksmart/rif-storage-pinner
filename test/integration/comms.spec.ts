@@ -1,6 +1,7 @@
 import chai from 'chai'
 import dirtyChai from 'dirty-chai'
 import config from 'config'
+import PeerId from 'peer-id'
 
 import { createAgreement, File, isPinned, TestingApp, uploadRandomData } from '../utils'
 import { CommunicationTransport, MessageCodesEnum, Strategy } from '../../src/definitions'
@@ -111,7 +112,8 @@ describe('Comms', function () {
       config.strategy = Strategy.Blockchain
     })
 
-    it('should rebroadcast messages per request', async () => {
+    it('should send messages with correct signature', async () => {
+      const peerId = await PeerId.createFromJSON(app.peerId as any)
       const file = await uploadRandomData(app.ipfsConsumer!)
 
       // Check if not pinned
@@ -119,11 +121,18 @@ describe('Comms', function () {
 
       await createAgreementMock(app, file)
 
-      await sleep(1000)
+      await sleep(3000)
 
       expect(await isPinned(app.ipfsProvider!, file.cid)).to.be.true()
 
-      expect(stubComms.create.getCalls().length).to.be.eql(3)
+      const [{ args: [msg1] }, { args: [msg2] }, { args: [msg3] }] = stubComms.create.getCalls()
+      const data1 = Buffer.from(JSON.stringify(msg1.data))
+      const data2 = Buffer.from(JSON.stringify(msg2.data))
+      const data3 = Buffer.from(JSON.stringify(msg3.data))
+
+      expect(await peerId.pubKey.verify(data1, msg1.signature)).to.be.eql(true)
+      expect(await peerId.pubKey.verify(data2, msg2.signature)).to.be.eql(true)
+      expect(await peerId.pubKey.verify(data3, msg3.signature)).to.be.eql(true)
     })
   })
 })
