@@ -63,13 +63,13 @@ describe('Marketplace Strategy', function () {
   let app: TestingApp
 
   before(() => {
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     config.strategy = Strategy.Marketplace
     config.util.extendDeep(config, { marketplace: { provider: 'http://localhost:3030' } })
   })
 
   after(() => {
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     config.strategy = Strategy.Blockchain
   })
 

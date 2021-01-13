@@ -33,23 +33,23 @@ describe('GC', function () {
   before(async (): Promise<void> => {
     sequelize = await sequelizeFactory()
 
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     originalConfirmations = config.blockchain.eventsEmitter.confirmations
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     originalAddress = config.directAddress
 
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     config.blockchain.eventsEmitter.confirmations = 5
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     config.directAddress = { ttl: '1s' } // 1 second
 
     channelSpy = sinon.stub(channel, 'broadcast')
   })
 
   after(() => {
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     config.blockchain.eventsEmitter.confirmations = originalConfirmations
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     config.directAddress.ttl = originalAddress
 
     channelSpy.restore()

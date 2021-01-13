@@ -16,16 +16,24 @@ async function handlePeerIdAnnouncement (message: DirectMessage<CommsMessage<Mul
   await DirectAddressModel.create({ peerId, agreementReference })
 }
 
+interface LatestMessagesWhere {
+  where: {
+    agreementReference?: string
+    code?: string
+  }
+}
+
 // eslint-disable-next-line require-await
 async function handleResendLatestMessages (message: DirectMessage<CommsMessage<ResendMessagesPayload>>): Promise<void> {
-  const where = {
-    where: {
-      agreementReference: message.data.payload.agreementReference
-    }
+  const where: LatestMessagesWhere = {
+    where: {}
+  }
+
+  if (message.data.payload.agreementReference) {
+    where.where.agreementReference = message.data.payload.agreementReference
   }
 
   if (message.data.payload.code) {
-    // @ts-ignore
     where.where.code = message.data.payload.code
   }
 

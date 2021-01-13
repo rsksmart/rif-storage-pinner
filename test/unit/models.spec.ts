@@ -11,7 +11,7 @@ const expect = chai.expect
 
 const generateModelGettersTests = (
   schema: Array<{ fn: string, cases: Array<any> }>,
-  modelFactory: (arg: object) => Sequelize.Model,
+  modelFactory: (arg: Record<string, unknown>) => Sequelize.Model,
   options?: { skip: string[] }
 ) => schema.forEach(
   ({ fn, cases }) =>
@@ -32,7 +32,7 @@ const day = hour * 24
 const month = day * 30
 const toSecond = (mili: number) => mili / 1000
 
-const agreementFactory = (arg: object) => new Agreement({
+const agreementFactory = (arg: Record<string, unknown>) => new Agreement({
   agreementReference: 'ref',
   dataReference: 'dataRef',
   consumer: 'Creator',

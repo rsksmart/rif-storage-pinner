@@ -7,7 +7,6 @@ import config from 'config'
 
 import { loggingFactory } from '../logger'
 import type {
-  MessageCodesEnum,
   AgreementInfoPayload,
   HashInfoPayload,
   RetryPayload,
@@ -16,6 +15,7 @@ import type {
 import { handle } from './handler'
 import Message from '../models/message.model'
 import { errorHandler } from '../utils'
+import { MessageCodesEnum } from '../definitions'
 
 const logger = loggingFactory('comms')
 const COMMUNICATION_PROTOCOL_VERSION = 1
@@ -45,7 +45,7 @@ export async function start (offerId?: string, contractAddress?: string): Promis
   }
 
   const libp2pConf = {
-    ...config.get<object>('comms.libp2p'),
+    ...config.get<Record<string, unknown>>('comms.libp2p'),
     peerId
   }
   libp2p = await createLibP2P(libp2pConf)
@@ -90,7 +90,7 @@ export async function broadcast (code: MessageCodesEnum, payload: Record<string,
     throw new Error('Communication was not started yet!')
   }
 
-  if (!payload.agreementReference) {
+  if (code !== MessageCodesEnum.E_GENERAL && !payload.agreementReference) {
     throw new Error('Every broadcasted message has to have Agreement Reference!')
   }
 
@@ -111,12 +111,22 @@ export async function broadcast (code: MessageCodesEnum, payload: Record<string,
 
   // Remove old messages
   const messageLimit = config.get<number>('comms.countOfMessagesPersistedPerAgreement')
-  const messagesToDelete = await Message.findAll({
-    offset: messageLimit,
-    order: [['id', 'DESC']],
-    where: { agreementReference: payload.agreementReference }
-  })
-  await Promise.all(messagesToDelete.map(msg => msg.destroy()))
+
+  if (payload.agreementReference) {
+    const messagesToDelete = await Message.findAll({
+      offset: messageLimit,
+      order: [['id', 'DESC']],
+      where: { agreementReference: payload.agreementReference }
+    })
+    await Promise.all(messagesToDelete.map(msg => msg.destroy()))
+  } else {
+    const messagesWithoutAgreement = await Message.findAll({
+      offset: messageLimit,
+      order: [['id', 'DESC']],
+      where: { agreementReference: null }
+    })
+    await Promise.all(messagesWithoutAgreement.map(msg => msg.destroy()))
+  }
 
   await room.broadcast(msg)
 }

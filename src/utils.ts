@@ -56,7 +56,7 @@ export function isEventWithProvider (event: BlockchainEvent): event is Blockchai
   return Boolean((event as BlockchainEventsWithProvider).returnValues.provider)
 }
 
-export function isValidEvent (value: string, handlers: object): value is keyof typeof handlers {
+export function isValidEvent (value: string, handlers: Record<string, unknown>): value is keyof typeof handlers {
   return value in handlers
 }
 
@@ -112,8 +112,8 @@ export function runAndAwaitFirstEvent<T = void> (emitted: EventEmitter, event: s
   })
 }
 
-export function sleep<T> (ms: number, ...args: T[]): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(...args), ms))
+export function sleep<T> (ms: number, arg?: T): Promise<T | undefined> {
+  return new Promise(resolve => setTimeout(() => resolve(arg), ms))
 }
 
 /**

@@ -93,12 +93,12 @@ describe('CLI', function () {
       let configDb: string
       before(() => {
         configDb = config.get('db')
-        // @ts-ignore
+        // @ts-ignore: Config is not typed
         config.db = 'asd.sqlite'
       })
 
       after(() => {
-        // @ts-ignore
+        // @ts-ignore: Config is not typed
         config.db = configDb
       })
 
@@ -268,7 +268,7 @@ describe('CLI', function () {
       })
 
       // Launches the Daemon
-      // @ts-ignore
+      // @ts-ignore: Supports only thenable API and not Catch as well
       DaemonCommand.run(['--skipPrompt', '--log=verbose']).catch((e) => expect.fail(e))
 
       await sleep(300)
