@@ -82,9 +82,9 @@ describe('Comms', function () {
 
   describe('Cache comms transport', () => {
     before(async () => {
-      // @ts-ignore
+      // @ts-ignore: Config is not typed
       config.comms.transport = CommunicationTransport.Cache
-      // @ts-ignore
+      // @ts-ignore: Config is not typed
       config.strategy = Strategy.Marketplace
       config.util.extendDeep(config, { marketplace: { provider: 'http://localhost:3030' } })
 
@@ -106,9 +106,9 @@ describe('Comms', function () {
       stubResetFunctions(stubAgreement)
       stubResetFunctions(stubOffer)
 
-      // @ts-ignore
+      // @ts-ignore: Config is not typed
       config.comms.transport = CommunicationTransport.Libp2p
-      // @ts-ignore
+      // @ts-ignore: Config is not typed
       config.strategy = Strategy.Blockchain
     })
 
