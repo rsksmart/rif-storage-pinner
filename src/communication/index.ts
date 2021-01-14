@@ -9,10 +9,8 @@ import type {
   AgreementSizeExceededPayload,
   CommsTransport
 } from '../definitions'
-import { CommunicationTransport } from '../definitions'
 import Message from '../models/message.model'
-import { errorHandler } from '../utils'
-import { MessageCodesEnum } from '../definitions'
+import { MessageCodesEnum, CommunicationTransport } from '../definitions'
 
 const logger = loggingFactory('comms')
 const COMMUNICATION_PROTOCOL_VERSION = 1

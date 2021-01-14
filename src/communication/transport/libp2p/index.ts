@@ -37,7 +37,7 @@ export async function start (offerId?: string, contractAddress?: string): Promis
   }
 
   const libp2pConf = {
-    ...config.get<object>('comms.libp2p'),
+    ...config.get<Record<string, unknown>>('comms.libp2p'),
     peerId
   }
   libp2p = await createLibP2P(libp2pConf)
