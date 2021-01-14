@@ -248,7 +248,7 @@ function rollbackCommands (transaction: any): Commands {
 function run (queryInterface: QueryInterface, _commands: (transaction: any) => Commands) {
   return async function (transaction: any): Promise<void> {
     for (const command of _commands(transaction)) {
-      // @ts-ignore
+      // @ts-ignore: QueryInterface not typed correctly
       // eslint-disable-next-line prefer-spread
       await queryInterface[command.fn].apply(queryInterface, command.params)
     }

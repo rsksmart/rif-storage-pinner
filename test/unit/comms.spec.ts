@@ -40,10 +40,10 @@ describe('Comms', function () {
     sequelize = await sequelizeFactory()
     await sequelize.sync({ force: true })
 
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     originalNumberOfSavedMessages = config.comms.countOfMessagesPersistedPerAgreement
 
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     config.comms.countOfMessagesPersistedPerAgreement = 3
 
     RoomStub = sinon.stub(comms, 'Room')
@@ -69,7 +69,7 @@ describe('Comms', function () {
   })
 
   after(() => {
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     config.comms.countOfMessagesPersistedPerAgreement = originalNumberOfSavedMessages
     sinon.restore()
   })

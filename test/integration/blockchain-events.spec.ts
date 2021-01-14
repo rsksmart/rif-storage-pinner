@@ -16,7 +16,7 @@ describe('Blockchain Strategy', function () {
   let app: TestingApp
 
   before(() => {
-    // @ts-ignore
+    // @ts-ignore: Config is not typed
     config.strategy = Strategy.Blockchain
   })
 

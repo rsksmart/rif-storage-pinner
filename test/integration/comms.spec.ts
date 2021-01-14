@@ -39,7 +39,7 @@ describe('Comms', function () {
 
   describe('Libp2p comms transport', () => {
     before(async () => {
-      // @ts-ignore
+      // @ts-ignore: Config is not typed
       config.strategy = Strategy.Blockchain
 
       app = new TestingApp()

@@ -32,7 +32,7 @@ export class Migration {
     return this.umzugIns.down(options as any)
   }
 
-  get on (): Function {
+  get on (): (eventName: ('migrating' | 'reverting' | 'migrated' | 'reverted'), cb?: (name: string, migration: Umzug.Migration) => void) => Umzug.Umzug {
     return this.umzugIns.on
   }
 

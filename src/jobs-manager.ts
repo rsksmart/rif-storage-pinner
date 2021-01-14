@@ -19,7 +19,7 @@ export abstract class Job extends EventEmitter {
     this.entity = new JobModel({ name, type, agreementReference })
   }
 
-  abstract async _run (): Promise<void>
+  abstract _run (): Promise<void>
 
   get name (): string {
     return this.entity.name
