@@ -2,6 +2,7 @@
   strategy: 'RIFS_STRATEGY',
   db: 'RIFS_DB',
   comms: {
+    transport: 'RIFS_COMMS_TRANSPORT',
     libp2p: {
       addresses: {
         listen: {
