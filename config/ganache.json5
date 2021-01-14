@@ -9,6 +9,9 @@
     },
     networkId: 8545
   },
+  marketplace: {
+    provider: 'http://localhost:3030',
+  },
   ipfs: {
     sizeFetchTimeout: '30s',
     clientOptions: {
