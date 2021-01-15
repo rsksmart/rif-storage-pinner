@@ -89,5 +89,5 @@ export async function broadcast (code: MessageCodesEnum, payload: Record<string,
     await Promise.all(messagesWithoutAgreement.map(msg => msg.destroy()))
   }
 
-  await transport.broadcast(msg)
+  await transport.broadcast(msg).catch(logger.error)
 }
