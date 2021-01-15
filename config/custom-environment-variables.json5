@@ -1,7 +1,11 @@
 {
   strategy: 'RIFS_STRATEGY',
   db: 'RIFS_DB',
+  marketplace: {
+    provider: 'RIFS_MARKETPLACE_URL'
+  },
   comms: {
+    transport: 'RIFS_COMMS_TRANSPORT',
     libp2p: {
       addresses: {
         listen: {

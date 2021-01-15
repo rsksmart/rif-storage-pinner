@@ -1,79 +1,40 @@
-import PeerId from 'peer-id'
-import type Libp2p from 'libp2p'
-import { Room, createLibP2P, DirectChat } from '@rsksmart/rif-communications-pubsub'
-
-import { getObject } from 'sequelize-store'
 import config from 'config'
 
+import { initCacheTransport, initLibp2pTransport } from './transport'
 import { loggingFactory } from '../logger'
 import type {
   AgreementInfoPayload,
   HashInfoPayload,
   RetryPayload,
-  AgreementSizeExceededPayload
+  AgreementSizeExceededPayload,
+  CommsTransport
 } from '../definitions'
-import { handle } from './handler'
 import Message from '../models/message.model'
-import { errorHandler } from '../utils'
-import { MessageCodesEnum } from '../definitions'
+import { MessageCodesEnum, CommunicationTransport } from '../definitions'
 
 const logger = loggingFactory('comms')
 const COMMUNICATION_PROTOCOL_VERSION = 1
 
-let room: Room
-let direct: DirectChat
-let libp2p: Libp2p
-
-function getRoomTopic (offerId?: string, contractAddress?: string): string {
-  const store = getObject()
-  const cAddress = contractAddress ?? config.get<string>('blockchain.contractAddress')
-  return `${config.get<string>('blockchain.networkId')}:${cAddress.toLowerCase()}:${offerId?.toLowerCase() ?? (store.offerId as string).toLowerCase()}`
-}
+let transport: CommsTransport
 
 export async function start (offerId?: string, contractAddress?: string): Promise<void> {
-  const store = getObject()
+  const transportType = config.get<CommunicationTransport>('comms.transport')
 
-  const peerId = await PeerId.createFromJSON({
-    id: store.peerId as string,
-    privKey: store.peerPrivKey as string,
-    pubKey: store.peerPubKey as string
-  })
-
-  // Valid peerId = that has id, privKey and pubKey configured.
-  if (!peerId.isValid()) {
-    throw new Error('PeerId is not valid!')
+  switch (transportType.toLowerCase()) {
+    case CommunicationTransport.Libp2p:
+      transport = await initLibp2pTransport(offerId, contractAddress)
+      break
+    case CommunicationTransport.Cache:
+      transport = await initCacheTransport(offerId, contractAddress)
+      break
+    default:
+      transport = await initCacheTransport(offerId, contractAddress)
+      break
   }
-
-  const libp2pConf = {
-    ...config.get<Record<string, unknown>>('comms.libp2p'),
-    peerId
-  }
-  libp2p = await createLibP2P(libp2pConf)
-
-  const topic = getRoomTopic(offerId, contractAddress)
-  logger.info(`Joining Room with topic ${topic}`)
-
-  room = new Room(libp2p, topic)
-  room.on('peer:joined', (peer) => logger.verbose(`Peer ${peer} joined.`))
-  room.on('peer:left', (peer) => logger.verbose(`Peer ${peer} left.`))
-  room.on('error', (e) => logger.error(e))
-
-  direct = DirectChat.getDirectChat(libp2p)
-  direct.on('error', (e) => logger.error(e))
-  direct.on('message', errorHandler(handle, logger))
 }
 
-export async function stop (): Promise<void> {
-  if (!libp2p) {
-    throw new Error('Communication was not started yet!')
-  }
-
-  room.leave()
-  await libp2p.stop()
-}
-
-export function sendTo (toPeerId: string, msg: any): Promise<void> {
-  return direct.sendTo(toPeerId, msg)
+export function stop (): void {
+  transport.stop()
 }
 
 export async function broadcast (code: MessageCodesEnum.I_AGREEMENT_NEW, payload: AgreementInfoPayload): Promise<void>
@@ -86,7 +47,7 @@ export async function broadcast (code: MessageCodesEnum.E_HASH_NOT_FOUND, payloa
 export async function broadcast (code: MessageCodesEnum.E_AGREEMENT_SIZE_LIMIT_EXCEEDED, payload: AgreementSizeExceededPayload): Promise<void>
 export async function broadcast (code: MessageCodesEnum, payload: Record<string, any>): Promise<void>
 export async function broadcast (code: MessageCodesEnum, payload: Record<string, any>): Promise<void> {
-  if (!room) {
+  if (!transport) {
     throw new Error('Communication was not started yet!')
   }
 
@@ -128,5 +89,5 @@ export async function broadcast (code: MessageCodesEnum, payload: Record<string,
     await Promise.all(messagesWithoutAgreement.map(msg => msg.destroy()))
   }
 
-  await room.broadcast(msg)
+  await transport.broadcast(msg).catch(logger.error)
 }

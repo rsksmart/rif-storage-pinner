@@ -6,8 +6,6 @@ import { getObject } from 'sequelize-store'
 
 import {
   TestingApp,
-  consumerIpfsUrl,
-  initIpfsClient,
   uploadRandomData,
   File,
   isPinned,

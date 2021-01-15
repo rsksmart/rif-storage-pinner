@@ -47,6 +47,11 @@ export interface Logger {
   extend?: (name: string) => Logger
 }
 
+export enum CommunicationTransport {
+  Cache = 'cache',
+  Libp2p = 'libp2p'
+}
+
 export enum Strategy { Blockchain = 'blockchain', Marketplace = 'marketplace' }
 
 export interface JobManagerOptions {
@@ -61,6 +66,7 @@ export interface Config {
   uiUrl?: string
 
   comms?: {
+    transport?: CommunicationTransport
     libp2p?: Libp2pOptions
     countOfMessagesPersistedPerAgreement?: number
   }
@@ -257,4 +263,9 @@ export interface CommsMessage<Payload> {
   version: number
   code: string
   payload: Payload
+}
+
+export interface CommsTransport {
+  broadcast (message: CommsMessage<any>): Promise<void>
+  stop (): void
 }

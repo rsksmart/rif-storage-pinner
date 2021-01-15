@@ -29,6 +29,7 @@ export const stubOffer: StubService = createStubService()
 export const stubAgreement: StubService = createStubService()
 export const stubNewBlock: StubService = createStubService({ events: ['newBlock'] })
 export const stubReorg: StubService = createStubService({ events: [REORG_OUT_OF_RANGE_EVENT] })
+export const stubComms: StubService = createStubService()
 
 export function mockOffer (offer: Record<string, any> = {}): Record<string, any> {
   return Object.assign({
@@ -76,6 +77,7 @@ export class FakeMarketplaceService {
   public agreementPath = config.get<string>('marketplace.agreements')
   public newBlockPath = config.get<string>('marketplace.newBlock')
   public reorgPath = config.get<string>('marketplace.reorg')
+  public commsPath = config.get<string>('marketplace.comms')
 
   constructor (port?: number) {
     this.port = port ?? 3030
@@ -95,6 +97,10 @@ export class FakeMarketplaceService {
 
   get reorgService () {
     return this.app.service(this.reorgPath)
+  }
+
+  get commsService () {
+    return this.app.service(this.commsPath)
   }
 
   run (): Promise<void> {
@@ -120,6 +126,10 @@ export class FakeMarketplaceService {
     // Init reorg service
     app.use(this.reorgPath, stubReorg)
     app.service(this.reorgPath)
+
+    // Init comms service
+    app.use(this.commsPath, stubComms)
+    app.service(this.commsPath)
 
     app.configure(storageChannels)
 
