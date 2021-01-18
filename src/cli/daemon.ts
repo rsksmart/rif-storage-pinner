@@ -57,16 +57,18 @@ export default class DaemonCommand extends BaseCommand {
       configObject.strategy = flags.strategy
     }
 
-    if (flags.provider) {
-      // We have to use hardcoded 'Strategy.Marketplace' here as default value, because we cant touch the `config` object yet.
-      const strategy = userConfig.strategy ?? configObject.strategy ?? Strategy.Marketplace
+    // TODO As now we use the markeplace url for comms we can depend on strategy
 
-      if (strategy === Strategy.Blockchain) {
-        configObject.blockchain = { provider: flags.provider }
-      } else {
-        configObject.marketplace = { provider: flags.provider }
-      }
-    }
+    // if (flags.provider) {
+    //   // We have to use hardcoded 'Strategy.Marketplace' here as default value, because we cant touch the `config` object yet.
+    //   const strategy = userConfig.strategy ?? configObject.strategy ?? Strategy.Marketplace
+    //
+    //   if (strategy === Strategy.Blockchain) {
+    //     configObject.blockchain = { provider: flags.provider }
+    //   } else {
+    //     configObject.marketplace = { provider: flags.provider }
+    //   }
+    // }
 
     if (flags.ipfs) {
       configObject.ipfs = { clientOptions: { url: flags.ipfs } }
