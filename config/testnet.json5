@@ -21,10 +21,10 @@
     networkId: 31,
     eventsEmitter: {
       startingBlock: 1425147,
-      confirmations: 5
+      confirmations: 8
     }
   },
   marketplace: {
-    provider: 'https://marketplace-cache.testnet.rifos.org/'
+    provider: 'https://marketplace-cache.testnet.rifos.org'
   }
 }
