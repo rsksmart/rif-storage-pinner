@@ -1,3 +1,19 @@
+<a name="0.2.0"></a>
+# [0.2.0](https://github.com/rsksmart/rds-ipfs/compare/v0.1.2...v0.2.0) (2021-01-21)
+
+
+### Bug Fixes
+
+* daemon command provider flag ([#338](https://github.com/rsksmart/rds-ipfs/issues/338)) ([b22730e](https://github.com/rsksmart/rds-ipfs/commit/b22730e))
+* release command ([6b2b1e9](https://github.com/rsksmart/rds-ipfs/commit/6b2b1e9))
+
+
+### Features
+
+* comms marketplace transport ([#323](https://github.com/rsksmart/rds-ipfs/issues/323)) ([22d4136](https://github.com/rsksmart/rds-ipfs/commit/22d4136))
+
+
+
 <a name="0.1.2"></a>
 ## [0.1.2](https://github.com/rsksmart/rds-ipfs/compare/v0.1.1...v0.1.2) (2020-12-21)
 

@@ -1,6 +1,6 @@
 {
   "name": "@rsksmart/rif-storage-pinning",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Application for providing your storage space to other to use in exchange of RIF Tokens",
   "keywords": [
     "IPFS",
@@ -41,7 +41,7 @@
     "lint": "tasegir lint",
     "prepack": "tasegir run --watch node_modules/.bin/oclif-dev -- manifest && sed -i '' 's#\"./src/cli\"#\"./lib/cli\"#g' package.json",
     "postpack": "sed -i '' 's#\"./lib/cli\"#\"./src/cli\"#g' package.json",
-    "release": "tasegir release --no-build --no-docs --target=node",
+    "release": "cross-env ALLOW_CONFIG_MUTATIONS=true tasegir release --no-build --no-docs --target=node",
     "start": "tasegir run --watch ./bin/run --",
     "test:integration": "cross-env ALLOW_CONFIG_MUTATIONS=true tasegir test --target node --files ./test/integration/*.spec.ts",
     "test:unit": "cross-env ALLOW_CONFIG_MUTATIONS=true tasegir test --target node --files ./test/unit/*.spec.ts",
