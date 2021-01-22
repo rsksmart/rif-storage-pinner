@@ -25,6 +25,6 @@
     }
   },
   marketplace: {
-    provider: 'https://marketplace-cache.testnet.rifos.org'
+    provider: 'https://cache.marketplace.testnet.rifos.org'
   }
 }
