@@ -43,6 +43,7 @@ function ethFactory (): Eth {
 
 function filterAndTransformBlockchainEvents (offerId: string, eventTransformer: EventTransformer, callback: Processor<BlockchainEvent>): Processor<BlockchainEvent> {
   return async (originalEvent: BlockchainEvent): Promise<void> => {
+    logger.info('Receive event: ', originalEvent)
     const event = eventTransformer(originalEvent)
     logger.debug(`Got ${event.event} for provider ${(event as BlockchainEventsWithProvider).returnValues.provider}`)
 
