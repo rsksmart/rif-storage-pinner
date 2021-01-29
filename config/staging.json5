@@ -21,7 +21,7 @@
     networkId: 31,
     eventsEmitter: {
       startingBlock: 1333889,
-      confirmations: 3
+      confirmations: 8
     }
   }
 }
