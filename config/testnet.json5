@@ -20,7 +20,7 @@
     contractAddress : '0x839856c0eC1aA2AeD25D47Fd3DDB7A14Dac3e76d',
     networkId: 31,
     eventsEmitter: {
-      startingBlock: 1425147,
+      startingBlock: 1656800,
       confirmations: 8
     }
   }
