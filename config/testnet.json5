@@ -17,7 +17,7 @@
     },
   },
   blockchain: {
-    contractAddress : '0x2647F2e5C2E6A05487708CBCBd72900Dc339af1b',
+    contractAddress : '0x839856c0eC1aA2AeD25D47Fd3DDB7A14Dac3e76d',
     networkId: 31,
     eventsEmitter: {
       startingBlock: 1425147,
