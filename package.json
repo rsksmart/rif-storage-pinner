@@ -1,6 +1,6 @@
 {
   "name": "@rsksmart/rif-storage-pinning",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Application for providing your storage space to other to use in exchange of RIF Tokens",
   "keywords": [
     "IPFS",
@@ -124,9 +124,10 @@
   "types": "types/index.d.ts",
   "contributors": [
     "Adam Uhlíř <adam@uhlir.dev>",
+    "Artem B <artem.bv@protonmail.com>",
     "Julian M. Rodriguez <56316686+julianmrodri@users.noreply.github.com>",
-    "Nazar Duchak <41945483+nduchak@users.noreply.github.com>",
     "Nazar Duchak <nazar@iovlabs.org>",
+    "Nazar Duchak <41945483+nduchak@users.noreply.github.com>",
     "Vojtech Simetka <vojtech@simetka.cz>",
     "dependabot-preview[bot] <27856297+dependabot-preview[bot]@users.noreply.github.com>"
   ],
