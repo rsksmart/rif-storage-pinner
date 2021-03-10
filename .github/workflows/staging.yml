@@ -59,11 +59,11 @@ jobs:
                --parameters commands=ifconfig \
                --output text --region=${{ secrets.STAGING_AWS_REGION }}
 
-      - name: Deploy rif-marketplace-cache staging
+      - name: Deploy rif-marketplace-pinner staging
         run: |
           aws ssm send-command \
               --document-name "AWS-RunRemoteScript" \
-              --instance-ids "i-0f729cae39a4dac56,i-00163664d508f654b" \
+              --instance-ids "["i-0f729cae39a4dac56","i-00163664d508f654b"]" \
               --region=${{ secrets.STAGING_AWS_REGION }} \
               --comment "github interaction-rif-marketplace-pinner" \
               --parameters '{"sourceType":["GitHub"],"sourceInfo":["{\"owner\":\"rootstock\", \"repository\":\"ask-devops\", \"path\": \"rif-marketplace/\",\"tokenInfo\":\"{{ssm-secure:github-token}}\"}"],"commandLine":["deploy-marketplace-pinner.sh"]}'
