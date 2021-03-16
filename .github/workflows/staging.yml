@@ -1,0 +1,70 @@
+---
+name: RIF Marketplace PINNER deploy
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+-**'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+    branches:
+      - staging
+      - features/devops
+
+jobs:
+  deploy-staging:
+    name: RIF Marketplace PINNER - Staging
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.STAGING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.STAGING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.STAGING_AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Extract Git Tag
+        run: echo "GIT_TAG="$(git describe --abbrev=0 --tags)"" >> $GITHUB_ENV
+      - name: Echo Git tag
+        run: echo "${{ env.GIT_TAG }}"
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: rif-marketplace-pinner
+          IMAGE_TAG: ${{ env.GIT_TAG }}
+        run: |
+           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Send a command to EC2 instance(s)
+        # This is needed basically to TEST if ssm is responding correctly
+        run: |
+           aws ssm send-command \
+               --instance-ids "i-0f729cae39a4dac56" \
+               --document-name "AWS-RunShellScript" \
+               --comment "IP config" \
+               --parameters commands=ifconfig \
+               --output text --region=${{ secrets.STAGING_AWS_REGION }}
+
+      - name: Deploy rif-marketplace-pinner staging
+        run: |
+          aws ssm send-command \
+              --document-name "AWS-RunRemoteScript" \
+              --targets '[{"Key":"InstanceIds","Values":["i-00163664d508f654b","i-0f729cae39a4dac56"]}]' \
+              --region=${{ secrets.STAGING_AWS_REGION }} \
+              --comment "github interaction-rif-marketplace-pinner" \
+              --parameters '{"sourceType":["GitHub"],"sourceInfo":["{\"owner\":\"rootstock\", \"repository\":\"ask-devops\", \"path\": \"rif-marketplace/\",\"tokenInfo\":\"{{ssm-secure:github-token}}\"}"],"commandLine":["deploy-marketplace-pinner.sh"]}'
+
