@@ -1,6 +1,30 @@
 {
+  uiUrl: 'http://marketplace.testnet.rifos.org/storage/sell?peerId=<<peerId>>',
+  comms: {
+    libp2p: {
+      config: {
+        peerDiscovery: {
+          bootstrap: {
+            list: [
+              '/dns4/pubsub-01.marketplace.testnet.rifos.org/tcp/8998/p2p/QmRstX1GjxktJhks6Pdu99CQxXMgS499Rw4FqDaqobCupW',
+              '/dns4/pubsub-02.marketplace.testnet.rifos.org/tcp/8998/p2p/QmRS1KbNRQPaQMHRu3pQJG8VxnC3yAr51bHK2hnS5gdeyh',
+              '/dns4/pubsub-01.marketplace.testnet.rifos.org/tcp/8999/ws/p2p/QmRstX1GjxktJhks6Pdu99CQxXMgS499Rw4FqDaqobCupW',
+              '/dns4/pubsub-02.marketplace.testnet.rifos.org/tcp/8999/ws/p2p/QmRS1KbNRQPaQMHRu3pQJG8VxnC3yAr51bHK2hnS5gdeyh',
+            ]
+          }
+        },
+      },
+    },
+  },
+  marketplace: {
+    provider: 'URL_TO_MARKETPLACE_CACHE'
+  },
   blockchain: {
-    //contractAddress : ''
+    contractAddress : '0xa18c181229F374b00f126fC952775d41A4F4c40e',
     networkId: 30,
+    eventsEmitter: {
+      startingBlock: 3226700,
+      confirmations: 8
+    }
   }
 }
