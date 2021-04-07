@@ -1,4 +1,5 @@
 import fs from 'fs'
+import path from 'path'
 import { flags } from '@oclif/command'
 import { isAddress } from 'web3-utils'
 import { IConfig } from '@oclif/config'
@@ -8,7 +9,6 @@ import { getObject, getEndPromise as forStoreFinish } from 'sequelize-store'
 import BaseCommand, { promptForFlag } from '../utils'
 import PeerId from 'peer-id'
 import { OutputFlags } from '@oclif/parser'
-import path from "path"
 
 const PEER_ID_PLACEHOLDER = '<<peerId>>'
 

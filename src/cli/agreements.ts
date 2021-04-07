@@ -1,3 +1,5 @@
+import config from 'config'
+import path from 'path'
 import { flags } from '@oclif/command'
 import { Op } from 'sequelize'
 import LogSymbols from 'log-symbols'
@@ -10,8 +12,6 @@ import JobModel from '../models/job.model'
 import { JobState } from '../definitions'
 import { IConfig } from '@oclif/config'
 import { OutputFlags } from '@oclif/parser'
-import config from "config"
-import path from "path"
 
 enum FilterStatus { active = 'active', inactive = 'inactive '}
 type AgreementWithJobs = Agreement & { jobs: JobModel[] }
