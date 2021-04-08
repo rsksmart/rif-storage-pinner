@@ -16,11 +16,14 @@
       },
     },
   },
+  marketplace: {
+    provider: 'URL_TO_MARKETPLACE_CACHE'
+  },
   blockchain: {
     contractAddress : '0x839856c0eC1aA2AeD25D47Fd3DDB7A14Dac3e76d',
     networkId: 31,
     eventsEmitter: {
-      startingBlock: 1656800,
+      startingBlock: 1745934,
       confirmations: 8
     }
   }

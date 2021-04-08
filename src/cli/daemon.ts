@@ -8,7 +8,6 @@ import { reset as resetStore } from 'sequelize-store'
 
 import BaseCommand from '../utils'
 import { initApp } from '../index'
-import { Strategy } from '../definitions'
 import { loggingFactory } from '../logger'
 
 const logger = loggingFactory('cli:daemon')
