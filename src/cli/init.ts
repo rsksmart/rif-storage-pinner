@@ -72,7 +72,7 @@ export default class InitCommand extends BaseCommand {
   async run (): Promise<void> {
     const offerId = this.parsedArgs.flags.offerId
 
-    if (!isAddress(offerId)) throw new Error('Invalid Offer Address')
+    if (!isAddress(offerId.toLowerCase())) throw new Error('Invalid Offer Address')
 
     if (fs.existsSync(this.dbPath as string)) {
       const overrideDb = this.parsedArgs.flags['override-db']
