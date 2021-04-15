@@ -17,7 +17,7 @@
     },
   },
   marketplace: {
-    provider: 'URL_TO_MARKETPLACE_CACHE'
+    provider: 'https://cache.marketplace.testnet.rifos.org'
   },
   blockchain: {
     contractAddress : '0x839856c0eC1aA2AeD25D47Fd3DDB7A14Dac3e76d',

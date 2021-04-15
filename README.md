@@ -172,7 +172,7 @@ OPTIONS
   --skipPrompt                         Answer yes for any prompting
 
   --strategy=marketplace|blockchain    what type of provider will be used for listening on events. Default is
-                                       "marketplace". For blockchain you have to have access to a node that has allowed
+                                       "blockchain". For blockchain you have to have access to a node that has allowed
                                        eth_getLogs call.
 
 EXAMPLES
