@@ -35,7 +35,7 @@ export default class DaemonCommand extends BaseCommand {
       env: 'RIFS_PROVIDER'
     }),
     strategy: flags.string({
-      description: 'what type of provider will be used for listening on events. Default is "marketplace". For blockchain you have to have access to a node that has allowed eth_getLogs call.',
+      description: 'what type of provider will be used for listening on events. Default is "blockchain". For blockchain you have to have access to a node that has allowed eth_getLogs call.',
       options: ['marketplace', 'blockchain']
     }),
     ipfs: flags.string({
