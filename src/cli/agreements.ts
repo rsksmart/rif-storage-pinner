@@ -1,3 +1,5 @@
+import config from 'config'
+import path from 'path'
 import { flags } from '@oclif/command'
 import { Op } from 'sequelize'
 import LogSymbols from 'log-symbols'
@@ -9,6 +11,7 @@ import Agreement from '../models/agreement.model'
 import JobModel from '../models/job.model'
 import { JobState } from '../definitions'
 import { IConfig } from '@oclif/config'
+import { OutputFlags } from '@oclif/parser'
 
 enum FilterStatus { active = 'active', inactive = 'inactive '}
 type AgreementWithJobs = Agreement & { jobs: JobModel[] }
@@ -26,6 +29,12 @@ const pinningStatusFilter = (job: JobModel, pinningStatuses: JobState[] | undefi
 export default class AgreementsCommand extends BaseCommand {
   static flags = {
     ...BaseCommand.flags,
+    network: flags.string({
+      char: 'n',
+      description: 'specifies to which network is the provider connected',
+      options: ['testnet', 'mainnet'],
+      env: 'RIFS_NETWORK'
+    }),
     status: flags.string({
       char: 's',
       description: 'Filter by status',
@@ -52,6 +61,19 @@ export default class AgreementsCommand extends BaseCommand {
 
   constructor (argv: string[], config: IConfig) {
     super(argv, config, { db: { migrate: true } })
+  }
+
+  protected baseConfig (flags: OutputFlags<typeof AgreementsCommand.flags>): void {
+    super.baseConfig(flags)
+    const { userConfig, configObject } = this.configuration
+
+    config.util.extendDeep(config, userConfig)
+    config.util.extendDeep(config, configObject)
+
+    if (flags.network) {
+      const networkConfigPath = path.join(__dirname, '..', '..', 'config', `${flags.network}.json5`)
+      config.util.extendDeep(config, config.util.parseFile(networkConfigPath))
+    }
   }
 
   static getStatus (agreement: Agreement): string {

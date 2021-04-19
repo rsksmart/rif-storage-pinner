@@ -1,4 +1,5 @@
 import fs from 'fs'
+import path from 'path'
 import { flags } from '@oclif/command'
 import { isAddress } from 'web3-utils'
 import { IConfig } from '@oclif/config'
@@ -7,12 +8,19 @@ import { getObject, getEndPromise as forStoreFinish } from 'sequelize-store'
 
 import BaseCommand, { promptForFlag } from '../utils'
 import PeerId from 'peer-id'
+import { OutputFlags } from '@oclif/parser'
 
 const PEER_ID_PLACEHOLDER = '<<peerId>>'
 
 export default class InitCommand extends BaseCommand {
   static flags = {
     ...BaseCommand.flags,
+    network: flags.string({
+      char: 'n',
+      description: 'specifies to which network is the provider connected',
+      options: ['testnet', 'mainnet'],
+      env: 'RIFS_NETWORK'
+    }),
     offerId: promptForFlag(flags.string({
       char: 'o',
       description: 'ID of Offer to which should the service listen to',
@@ -48,10 +56,23 @@ export default class InitCommand extends BaseCommand {
     super(argv, config, { serviceRequired: false, db: undefined })
   }
 
+  protected baseConfig (flags: OutputFlags<typeof InitCommand.flags>): void {
+    super.baseConfig(flags)
+    const { userConfig, configObject } = this.configuration
+
+    config.util.extendDeep(config, userConfig)
+    config.util.extendDeep(config, configObject)
+
+    if (flags.network) {
+      const networkConfigPath = path.join(__dirname, '..', '..', 'config', `${flags.network}.json5`)
+      config.util.extendDeep(config, config.util.parseFile(networkConfigPath))
+    }
+  }
+
   async run (): Promise<void> {
     const offerId = this.parsedArgs.flags.offerId
 
-    if (!isAddress(offerId)) throw new Error('Invalid Offer Address')
+    if (!isAddress(offerId.toLowerCase())) throw new Error('Invalid Offer Address')
 
     if (fs.existsSync(this.dbPath as string)) {
       const overrideDb = this.parsedArgs.flags['override-db']
