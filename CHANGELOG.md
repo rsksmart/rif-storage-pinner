@@ -1,3 +1,11 @@
+<a name="0.2.3"></a>
+## [0.2.3](https://github.com/rsksmart/rds-ipfs/compare/v0.2.3-next.1...v0.2.3) (2021-04-19)
+
+* Fix `--network` flag for CLI
+* adjust configs
+
+
+
 <a name="0.2.2"></a>
 ## [0.2.2](https://github.com/rsksmart/rds-ipfs/compare/v0.2.1...v0.2.2) (2021-03-04)
 
