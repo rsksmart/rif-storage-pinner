@@ -20,6 +20,7 @@
     provider: 'https://cache.marketplace.testnet.rifos.org'
   },
   blockchain: {
+    provider: 'https://public-node.testnet.rsk.co',
     contractAddress : '0x839856c0eC1aA2AeD25D47Fd3DDB7A14Dac3e76d',
     networkId: 31,
     eventsEmitter: {
