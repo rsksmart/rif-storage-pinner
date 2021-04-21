@@ -9,6 +9,7 @@ import { reset as resetStore } from 'sequelize-store'
 import BaseCommand from '../utils'
 import { initApp } from '../index'
 import { loggingFactory } from '../logger'
+import { Strategy } from '../definitions'
 
 const logger = loggingFactory('cli:daemon')
 
@@ -56,18 +57,15 @@ export default class DaemonCommand extends BaseCommand {
       configObject.strategy = flags.strategy
     }
 
-    // TODO As now we use the markeplace url for comms we can depend on strategy
+    if (flags.provider) {
+      const strategy = userConfig.strategy ?? configObject.strategy ?? Strategy.Blockchain
 
-    // if (flags.provider) {
-    //   // We have to use hardcoded 'Strategy.Marketplace' here as default value, because we cant touch the `config` object yet.
-    //   const strategy = userConfig.strategy ?? configObject.strategy ?? Strategy.Marketplace
-    //
-    //   if (strategy === Strategy.Blockchain) {
-    //     configObject.blockchain = { provider: flags.provider }
-    //   } else {
-    //     configObject.marketplace = { provider: flags.provider }
-    //   }
-    // }
+      if (strategy === Strategy.Blockchain) {
+        configObject.blockchain = { provider: flags.provider }
+      } else {
+        configObject.marketplace = { provider: flags.provider }
+      }
+    }
 
     if (flags.ipfs) {
       configObject.ipfs = { clientOptions: { url: flags.ipfs } }
