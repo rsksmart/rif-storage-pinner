@@ -34,7 +34,7 @@ jobs:
           aws ssm send-command \
               --document-name "AWS-RunRemoteScript" \
               --targets '[{"Key":"InstanceIds","Values":["${{ secrets.STAGING_EC2_ID_1 }}","${{ secrets.STAGING_EC2_ID_2 }}"]}]' \
-              --region=${{ secrets.STAGING_AWS_REGION }} \
+              --region=${{ secrets.DEVELOP_AWS_REGION }} \
               --comment "github interaction-rif-marketplace-pinner" \
               --parameters '{"sourceType":["GitHub"],"sourceInfo":["{\"owner\":\"rootstock\", \"repository\":\"ask-devops\", \"path\": \"rif-marketplace/\",\"tokenInfo\":\"{{ssm-secure:github-token}}\"}"],"commandLine":["deploy-marketplace-pinner-dev.sh"]}'
 
