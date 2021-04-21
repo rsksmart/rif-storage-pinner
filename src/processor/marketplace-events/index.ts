@@ -108,8 +108,7 @@ export class MarketplaceEventsProcessor extends EventProcessor {
     async precache (): Promise<void> {
       if (!this.initialized) await this.initialize()
 
-      const offer = await this.services.offer.get(this.offerId)
-
+      const offer = await this.services.offer.get(this.offerId).catch(() => undefined)
       if (!offer) {
         logger.warn(`Offer ${this.offerId} not exist. Pinning will start after offer will be created`)
         return

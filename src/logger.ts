@@ -93,8 +93,8 @@ type SupportedLevels = 'critical' | 'error' | 'warn' | 'info' | 'verbose' | 'deb
 
 const supportedLevels: Record<SupportedLevels, number> = {
   critical: 0,
-  error: 1,
-  warn: 2,
+  warn: 1,
+  error: 2,
   info: 3,
   verbose: 4,
   debug: 5

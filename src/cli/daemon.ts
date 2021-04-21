@@ -36,8 +36,9 @@ export default class DaemonCommand extends BaseCommand {
       env: 'RIFS_PROVIDER'
     }),
     strategy: flags.string({
-      description: 'what type of provider will be used for listening on events. Default is "blockchain". For blockchain you have to have access to a node that has allowed eth_getLogs call.',
-      options: ['marketplace', 'blockchain']
+      description: 'what type of provider will be used for listening on events. Default is "marketplace". For blockchain you have to have access to a node that has allowed eth_getLogs call.',
+      options: ['marketplace', 'blockchain'],
+      default: 'marketplace'
     }),
     ipfs: flags.string({
       description: 'specifies a connection URL to IPFS node. Default is go-ipfs listening configuration.',
@@ -53,12 +54,17 @@ export default class DaemonCommand extends BaseCommand {
     super.baseConfig(flags)
     const { userConfig, configObject } = this.configuration
 
+    if (flags.network) {
+      const networkConfigPath = path.join(__dirname, '..', '..', 'config', `${flags.network}.json5`)
+      config.util.extendDeep(config, config.util.parseFile(networkConfigPath))
+    }
+
     if (flags.strategy) {
       configObject.strategy = flags.strategy
     }
 
     if (flags.provider) {
-      const strategy = userConfig.strategy ?? configObject.strategy ?? Strategy.Blockchain
+      const strategy = userConfig.strategy ?? configObject.strategy ?? Strategy.Marketplace
 
       if (strategy === Strategy.Blockchain) {
         configObject.blockchain = { provider: flags.provider }
@@ -74,11 +80,6 @@ export default class DaemonCommand extends BaseCommand {
     config.util.extendDeep(config, userConfig)
     config.util.extendDeep(config, configObject)
 
-    if (flags.network) {
-      const networkConfigPath = path.join(__dirname, '..', '..', 'config', `${flags.network}.json5`)
-      config.util.extendDeep(config, config.util.parseFile(networkConfigPath))
-    }
-
     if (!config.has('blockchain.contractAddress')) {
       throw new Error('You have to specify address of smart contract! Use --network flag!')
     }
@@ -86,6 +87,10 @@ export default class DaemonCommand extends BaseCommand {
 
   async run (): Promise<void> {
     const offerId = this.offerId
+
+    if (config.get<string>('strategy') === 'marketplace') {
+      logger.warn("By default, the 'marketplace' communication strategy is used. This method should be used for testing purposes. For providing services to a real customer - use the 'blockchain' strategy and connect to a full RSK node that exposes the 'getLogs' method. You may install it locally or connect to a public one.")
+    }
 
     // An infinite loop which you can exit only with SIGINT/SIGKILL
     while (true) {

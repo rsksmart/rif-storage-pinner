@@ -20,7 +20,6 @@
     provider: 'https://cache.mainnet.marketplace.rifcomputing.net'
   },
   blockchain: {
-    provider: 'https://public-node.rsk.co',
     contractAddress : '0xa18c181229F374b00f126fC952775d41A4F4c40e',
     networkId: 30,
     eventsEmitter: {
