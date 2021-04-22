@@ -1,3 +1,13 @@
+<a name="0.2.4"></a>
+## [0.2.4](https://github.com/rsksmart/rds-ipfs/compare/v0.2.3-next.1...v0.2.4) (2021-04-22)
+
+
+### Features
+
+* **devops:** fixes on cd workflow for security ([#406](https://github.com/rsksmart/rds-ipfs/issues/406)) ([3dfdc95](https://github.com/rsksmart/rds-ipfs/commit/3dfdc95))
+
+
+
 <a name="0.2.3"></a>
 ## [0.2.3](https://github.com/rsksmart/rds-ipfs/compare/v0.2.3-next.1...v0.2.3) (2021-04-19)
 
