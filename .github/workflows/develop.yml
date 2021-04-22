@@ -8,7 +8,7 @@ on:
       - develop
 
 jobs:
-  deploy-staging:
+  deploy-develop:
     name: RIF Marketplace PINNER - Develop
     runs-on: ubuntu-latest
     environment:
