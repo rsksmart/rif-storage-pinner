@@ -60,7 +60,10 @@ export function isValidEvent (value: string, handlers: Record<string, unknown>):
   return value in handlers
 }
 
-export function buildHandler<T extends StorageEvents, O extends EventProcessorOptions> (handlers: HandlersObject<T, O>, events: string[]): EventsHandler<T, O> {
+export function buildHandler<
+  T extends StorageEvents,
+  O extends EventProcessorOptions
+> (handlers: HandlersObject<T, O>, events: string[]): EventsHandler<T, O> {
   return {
     events,
     process: (event: T, options: O): Promise<void> => {
@@ -153,7 +156,7 @@ export default abstract class BaseCommand extends Command {
     log: flags.string({
       description: 'what level of information to log',
       options: ['error', 'warn', 'info', 'verbose', 'debug'],
-      default: 'error',
+      default: 'info',
       env: 'LOG_LEVEL'
     }),
     skipPrompt: flags.boolean({
