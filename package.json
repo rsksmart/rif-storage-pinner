@@ -130,7 +130,8 @@
     "Nazar Duchak <41945483+nduchak@users.noreply.github.com>",
     "Vojtech Simetka <vojtech@simetka.cz>",
     "dependabot-preview[bot] <27856297+dependabot-preview[bot]@users.noreply.github.com>",
-    "rafaelortiz <rafael@iovlabs.org>"
+    "rafaelortiz <rafael@iovlabs.org>",
+    "rafaiovlabs <76968120+rafaiovlabs@users.noreply.github.com>"
   ],
   "oclif": {
     "bin": "rif-pinning",
