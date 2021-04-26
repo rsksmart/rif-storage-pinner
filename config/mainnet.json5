@@ -17,7 +17,7 @@
     },
   },
   marketplace: {
-    provider: 'https://cache.mainnet.marketplace.rifcomputing.net'
+    provider: 'https://cache.marketplace.rifos.org'
   },
   blockchain: {
     contractAddress : '0xa18c181229F374b00f126fC952775d41A4F4c40e',
