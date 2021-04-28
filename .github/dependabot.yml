@@ -1,0 +1,54 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "09:00"
+    timezone: Europe/Prague
+  open-pull-requests-limit: 10
+  reviewers:
+  - AuHau
+  ignore:
+  - dependency-name: peer-id
+    versions:
+    - 0.14.6
+    - 0.14.8
+  - dependency-name: multiaddr
+    versions:
+    - 9.0.1
+  - dependency-name: web3-eth-contract
+    versions:
+    - 1.3.3
+    - 1.3.4
+    - 1.3.5
+  - dependency-name: web3-eth
+    versions:
+    - 1.3.3
+    - 1.3.4
+    - 1.3.5
+  - dependency-name: socket.io-client
+    versions:
+    - 3.1.2
+    - 4.0.0
+    - 4.0.1
+  - dependency-name: ipfs-http-client
+    versions:
+    - 48.2.2
+    - 49.0.1
+    - 49.0.2
+  - dependency-name: "@fluffy-spoon/substitute"
+    versions:
+    - 1.185.0
+    - 1.187.0
+  - dependency-name: sql-formatter
+    versions:
+    - 3.1.0
+    - 4.0.0
+    - 4.0.2
+  - dependency-name: web3-core
+    versions:
+    - 1.3.3
+  - dependency-name: "@rsksmart/web3-events"
+    versions:
+    - 0.1.0-dev.6
