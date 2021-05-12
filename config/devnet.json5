@@ -1,0 +1,22 @@
+{
+  uiUrl: 'http://marketplace.dev.rifcomputing.net/storage/sell?peerId=<<peerId>>',
+  comms: {
+    libp2p: {
+      config: {
+        peerDiscovery: {
+          bootstrap: {
+            list: ['/ip4/127.0.0.1/tcp/8998', '/ip4/127.0.0.1/tcp/8999/ws']
+          }
+        },
+      },
+    },
+  },
+  blockchain: {
+    contractAddress: '0x89bac3BB0517F7Dc0E5E94265217A9Acc5cc489f',
+    networkId: 33,
+    eventsEmitter: {
+      startingBlock: 272414,
+      confirmations: 3
+    }
+  }
+}
