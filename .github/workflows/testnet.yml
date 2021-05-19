@@ -3,15 +3,12 @@ name: RIF Marketplace PINNER deploy
 
 on:
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
     branches:
       - testnet
 
-
 jobs:
   deploy-staging:
-    name: RIF Marketplace PINNER - Testnet
+    name: RIF Marketplace PINNER - TESTNET
     runs-on: ubuntu-latest
     environment:
       name: testnet
@@ -38,5 +35,5 @@ jobs:
               --targets '[{"Key":"InstanceIds","Values":["${{ secrets.TESTNET_EC2_ID_1 }}","${{ secrets.TESTNET_EC2_ID_2 }}"]}]' \
               --region=${{ secrets.STAGING_AWS_REGION }} \
               --comment "github interaction-rif-marketplace-pinner" \
-              --parameters '{"sourceType":["GitHub"],"sourceInfo":["{\"owner\":\"rootstock\", \"repository\":\"ask-devops\", \"path\": \"rif-marketplace/\",\"tokenInfo\":\"{{ssm-secure:github-token}}\"}"],"commandLine":["deploy-marketplace-pinner.sh"]}'
+              --parameters '{"sourceType":["GitHub"],"sourceInfo":["{\"owner\":\"rootstock\", \"repository\":\"ask-devops\", \"path\": \"rif-marketplace/\",\"tokenInfo\":\"{{ssm-secure:github-token}}\"}"],"commandLine":["deploy-marketplace-pinner-testnet.sh"]}'
 
