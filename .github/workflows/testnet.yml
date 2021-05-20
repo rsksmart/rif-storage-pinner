@@ -1,5 +1,5 @@
 ---
-name: RIF Marketplace PINNER deploy
+name: RIF Marketplace Testnet PINNER deploy
 
 on:
   push:
@@ -36,4 +36,3 @@ jobs:
               --region=${{ secrets.TESTNET_AWS_REGION }} \
               --comment "github interaction-rif-marketplace-pinner" \
               --parameters '{"sourceType":["GitHub"],"sourceInfo":["{\"owner\":\"rootstock\", \"repository\":\"ask-devops\", \"path\": \"rif-marketplace/\",\"tokenInfo\":\"{{ssm-secure:github-token}}\"}"],"commandLine":["deploy-marketplace-pinner-testnet.sh"]}'
-
