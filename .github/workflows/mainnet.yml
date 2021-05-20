@@ -1,0 +1,39 @@
+---
+name: RIF Marketplace MAINNET PINNER deploy
+
+on:
+  push:
+    branches:
+      - mainnet
+
+jobs:
+  deploy-mainnet:
+    name: RIF Marketplace PINNER - MAINNET
+    runs-on: ubuntu-latest
+    environment:
+      name: mainnet
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.MAINNET_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.MAINNET_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.MAINNET_AWS_REGION }}
+
+
+      - name: Deploy rif-marketplace-pinner MAINNET
+        run: |
+          aws ssm send-command \
+              --document-name "AWS-RunRemoteScript" \
+              --targets '[{"Key":"InstanceIds","Values":["${{ secrets.MAINNET_EC2_ID_1 }}","${{ secrets.MAINNET_EC2_ID_2 }}"]}]' \
+              --region=${{ secrets.MAINNET_AWS_REGION }} \
+              --comment "github interaction-rif-marketplace-pinner" \
+              --parameters '{"sourceType":["GitHub"],"sourceInfo":["{\"owner\":\"rootstock\", \"repository\":\"ask-devops\", \"path\": \"rif-marketplace/\",\"tokenInfo\":\"{{ssm-secure:github-token}}\"}"],"commandLine":["deploy-marketplace-pinner-mainnet.sh"]}'
+
