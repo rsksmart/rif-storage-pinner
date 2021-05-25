@@ -1,5 +1,5 @@
 ---
-name: RIF Marketplace PINNER deploy
+name: RIF Marketplace PINNER DEVELOP deploy
 
 on:
   push:
