@@ -70,7 +70,7 @@
     "config": "^3.3.1",
     "ipfs-http-client": "^49.0.4",
     "log-symbols": "^5.0.0",
-    "multiaddr": "^8.0.0",
+    "multiaddr": "^10.0.0",
     "node-fetch": "^2.6.1",
     "parse-duration": "^1.0.0",
     "peer-id": "^0.14.0",
