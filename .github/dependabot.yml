@@ -8,7 +8,7 @@ updates:
     timezone: Europe/Prague
   open-pull-requests-limit: 10
   reviewers:
-  - AuHau
+  - jurajpiar
   ignore:
   - dependency-name: peer-id
     versions:
